@@ -1,0 +1,44 @@
+name: Resolve Version Test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/resolve-version.ts"
+      - "scripts/resolve-version-test.ts"
+      - "electrobun.config.ts"
+      - ".github/workflows/resolve-version-test.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Resolve Version Test (${{ matrix.channel }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        channel: [stable, canary, dev]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        shell: bash
+        run: bun install --frozen-lockfile
+
+      - name: Run resolve-version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bun scripts/resolve-version-test.ts ${{ matrix.channel }}

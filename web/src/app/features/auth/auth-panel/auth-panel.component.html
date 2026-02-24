@@ -1,0 +1,115 @@
+<section
+  class="rounded-3xl border p-6"
+  [class.border-slate-200]="!store.isDark()"
+  [class.bg-white]="!store.isDark()"
+  [class.shadow-sm]="!store.isDark()"
+  [class.border-slate-700]="store.isDark()"
+  [class.bg-slate-900]="store.isDark()"
+>
+  <p
+    class="text-xs font-semibold uppercase tracking-[0.2em]"
+    [class.text-slate-500]="!store.isDark()"
+    [class.text-slate-400]="store.isDark()"
+  >
+    Step 1
+  </p>
+  <h2
+    class="mt-2 text-2xl font-bold"
+    [class.text-slate-900]="!store.isDark()"
+    [class.text-white]="store.isDark()"
+  >
+    Authenticate
+  </h2>
+  <p
+    class="mt-2 text-sm"
+    [class.text-slate-500]="!store.isDark()"
+    [class.text-slate-300]="store.isDark()"
+  >
+    @if (store.hasCheckedStoredWustToken() && store.hasStoredWustToken()) {
+      Stored WUST token detected in config.json. Use one-click login below.
+    } @else if (store.hasCheckedStoredWustToken()) {
+      Open Lenovo login in browser, sign in, and paste callback URL or WUST token.
+    } @else {
+      Checking for stored WUST token...
+    }
+  </p>
+
+  @if (store.hasCheckedStoredWustToken() && store.hasStoredWustToken()) {
+    <div class="mt-4 flex flex-wrap gap-3">
+      <button
+        class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+        type="button"
+        (click)="store.authenticateWithStoredToken()"
+      >
+        Login with saved WUST token
+      </button>
+    </div>
+  }
+
+  @if (store.loginUrl()) {
+    <p
+      class="mt-4 rounded-xl border p-3 text-xs break-all"
+      [class.border-slate-200]="!store.isDark()"
+      [class.bg-slate-50]="!store.isDark()"
+      [class.text-slate-700]="!store.isDark()"
+      [class.border-slate-700]="store.isDark()"
+      [class.bg-slate-800]="store.isDark()"
+      [class.text-slate-200]="store.isDark()"
+    >
+      Login URL: {{ store.loginUrl() }}
+    </p>
+  }
+
+  @if (store.hasCheckedStoredWustToken() && !store.hasStoredWustToken()) {
+    <div class="mt-4 flex flex-wrap gap-3">
+      <button
+        class="rounded-xl border px-4 py-2 text-sm font-semibold transition"
+        [class.border-slate-300]="!store.isDark()"
+        [class.bg-white]="!store.isDark()"
+        [class.text-slate-800]="!store.isDark()"
+        [class.hover:bg-slate-100]="!store.isDark()"
+        [class.border-slate-600]="store.isDark()"
+        [class.bg-slate-800]="store.isDark()"
+        [class.text-slate-100]="store.isDark()"
+        [class.hover:bg-slate-700]="store.isDark()"
+        type="button"
+        (click)="store.openLoginBrowser()"
+      >
+        Open Lenovo Login
+      </button>
+    </div>
+
+    <label
+      class="mt-5 block text-xs font-semibold uppercase tracking-wide"
+      [class.text-slate-600]="!store.isDark()"
+      [class.text-slate-300]="store.isDark()"
+      for="wust"
+    >
+      Callback URL / WUST token
+    </label>
+    <textarea
+      id="wust"
+      class="mt-2 h-32 w-full rounded-xl border px-3 py-2 text-sm outline-none transition placeholder:opacity-100 focus:border-sky-500"
+      [class.border-slate-300]="!store.isDark()"
+      [class.bg-white]="!store.isDark()"
+      [class.text-slate-900]="!store.isDark()"
+      [class.placeholder-slate-500]="!store.isDark()"
+      [class.caret-slate-900]="!store.isDark()"
+      [class.border-slate-600]="store.isDark()"
+      [class.bg-slate-800]="store.isDark()"
+      [class.text-slate-100]="store.isDark()"
+      [class.placeholder-slate-300]="store.isDark()"
+      [class.caret-slate-100]="store.isDark()"
+      [ngModel]="store.callbackUrlOrToken()"
+      (ngModelChange)="store.callbackUrlOrToken.set($event)"
+      placeholder="https://...lenovoid.wust=... or the token itself"
+    ></textarea>
+    <button
+      class="mt-4 rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+      type="button"
+      (click)="store.submitWustToken()"
+    >
+      Save and authenticate
+    </button>
+  }
+</section>

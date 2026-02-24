@@ -1,0 +1,48 @@
+<section class="rounded-3xl border p-5" [class.border-slate-200]="!store.isDark()" [class.bg-white]="!store.isDark()"
+  [class.shadow-sm]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()">
+  <p class="text-xs font-semibold uppercase tracking-[0.2em]" [class.text-slate-500]="!store.isDark()"
+    [class.text-slate-400]="store.isDark()">
+    Step 2
+  </p>
+  <h2 class="mt-2 text-lg font-bold" [class.text-slate-900]="!store.isDark()" [class.text-white]="store.isDark()">
+    Select Source
+  </h2>
+  <div class="mt-4 grid gap-2">
+    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition"
+      [class.bg-sky-700]="store.sourceMode() === 'connected'" [class.text-white]="store.sourceMode() === 'connected'"
+      [class.bg-slate-100]="store.sourceMode() !== 'connected' && !store.isDark()"
+      [class.text-slate-700]="store.sourceMode() !== 'connected' && !store.isDark()"
+      [class.bg-slate-800]="store.sourceMode() !== 'connected' && store.isDark()"
+      [class.text-slate-200]="store.sourceMode() !== 'connected' && store.isDark()" type="button"
+      (click)="store.setSourceMode('connected')">
+      Connected Device (ADB/Fastboot)
+    </button>
+    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition"
+      [class.bg-sky-700]="store.sourceMode() === 'catalog'" [class.text-white]="store.sourceMode() === 'catalog'"
+      [class.bg-slate-100]="store.sourceMode() !== 'catalog' && !store.isDark()"
+      [class.text-slate-700]="store.sourceMode() !== 'catalog' && !store.isDark()"
+      [class.bg-slate-800]="store.sourceMode() !== 'catalog' && store.isDark()"
+      [class.text-slate-200]="store.sourceMode() !== 'catalog' && store.isDark()" type="button"
+      (click)="store.setSourceMode('catalog')">
+      Model Catalog
+    </button>
+    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition"
+      [class.bg-sky-700]="store.sourceMode() === 'downloads'" [class.text-white]="store.sourceMode() === 'downloads'"
+      [class.bg-slate-100]="store.sourceMode() !== 'downloads' && !store.isDark()"
+      [class.text-slate-700]="store.sourceMode() !== 'downloads' && !store.isDark()"
+      [class.bg-slate-800]="store.sourceMode() !== 'downloads' && store.isDark()"
+      [class.text-slate-200]="store.sourceMode() !== 'downloads' && store.isDark()" type="button"
+      (click)="store.setSourceMode('downloads')">
+      Downloads
+    </button>
+    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition mt-2"
+      [class.bg-sky-700]="store.sourceMode() === 'about'" [class.text-white]="store.sourceMode() === 'about'"
+      [class.bg-slate-100]="store.sourceMode() !== 'about' && !store.isDark()"
+      [class.text-slate-700]="store.sourceMode() !== 'about' && !store.isDark()"
+      [class.bg-slate-800]="store.sourceMode() !== 'about' && store.isDark()"
+      [class.text-slate-200]="store.sourceMode() !== 'about' && store.isDark()" type="button"
+      (click)="store.setSourceMode('about')">
+      About
+    </button>
+  </div>
+</section>

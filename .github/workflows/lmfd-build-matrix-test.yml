@@ -1,0 +1,288 @@
+name: LMFD Build Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildEnv:
+        description: "Electrobun build environment"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - canary
+          - stable
+      publishRelease:
+        description: "Publish build artifacts to a GitHub Release"
+        required: true
+        default: true
+        type: boolean
+      releaseTag:
+        description: "Release tag (leave empty to auto-generate)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-version:
+    name: Resolve Version (${{ inputs.buildEnv }})
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Resolve Version
+        id: resolve
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          version=$(bun scripts/resolve-version.ts ${{ inputs.buildEnv }})
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $version"
+
+  build:
+    name: Build (${{ matrix.os }}, ${{ matrix.arch }}, ${{ inputs.buildEnv }})
+    needs: resolve-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+          - os: macos-15-intel
+            arch: x64
+          - os: ubuntu-latest
+            arch: x64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+          - os: windows-latest
+            arch: x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install root dependencies
+        shell: bash
+        run: bun install
+
+      - name: Patch version in config
+        shell: bash
+        run: |
+          appVersion="${{ needs.resolve-version.outputs.version }}"
+          if [ "${{ inputs.buildEnv }}" != "stable" ]; then
+            shortSha=$(git rev-parse --short HEAD)
+            appVersion="${appVersion}-${{ inputs.buildEnv }}.${shortSha}"
+          fi
+          bun scripts/patch-config.ts "$appVersion" "${{ inputs.buildEnv }}"
+
+      - name: Install web dependencies
+        shell: bash
+        run: |
+          cd web
+          bun install
+
+      - name: Prepare runtime views
+        shell: bash
+        run: bun run prepare:all
+
+      - name: Install zsync tools (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y zsync
+
+      - name: Build Electrobun app (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          attempts=4
+          for i in $(seq 1 "$attempts"); do
+            echo "Electrobun build attempt $i/$attempts"
+            if bunx electrobun build --env=${{ inputs.buildEnv }}; then
+              exit 0
+            fi
+            if [ "$i" -lt "$attempts" ]; then
+              sleepSeconds=$((i * 20))
+              echo "Build failed (likely transient download issue). Retrying in ${sleepSeconds}s..."
+              sleep "$sleepSeconds"
+            fi
+          done
+          echo "Electrobun build failed after $attempts attempts."
+          exit 1
+
+      - name: Build Electrobun app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          TAR_OPTIONS: --force-local
+        run: |
+          $attempts = 4
+          for ($i = 1; $i -le $attempts; $i++) {
+            Write-Host "Electrobun build attempt $i/$attempts"
+            bunx electrobun build --env=${{ inputs.buildEnv }}
+            if ($LASTEXITCODE -eq 0) {
+              exit 0
+            }
+            if ($i -lt $attempts) {
+              $sleepSeconds = $i * 20
+              Write-Host "Build failed (likely transient download issue). Retrying in $sleepSeconds s..."
+              Start-Sleep -Seconds $sleepSeconds
+            }
+          }
+          Write-Host "Electrobun build failed after $attempts attempts."
+          exit 1
+
+      - name: Rename artifacts
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            macOS) os="macos" ;;
+            Windows) os="win" ;;
+            Linux) os="linux" ;;
+          esac
+          arch="${{ matrix.arch }}"
+          env="${{ inputs.buildEnv }}"
+          prefix="${env}-${os}-${arch}"
+          
+          # Extract clean version without canary tags for installer names
+          rawVersion="${{ needs.resolve-version.outputs.version }}"
+          cleanVersion=$(echo "$rawVersion" | cut -d'-' -f1)
+          shortSha=$(git rev-parse --short HEAD)
+          
+          cd artifacts || exit 0
+          
+          # We purposefully leave .tar.zst, .patch, and update.json ALONE.
+          # Electrobun already names them correctly according to the strict 
+          # format required for the delta updater to work properly.
+          
+          # Rename ONLY the user-facing installer files
+          if [ "$os" == "macos" ]; then
+            for f in *.dmg; do
+              [ -f "$f" ] && mv "$f" "${prefix}-v${cleanVersion}-${shortSha}-LMFD.dmg"
+            done
+          elif [ "$os" == "win" ]; then
+            for f in *.zip; do
+              [ -f "$f" ] && mv "$f" "${prefix}-v${cleanVersion}-${shortSha}-Setup-LMFD.zip"
+            done
+          fi
+
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: LenovoMotoFirmwareDownloader-${{ runner.os }}-${{ matrix.arch }}-${{ inputs.buildEnv }}
+          path: artifacts/
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: ${{ inputs.publishRelease }}
+    needs: [build, resolve-version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: LenovoMotoFirmwareDownloader-*-${{ inputs.buildEnv }}
+          path: release-assets
+          merge-multiple: true
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          appVersion="${{ needs.resolve-version.outputs.version }}"
+          appName=$(bun -e "import config from './electrobun.config.ts'; console.log(config.app.name);")
+          releaseTag="${{ inputs.releaseTag }}"
+          shortSha=$(git rev-parse --short HEAD)
+
+          if [ -z "$releaseTag" ]; then
+            if [ "${{ inputs.buildEnv }}" == "stable" ]; then
+              releaseTag="v${appVersion}"
+            else
+              releaseTag="v${appVersion}-${{ inputs.buildEnv }}.${shortSha}"
+            fi
+          fi
+
+          echo "tag=$releaseTag" >> "$GITHUB_OUTPUT"
+          echo "title=${appName} v${appVersion} (${{ inputs.buildEnv }} build)" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update release and upload assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          tag="${{ steps.meta.outputs.tag }}"
+          title="${{ steps.meta.outputs.title }}"
+          buildEnv="${{ inputs.buildEnv }}"
+
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            prerelease=""
+            [ "$buildEnv" != "stable" ] && prerelease="--prerelease"
+            gh release create "$tag" --title "$title" --notes "Automated build." $prerelease
+          fi
+
+          gh release upload "$tag" release-assets/* --clobber
+
+          # Mirror to a floating canary release if this is a canary build
+          if [ "$buildEnv" == "canary" ]; then
+            echo "Updating rolling canary release..."
+            
+            # Move the local tag to the new build and force push it to GitHub
+            git tag -f canary
+            git push origin canary --force
+            
+            # Check if the canary release already exists
+            if gh release view canary >/dev/null 2>&1; then
+              # Update existing release to preserve the URL (sets it to active if it was stuck as a draft)
+              gh release edit canary --title "LMFD Canary (Latest)" --prerelease --draft=false
+              
+              # Delete old versioned installers to prevent them from piling up, 
+              # but KEEP the .patch files and .tar.zst payloads for the updater!
+              echo "Cleaning up old installers..."
+              for asset in $(gh release view canary --json assets --jq '.assets[].name'); do
+                if [[ "$asset" == *".dmg" || "$asset" == *".zip" || "$asset" == *".AppImage" || "$asset" == *".AppImage.zsync" ]]; then
+                  gh release delete-asset canary "$asset" -y || true
+                fi
+              done
+            else
+              # Create the release if it is the very first time
+              gh release create canary --title "LMFD Canary (Latest)" --notes "This rolling release always points to the latest canary build." --prerelease
+            fi
+            
+            # Overwrite all files in the release with the new ones
+            gh release upload canary release-assets/* --clobber
+            
+            echo "Canary mirror updated successfully!"
+          fi

@@ -1,0 +1,60 @@
+@if (store.showDesktopPrompt()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="dismiss()"></div>
+
+    <div class="relative w-full max-w-md transform overflow-hidden rounded-2xl p-6 text-left align-middle shadow-xl transition-all"
+        [class.bg-white]="!store.isDark()" [class.bg-slate-900]="store.isDark()" [class.border]="store.isDark()"
+        [class.border-slate-700]="store.isDark()">
+
+        <h3 class="text-xl font-bold leading-6" [class.text-slate-900]="!store.isDark()"
+            [class.text-white]="store.isDark()">
+            Desktop Shortcut
+        </h3>
+
+        <div class="mt-4">
+            @if (store.desktopPromptReason() === 'wrong_wmclass') {
+            <p class="text-sm" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+                An existing desktop shortcut was found, but it has an incorrect window class setting.
+                This can cause the application to not group correctly in your dock and taskbar.<br><br>
+                Would you like to fix it?
+            </p>
+            } @else {
+            <p class="text-sm" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+                It looks like you don't have a desktop shortcut configured.<br><br>
+                Would you like to create one so it appears correctly in your application launcher and dock?
+            </p>
+            }
+        </div>
+
+        <div class="mt-8 flex items-center justify-between">
+            <label class="flex items-center gap-2 text-sm cursor-pointer select-none"
+                [class.text-slate-600]="!store.isDark()" [class.text-slate-400]="store.isDark()">
+                <input type="checkbox"
+                    class="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-600 bg-slate-100 dark:bg-slate-800 dark:border-slate-600"
+                    [checked]="dontAskAgain()" (change)="toggleDontAsk($event)" />
+                Don't ask again
+            </label>
+
+            <div class="flex items-center gap-3">
+                <button type="button" class="rounded-xl px-4 py-2 text-sm font-semibold transition"
+                    [class.bg-slate-100]="!store.isDark()" [class.text-slate-700]="!store.isDark()"
+                    [class.hover:bg-slate-200]="!store.isDark()" [class.bg-slate-800]="store.isDark()"
+                    [class.text-slate-200]="store.isDark()" [class.hover:bg-slate-700]="store.isDark()"
+                    (click)="dismiss()" [disabled]="isProcessing()">
+                    No thanks
+                </button>
+
+                <button type="button"
+                    class="inline-flex justify-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:opacity-50"
+                    (click)="createShortcut()" [disabled]="isProcessing()">
+                    @if (isProcessing()) {
+                    {{ store.desktopPromptReason() === 'wrong_wmclass' ? 'Fixing...' : 'Creating...' }}
+                    } @else {
+                    {{ store.desktopPromptReason() === 'wrong_wmclass' ? 'Yes, fix it' : 'Yes, create it' }}
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+}

@@ -1,0 +1,330 @@
+@if (store.firmwareVariants().length > 0) {
+<section class="rounded-3xl border p-6" [class.border-slate-200]="!store.isDark()" [class.bg-white]="!store.isDark()"
+  [class.shadow-sm]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()">
+  <h3 class="text-lg font-bold" [class.text-slate-900]="!store.isDark()" [class.text-white]="store.isDark()">
+    Firmware variants ({{ store.firmwareVariants().length }})
+  </h3>
+
+  @if (activeVariantDownloads().length > 0) {
+  <div class="mt-4 grid gap-3">
+    @for (download of activeVariantDownloads(); track download.downloadId) {
+    <article class="rounded-2xl border p-4" [class.border-slate-200]="!store.isDark()"
+      [class.bg-slate-50]="!store.isDark()" [class.border-slate-700]="store.isDark()"
+      [class.bg-slate-800]="store.isDark()">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span class="rounded-lg border px-2 py-1 text-xs" [class.border-sky-300]="!store.isDark()"
+            [class.text-sky-700]="!store.isDark()" [class.border-sky-700]="store.isDark()"
+            [class.text-sky-300]="store.isDark()">
+            {{ actionLabel(download) }}
+          </span>
+          <span class="rounded-lg border px-2 py-1 text-xs" [class.border-slate-300]="!store.isDark()"
+            [class.text-slate-600]="!store.isDark()" [class.border-slate-600]="store.isDark()"
+            [class.text-slate-300]="store.isDark()">
+            {{ download.status }}
+          </span>
+          @if (isRescueLite(download) && isRecipeGuided(download)) {
+          <span class="rounded-lg border px-2 py-1 text-xs" [class.border-emerald-300]="!store.isDark()"
+            [class.text-emerald-700]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
+            [class.text-emerald-300]="store.isDark()">
+            Recipe-guided
+          </span>
+          }
+        </div>
+        <div class="flex items-center gap-2">
+          @if (download.status === 'downloading') {
+          <button
+            class="rounded-lg bg-amber-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-amber-500 disabled:opacity-60"
+            type="button" [disabled]="isCanceling(download)" (click)="pauseEntry(download)">
+            Pause
+          </button>
+          } @else if (download.status === 'paused') {
+          <button
+            class="rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
+            type="button" [disabled]="isCanceling(download)" (click)="resumeEntry(download)">
+            Resume
+          </button>
+          }
+
+          <button
+            class="rounded-lg bg-rose-700 px-2 py-1 text-xs font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60"
+            type="button" [disabled]="isCanceling(download)" (click)="cancelDownloadById(download.downloadId)">
+            {{ cancelButtonLabel(download) }}
+          </button>
+          <button class="rounded-lg border px-2 py-1 text-xs transition" [class.border-slate-300]="!store.isDark()"
+            [class.text-slate-700]="!store.isDark()" [class.hover:bg-slate-100]="!store.isDark()"
+            [class.border-slate-600]="store.isDark()" [class.text-slate-200]="store.isDark()"
+            [class.hover:bg-slate-700]="store.isDark()" type="button" (click)="clearDownloadById(download.downloadId)">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <p class="mt-2 text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+        {{ download.romName }}
+      </p>
+      @if (isRescueLite(download)) {
+      <p class="mt-1 text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
+        Execution: {{ rescueExecutionLabel(download) }} | Data reset:
+        {{ dataResetLabel(download.dataReset) }}
+      </p>
+      @if (rescueStepText(download)) {
+      <p class="mt-1 break-all text-xs" [class.text-slate-500]="!store.isDark()"
+        [class.text-slate-400]="store.isDark()">
+        {{ rescueStepText(download) }}
+      </p>
+      }
+      }
+
+      <app-progress-bar class="mt-3" [percent]="downloadPercent(download) || 0" [isDark]="store.isDark()" />
+
+      @if (download.savePath) {
+      <p class="mt-1 break-all text-xs" [class.text-slate-500]="!store.isDark()"
+        [class.text-slate-400]="store.isDark()">
+        Saved to: {{ download.savePath }}
+      </p>
+      }
+    </article>
+    }
+  </div>
+  }
+
+  <div class="mt-3 grid gap-3">
+    @for (variant of store.firmwareVariants(); track variant.romUrl) {
+    <article class="rounded-xl border p-3 text-sm" [class.border-slate-200]="!store.isDark()"
+      [class.bg-slate-50]="!store.isDark()" [class.border-slate-700]="store.isDark()"
+      [class.bg-slate-800]="store.isDark()">
+      <p class="font-semibold" [class.text-slate-900]="!store.isDark()" [class.text-slate-100]="store.isDark()">
+        {{ variant.romName }}
+      </p>
+      <p class="mt-1 text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
+        Published: {{ variant.publishDate || 'Unknown' }}
+      </p>
+      <p class="mt-0.5 text-xs opacity-70" [class.text-slate-500]="!store.isDark()"
+        [class.text-slate-400]="store.isDark()">
+        ROM match ID: {{ variant.romMatchIdentifier || 'N/A' }}
+      </p>
+      @if (hasRecipeAvailable(variant)) {
+      <p class="mt-1 text-xs" [class.text-emerald-700]="!store.isDark()" [class.text-emerald-300]="store.isDark()">
+        Recipe available
+      </p>
+      } @else {
+      <p class="mt-1 text-xs" [class.text-amber-600]="!store.isDark()" [class.text-amber-300]="store.isDark()">
+        Recipe unavailable (will fallback to local XML/script detection).
+      </p>
+      }
+      @if (variant.selectedParameters['lmsaCode'] === '3040') {
+      <p class="mt-1 text-xs text-amber-500">
+        LMSA code 3040: often requires extra confirmation in full rescue.
+      </p>
+      }
+      <div class="mt-2 flex flex-wrap gap-2">
+        @if (!isVariantDownloadActive(variant)) {
+        <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-emerald-300]="!store.isDark()" [class.text-emerald-700]="!store.isDark()"
+          [class.hover:bg-emerald-50]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
+          [class.text-emerald-300]="store.isDark()" [class.hover:bg-emerald-900]="store.isDark()" type="button"
+          (click)="startRescueLite(variant)">
+          Rescue Lite
+        </button>
+        <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-emerald-300]="!store.isDark()" [class.text-emerald-700]="!store.isDark()"
+          [class.hover:bg-emerald-50]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
+          [class.text-emerald-300]="store.isDark()" [class.hover:bg-emerald-900]="store.isDark()" type="button"
+          (click)="startRescueLiteDryRun(variant)">
+          Rescue Lite (Dry run)
+        </button>
+        }
+        @if (canAttachRecipeToLocalZip(variant) || isAttachingRecipeToLocalZip(variant)) {
+        <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-sky-300]="!store.isDark()" [class.text-sky-700]="!store.isDark()"
+          [class.hover:bg-sky-50]="!store.isDark()" [class.border-sky-700]="store.isDark()"
+          [class.text-sky-300]="store.isDark()" [class.hover:bg-sky-900]="store.isDark()"
+          [disabled]="isAttachingRecipeToLocalZip(variant)" type="button" (click)="attachRecipeToLocalZip(variant)">
+          {{
+          isAttachingRecipeToLocalZip(variant)
+          ? 'Linking recipe...'
+          : 'Use local ZIP (no re-download)'
+          }}
+        </button>
+        }
+        @if (!hasLocalZipForVariant(variant)) {
+        <button
+          class="rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+          type="button" (click)="startDownload(variant)">
+          @if (
+          isVariantDownloadActive(variant) && getVariantStatus(variant) === 'canceling'
+          ) {
+          Cancelling...
+          } @else if (isVariantDownloadActive(variant)) {
+          @if (getVariantMode(variant) === 'rescue-lite') {
+          @if (getVariantDryRun(variant)) {
+          Dry run...
+          } @else {
+          Running...
+          }
+          } @else {
+          Downloading...
+          }
+          } @else {
+          Download
+          }
+        </button>
+        } @else {
+        <span class="rounded-lg border px-2 py-1 text-xs" [class.border-emerald-300]="!store.isDark()"
+          [class.text-emerald-700]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
+          [class.text-emerald-300]="store.isDark()">
+          ZIP already in Downloads
+        </span>
+        }
+        @if (isVariantDownloadTracked(variant)) {
+        <span class="rounded-lg border px-2 py-1 text-xs" [class.border-slate-300]="!store.isDark()"
+          [class.text-slate-600]="!store.isDark()" [class.border-slate-600]="store.isDark()"
+          [class.text-slate-300]="store.isDark()">
+          {{ getVariantStatus(variant) }}
+        </span>
+        @if (getVariantMode(variant) === 'rescue-lite' && isVariantDownloadActive(variant)) {
+        <span class="rounded-lg border px-2 py-1 text-xs" [class.border-emerald-300]="!store.isDark()"
+          [class.text-emerald-700]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
+          [class.text-emerald-300]="store.isDark()">
+          Rescue Lite{{ getVariantDryRun(variant) ? ' (Dry run)' : '' }}
+        </span>
+        }
+        }
+      </div>
+      <a class="mt-1 block break-all text-sky-700 underline" [href]="variant.romUrl" target="_blank" rel="noopener">
+        {{ variant.romUrl }}
+      </a>
+      @if (variant.recipeUrl) {
+      <p class="mt-1 break-all text-xs" [class.text-slate-500]="!store.isDark()"
+        [class.text-slate-400]="store.isDark()">
+        recipe: {{ variant.recipeUrl }}
+      </p>
+      }
+      <p class="mt-1 break-all text-xs" [class.text-slate-500]="!store.isDark()"
+        [class.text-slate-400]="store.isDark()">
+        params:
+        @for (entry of variant.selectedParameters | keyvalue; track entry.key) {
+        <span>{{ entry.key }}={{ entry.value }} </span>
+        }
+      </p>
+    </article>
+    }
+  </div>
+</section>
+}
+
+@if (rescueDialogOpen) {
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" (click)="closeRescueDialog()">
+  <div class="w-full max-w-xl rounded-2xl border p-5 shadow-xl" [class.border-slate-200]="!store.isDark()"
+    [class.bg-white]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()"
+    (click)="$event.stopPropagation()">
+    <h4 class="text-base font-bold" [class.text-slate-900]="!store.isDark()" [class.text-slate-100]="store.isDark()">
+      {{ rescueDialogTitle() }}
+    </h4>
+
+    <p class="mt-2 text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+      {{ rescueDialogDescription() }}
+    </p>
+
+    @if (rescueDialogVariant) {
+    <p class="mt-2 text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+      {{ rescueDialogVariant.romName }}
+    </p>
+    }
+
+    <p class="mt-2 text-sm" [class.text-slate-700]="!store.isDark()" [class.text-slate-200]="store.isDark()">
+      Data reset
+    </p>
+    <p class="mt-1 text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
+      @if (rescueDialogDryRun) {
+      Choose whether wipe commands should be included in the dry-run command plan.
+      } @else {
+      Choose whether user data should be wiped during rescue.
+      }
+    </p>
+
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+        [class.border-sky-500]="rescueDialogDataReset === 'yes'" [class.bg-sky-700]="rescueDialogDataReset === 'yes'"
+        [class.text-white]="rescueDialogDataReset === 'yes'"
+        [class.border-slate-300]="rescueDialogDataReset !== 'yes' && !store.isDark()"
+        [class.text-slate-700]="rescueDialogDataReset !== 'yes' && !store.isDark()"
+        [class.hover:bg-slate-100]="rescueDialogDataReset !== 'yes' && !store.isDark()"
+        [class.border-slate-600]="rescueDialogDataReset !== 'yes' && store.isDark()"
+        [class.text-slate-200]="rescueDialogDataReset !== 'yes' && store.isDark()"
+        [class.hover:bg-slate-700]="rescueDialogDataReset !== 'yes' && store.isDark()" type="button"
+        (click)="setRescueDialogDataReset('yes')">
+        Yes
+      </button>
+      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+        [class.border-sky-500]="rescueDialogDataReset === 'no'" [class.bg-sky-700]="rescueDialogDataReset === 'no'"
+        [class.text-white]="rescueDialogDataReset === 'no'"
+        [class.border-slate-300]="rescueDialogDataReset !== 'no' && !store.isDark()"
+        [class.text-slate-700]="rescueDialogDataReset !== 'no' && !store.isDark()"
+        [class.hover:bg-slate-100]="rescueDialogDataReset !== 'no' && !store.isDark()"
+        [class.border-slate-600]="rescueDialogDataReset !== 'no' && store.isDark()"
+        [class.text-slate-200]="rescueDialogDataReset !== 'no' && store.isDark()"
+        [class.hover:bg-slate-700]="rescueDialogDataReset !== 'no' && store.isDark()" type="button"
+        (click)="setRescueDialogDataReset('no')">
+        No
+      </button>
+    </div>
+
+    <div class="mt-5 flex items-center justify-end gap-2">
+      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+        [class.border-slate-300]="!store.isDark()" [class.text-slate-700]="!store.isDark()"
+        [class.hover:bg-slate-100]="!store.isDark()" [class.border-slate-600]="store.isDark()"
+        [class.text-slate-200]="store.isDark()" [class.hover:bg-slate-700]="store.isDark()" type="button"
+        (click)="closeRescueDialog()">
+        Cancel
+      </button>
+      <button class="rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-sky-600"
+        type="button" (click)="confirmRescueDialog()">
+        @if (rescueDialogDryRun) {
+        Start dry run
+        } @else {
+        Start rescue
+        }
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+@if (store.rescueDryRunPlanDialog(); as plan) {
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" (click)="closeDryRunPlanDialog()">
+  <div class="w-full max-w-3xl rounded-2xl border p-5 shadow-xl" [class.border-slate-200]="!store.isDark()"
+    [class.bg-white]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()"
+    (click)="$event.stopPropagation()">
+    <h4 class="text-base font-bold" [class.text-slate-900]="!store.isDark()" [class.text-slate-100]="store.isDark()">
+      Rescue Lite Dry Run Command Plan
+    </h4>
+    <p class="mt-2 text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+      {{ plan.romName }} | source={{ plan.commandSource }} | data reset:
+      {{ plan.dataReset === 'yes' ? 'Yes' : 'No' }}
+    </p>
+    @if (plan.localFilePath) {
+    <p class="mt-1 break-all text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
+      {{ plan.localFilePath }}
+    </p>
+    }
+
+    <div class="mt-3 max-h-[55vh] overflow-auto rounded-xl border p-3 font-mono text-xs"
+      [class.border-slate-200]="!store.isDark()" [class.bg-slate-50]="!store.isDark()"
+      [class.border-slate-700]="store.isDark()" [class.bg-slate-800]="store.isDark()"
+      [class.text-slate-800]="!store.isDark()" [class.text-slate-100]="store.isDark()">
+      @for (command of plan.commands; track $index) {
+      <p class="break-all">{{ command }}</p>
+      }
+    </div>
+
+    <div class="mt-5 flex items-center justify-end gap-2">
+      <button class="rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-sky-600"
+        type="button" (click)="closeDryRunPlanDialog()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+}
