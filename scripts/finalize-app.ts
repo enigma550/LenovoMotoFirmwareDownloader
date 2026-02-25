@@ -36,8 +36,8 @@ const pickAppFolder = (): { appFolder: string; appName: string } | null => {
     }
 
     const candidates: string[] = readdirSync(buildDir, { withFileTypes: true })
-        .filter((entry: any) => entry.isDirectory())
-        .map((entry: any) => entry.name)
+        .filter((entry: unknown) => entry.isDirectory())
+        .map((entry: unknown) => entry.name)
         .filter((name: string) => checkFolder(join(buildDir, name)));
 
     if (candidates.length === 1) {
@@ -163,17 +163,17 @@ if (targetOS === "linux") {
             }
             copyFileSync(iconPath, appIcoPath);
             console.log(`FinalizeApp: Copied icon to ${appIcoPath}`);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(`FinalizeApp Error: Failed to copy icon to ${appIcoPath}`, err);
         }
 
-        import("rcedit").then((m: any) => {
-            const rcedit: any = (m as any).rcedit || (m as any).default || m;
+        import("rcedit").then((m: unknown) => {
+            const rcedit: unknown = (m as unknown).rcedit || (m as unknown).default || m;
             const launcherPath: string = join(app.appFolder, "bin", "launcher.exe");
             const bunExePath: string = join(app.appFolder, "bin", "bun.exe");
 
             const rceditPromises: Promise<void>[] = [];
-            const rceditOptions: any = {
+            const rceditOptions: unknown = {
                 icon: iconPath,
                 "version-string": {
                     ProductName: desktopDisplayName,
@@ -196,11 +196,11 @@ if (targetOS === "linux") {
                     .then(() => {
                         console.log("FinalizeApp: Successfully applied application icons and metadata.");
                     })
-                    .catch((err: any) => {
+                    .catch((err: unknown) => {
                         console.error("FinalizeApp Error: Failed to apply icons/metadata!", err);
                     });
             }
-        }).catch((err: any) => {
+        }).catch((err: unknown) => {
             console.error("FinalizeApp Error: rcedit module not found.", err);
         });
     }
@@ -223,7 +223,7 @@ if (targetOS === "linux") {
 
             writeFileSync(plistPath, plistContent, "utf8");
             console.log(`FinalizeApp: Patched Info.plist to use full name '${desktopDisplayName}' for macOS.`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("FinalizeApp: Could not patch Info.plist", error);
         }
     } else {

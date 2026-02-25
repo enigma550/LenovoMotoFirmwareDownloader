@@ -24,7 +24,7 @@ try {
 console.log("[1/3] Preparing application views...");
 try {
     execSync("bun run prepare:all", { stdio: "inherit" });
-} catch (e: any) {
+} catch (e: unknown) {
     console.error("\\n[Error] Angular build failed. Fix the errors and try again.\\n");
     process.exit(e.status || 1);
 }
@@ -41,7 +41,7 @@ if (existsSync("build")) {
         renameSync("build", "build_trash");
         // Cleanup in background
         rmSync("build_trash", { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
-    } catch (e: any) {
+    } catch (e: unknown) {
         // If we can't rename it, it's locked. 
         const isMissingBinary = !existsSync(launcherPath);
 
@@ -59,7 +59,7 @@ if (canBuildNative) {
     console.log("\n[2/3] Building native Electrobun app...\n");
     try {
         execSync("bunx electrobun build --env=dev", { stdio: "inherit" });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("\n[Error] Native build failed. Usually because of a file lock or syntax error.");
         process.exit(1);
     }
@@ -71,7 +71,7 @@ if (canBuildNative) {
 console.log("[3/3] Launching application...\n");
 try {
     execSync("bunx electrobun dev", { stdio: "inherit" });
-} catch (e: any) {
+} catch (e: unknown) {
     console.error("\n[Fatal] Application failed to launch.");
     process.exit(1);
 }

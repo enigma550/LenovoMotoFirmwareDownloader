@@ -16,11 +16,11 @@ type ActiveDownload = {
   controller: AbortController;
   canceled: boolean;
   paused: boolean;
-  payload: any;
+  payload: unknown;
 };
 
 const activeDownloads = new Map<string, ActiveDownload>();
-const pausedDownloadPayloads = new Map<string, any>();
+const pausedDownloadPayloads = new Map<string, unknown>();
 
 function parseFileNameFromContentDisposition(
   contentDisposition: string | null,
@@ -79,8 +79,8 @@ export async function downloadFirmwareWithProgress(
 ): Promise<DownloadFirmwareResponse> {
   const { downloadId, romUrl, romName } = payload;
   let savePath = "";
-  let downloadedBytes = (payload as any).downloadedBytes || 0;
-  let totalBytes: number | undefined = (payload as any).totalBytes;
+  let downloadedBytes = (payload as unknown).downloadedBytes || 0;
+  let totalBytes: number | undefined = (payload as unknown).totalBytes;
   const downloadDirectory = getDownloadDirectory();
   const controller = new AbortController();
   activeDownloads.set(downloadId, { controller, canceled: false, paused: false, payload });

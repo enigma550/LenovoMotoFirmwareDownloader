@@ -85,7 +85,7 @@ function toErrorMessage(error: unknown) {
 const DOWNLOAD_RPC_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
 type DesktopApiMethod = {
-  [K in keyof DesktopApi]: DesktopApi[K] extends (...args: any[]) => any
+  [K in keyof DesktopApi]: DesktopApi[K] extends (...args: unknown[]) => unknown
   ? K
   : never;
 }[keyof DesktopApi];

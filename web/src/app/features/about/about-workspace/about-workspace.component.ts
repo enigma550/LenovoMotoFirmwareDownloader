@@ -73,8 +73,12 @@ export class AboutWorkspaceComponent implements OnInit {
                 try {
                     const res = await fetch('https://api.github.com/repos/enigma550/LenovoMotoFirmwareDownloader/releases?per_page=10');
                     if (res.ok) {
-                        const releases = await res.json();
-                        const targetRelease = releases.find((r: any) => {
+                        const releases = (await res.json()) as Array<{
+                            prerelease: boolean;
+                            html_url: string;
+                            tag_name: string;
+                        }>;
+                        const targetRelease = releases.find((r) => {
                             if (channel === 'stable') return !r.prerelease;
                             if (channel === 'canary') return r.prerelease;
                             return false;
@@ -95,8 +99,13 @@ export class AboutWorkspaceComponent implements OnInit {
             // Fallback for Linux or if update.json check fails/is empty
             const res = await fetch('https://api.github.com/repos/enigma550/LenovoMotoFirmwareDownloader/releases?per_page=10');
             if (res.ok) {
-                const releases = await res.json();
-                const targetRelease = releases.find((r: any) => {
+                const releases = (await res.json()) as Array<{
+                    prerelease: boolean;
+                    html_url: string;
+                    tag_name: string;
+                }>;
+
+                const targetRelease = releases.find((r) => {
                     if (channel === 'stable') return !r.prerelease;
                     if (channel === 'canary') return r.prerelease;
                     return false;
@@ -146,9 +155,9 @@ export class AboutWorkspaceComponent implements OnInit {
             this.ui.dismissToast(toastId);
             this.ui.showToast('Update downloaded. Applying...', 'success');
             await this.store.applyFrameworkUpdate();
-        } catch (e: any) {
+        } catch (e: unknown) {
             this.ui.dismissToast(toastId);
-            const errMsg = e?.message || String(e);
+            const errMsg = e instanceof Error ? e.message : String(e);
             this.ui.showToast(`Update failed: ${errMsg}`, 'error', 10000);
             console.error("Update applying error:", e);
         } finally {

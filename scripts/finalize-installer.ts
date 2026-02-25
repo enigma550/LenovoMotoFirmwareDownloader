@@ -82,7 +82,7 @@ async function buildLinuxAppImage(): Promise<void> {
   );
   try {
     execSync(`tar -xf "${zstBundle}" -C "${stagingDir}"`, { stdio: "inherit" });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(
       "FinalizeInstaller: Failed to extract .tar.zst! You may be missing zstd.",
       e,
@@ -96,7 +96,7 @@ async function buildLinuxAppImage(): Promise<void> {
   const versionJsonPath: string = join(appDirPath, "Resources", "version.json");
   if (existsSync(versionJsonPath)) {
     try {
-      const vInfo: any = JSON.parse(readFileSync(versionJsonPath, "utf8"));
+      const vInfo: unknown = JSON.parse(readFileSync(versionJsonPath, "utf8"));
       if (vInfo.version) appVersion = vInfo.version;
     } catch {
       /* use default */
@@ -194,7 +194,7 @@ X-AppImage-Version=${cleanVersion}
         { stdio: "inherit" },
       );
       execSync(`chmod +x "${uruntimePath}"`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("FinalizeInstaller: Failed to download uruntime.", error);
       return;
     }
@@ -272,7 +272,7 @@ X-AppImage-Version=${cleanVersion}
         unlinkSync(join(artifactDir, f));
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("FinalizeInstaller: Failed to build AppImage.", error);
   } finally {
     if (existsSync(stagingDir)) {
@@ -311,11 +311,11 @@ async function patchWindowsInstaller(): Promise<void> {
   // Electrobun's self-extractor strictly uses metadata.name to find the 
   // extracted folder name (LMFD-canary). Changing it breaks installation.
 
-  const m: any = await import("rcedit");
-  const rcedit: any = (m as any).rcedit || (m as any).default || m;
+  const m: unknown = await import("rcedit");
+  const rcedit: unknown = (m as unknown).rcedit || (m as unknown).default || m;
 
   // We still patch the EXE so hovering over it and Task Manager shows the full name
-  const rceditOptions: any = {
+  const rceditOptions: unknown = {
     icon: iconPath,
     "version-string": {
       ProductName: desktopDisplayName,
@@ -347,10 +347,10 @@ async function patchWindowsInstaller(): Promise<void> {
 
   unlinkSync(artifactZipPath);
 
-  const archiverModule: any = await import("archiver");
-  const archiver: any = archiverModule.default;
+  const archiverModule: unknown = await import("archiver");
+  const archiver: unknown = archiverModule.default;
   const output: import("fs").WriteStream = createWriteStream(artifactZipPath);
-  const archive: any = archiver("zip", { zlib: { level: 9 } });
+  const archive: unknown = archiver("zip", { zlib: { level: 9 } });
 
   await new Promise<void>((resolve, reject) => {
     output.on("close", () => {
@@ -390,7 +390,7 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err: any) => {
+main().catch((err: unknown) => {
   console.error("FinalizeInstaller: Failed:", err);
   process.exit(1);
 });

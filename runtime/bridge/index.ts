@@ -129,7 +129,7 @@ function initializeDesktopBridge(attempt = 0) {
       .finally(() => {
         bridgeInitializing = false;
       });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (attempt >= MAX_INIT_ATTEMPTS) {
       console.error("[DesktopBridge] Initialization failed:", error);
       return;

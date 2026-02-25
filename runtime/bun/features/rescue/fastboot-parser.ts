@@ -447,7 +447,7 @@ export async function pickScriptCommands(
 export function xmlScriptPriority(
     scriptPath: string,
     dataReset: "yes" | "no",
-    recipeHints?: any,
+    recipeHints?: unknown,
 ) {
     const lowerName = basename(scriptPath).toLowerCase();
     let score = 0;

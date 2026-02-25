@@ -71,7 +71,10 @@ function normalizeModelCatalog(content: unknown) {
 
 async function fetchModelCatalogFromApi() {
   const response = await requestApi("/rescueDevice/getModelNames.jhtml", {});
-  const data: any = await response.json();
+  const data = (await response.json()) as {
+    code?: string;
+    content?: unknown;
+  };
   if (data?.code !== "0000") {
     throw new Error(`getModelNames failed: ${data?.code ?? "unknown"}`);
   }

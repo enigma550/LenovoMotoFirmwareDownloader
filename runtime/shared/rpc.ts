@@ -82,8 +82,8 @@ type RpcRequest<Params, Response> = {
 
 type DesktopApiMethod = {
   [Method in keyof DesktopApi]: DesktopApi[Method] extends (
-    ...args: any[]
-  ) => any
+    ...args: unknown[]
+  ) => unknown
   ? Method
   : never;
 }[keyof DesktopApi];
