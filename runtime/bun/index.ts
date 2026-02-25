@@ -66,7 +66,7 @@ import {
   cancelActiveRescue,
   extractLocalFirmwarePackage,
   rescueLiteFirmwareWithProgress,
-} from "./rescue-manager.ts";
+} from "./features/rescue/rescue-manager.ts";
 import { openExternalUrl } from "./browser";
 import {
   type AppInfo,
