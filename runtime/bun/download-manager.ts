@@ -105,6 +105,11 @@ export async function downloadFirmwareWithProgress(
       headers: downloadedBytes > 0 ? { Range: `bytes=${downloadedBytes}-` } : {},
     });
 
+    if (downloadedBytes > 0 && response.status === 200) {
+      // Server ignored Range header, reset downloadedBytes to avoid data corruption
+      downloadedBytes = 0;
+    }
+
     if (response.status === 416) {
       // Range Not Satisfiable - likely already finished or server doesn't support it
       // For now we'll just treat it as complete if we have bytes, or error if not.
@@ -119,10 +124,21 @@ export async function downloadFirmwareWithProgress(
       );
     }
 
-    const totalHeader = response.headers.get("content-length");
-    const parsedTotal = totalHeader ? Number.parseInt(totalHeader, 10) : 0;
-    totalBytes =
-      Number.isFinite(parsedTotal) && parsedTotal > 0 ? parsedTotal : undefined;
+    const contentRange = response.headers.get("content-range");
+    if (contentRange) {
+      const match = contentRange.match(/\/(\d+)/);
+      if (match) {
+        totalBytes = parseInt(match[1], 10);
+      }
+    }
+
+    if (!totalBytes) {
+      const totalHeader = response.headers.get("content-length");
+      const parsedTotal = totalHeader ? Number.parseInt(totalHeader, 10) : 0;
+      if (Number.isFinite(parsedTotal) && parsedTotal > 0) {
+        totalBytes = response.status === 206 ? parsedTotal + downloadedBytes : parsedTotal;
+      }
+    }
 
     const headerFileName = parseFileNameFromContentDisposition(
       response.headers.get("content-disposition"),
