@@ -69,8 +69,9 @@ function pushUniqueVariant(
   seenRomUrls: Set<string>,
   variant: FirmwareVariant,
 ) {
-  if (seenRomUrls.has(variant.romUrl)) return;
-  seenRomUrls.add(variant.romUrl);
+  const variantKey = `${variant.romUrl}-${JSON.stringify(variant.selectedParameters)}`;
+  if (seenRomUrls.has(variantKey)) return;
+  seenRomUrls.add(variantKey);
   variants.push(variant);
 }
 
@@ -107,8 +108,8 @@ async function fetchAutoMatchParameterHints(modelName: string) {
 
   const requiredParameters = Array.isArray(payload.content.params)
     ? payload.content.params.filter(
-        (parameter) => typeof parameter === "string",
-      )
+      (parameter) => typeof parameter === "string",
+    )
     : [];
 
   return {

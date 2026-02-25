@@ -4,5 +4,5 @@ export interface FirmwareVariant {
   romMatchIdentifier: string;
   publishDate?: string;
   recipeUrl?: string;
-  selectedParameters: Record<string, string>;
+  selectedParameters?: Record<string, string>;
 }
