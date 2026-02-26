@@ -1,5 +1,5 @@
-import { chmod, lstat, mkdir, readdir, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { chmod, lstat, mkdir, readdir, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 
 async function ensureDirectory(path: string) {
   try {
@@ -17,23 +17,19 @@ async function ensureDirectory(path: string) {
 }
 
 export async function cleanupLinuxCefProfileLocks(userCachePath: string) {
-  if (process.platform !== "linux") {
+  if (process.platform !== 'linux') {
     return;
   }
 
-  const cefRoot = join(userCachePath, "CEF");
-  const partitionsDir = join(cefRoot, "Partitions");
-  const defaultPartitionDir = join(partitionsDir, "default");
-  const defaultProfileDir = join(cefRoot, "Default");
+  const cefRoot = join(userCachePath, 'CEF');
+  const partitionsDir = join(cefRoot, 'Partitions');
+  const defaultPartitionDir = join(partitionsDir, 'default');
+  const defaultProfileDir = join(cefRoot, 'Default');
 
   try {
     await ensureDirectory(cefRoot);
-    await rm(partitionsDir, { recursive: true, force: true }).catch(
-      () => undefined,
-    );
-    await rm(defaultProfileDir, { recursive: true, force: true }).catch(
-      () => undefined,
-    );
+    await rm(partitionsDir, { recursive: true, force: true }).catch(() => undefined);
+    await rm(defaultProfileDir, { recursive: true, force: true }).catch(() => undefined);
     await ensureDirectory(defaultPartitionDir);
 
     await chmod(cefRoot, 0o700).catch(() => undefined);
@@ -41,7 +37,7 @@ export async function cleanupLinuxCefProfileLocks(userCachePath: string) {
 
     const cefEntries = await readdir(cefRoot).catch(() => []);
     for (const entryName of cefEntries) {
-      if (entryName.startsWith("Singleton")) {
+      if (entryName.startsWith('Singleton')) {
         await rm(join(cefRoot, entryName), {
           recursive: true,
           force: true,
@@ -49,21 +45,13 @@ export async function cleanupLinuxCefProfileLocks(userCachePath: string) {
       }
     }
 
-    for (const lockName of [
-      "LOCK",
-      "SingletonLock",
-      "SingletonSocket",
-      "SingletonCookie",
-    ]) {
+    for (const lockName of ['LOCK', 'SingletonLock', 'SingletonSocket', 'SingletonCookie']) {
       await rm(join(defaultPartitionDir, lockName), {
         recursive: true,
         force: true,
       }).catch(() => undefined);
     }
   } catch (error) {
-    console.warn(
-      "[CEF] Failed to clean profile locks. Continuing without cleanup.",
-      error,
-    );
+    console.warn('[CEF] Failed to clean profile locks. Continuing without cleanup.', error);
   }
 }

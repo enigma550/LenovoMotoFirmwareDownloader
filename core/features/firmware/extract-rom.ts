@@ -1,26 +1,30 @@
-import { normalizeRemoteUrl } from "./resource-variant.ts";
+import { normalizeRemoteUrl } from './resource-variant.ts';
 
-export function extractRomUrl(content: unknown) {
+type ResourceItemValue = object | string | number | boolean | null;
+type ResourceRecord = Record<string, ResourceItemValue>;
+
+function toResourceRecord(value: object | null | undefined): ResourceRecord | null {
+  if (!value || Array.isArray(value)) return null;
+  return value as ResourceRecord;
+}
+
+export function extractRomUrl<T>(content: T) {
   if (!Array.isArray(content)) return null;
 
   for (const item of content) {
-    if (
-      item &&
-      typeof item === "object" &&
-      "romResource" in item &&
-      item.romResource &&
-      typeof item.romResource === "object" &&
-      "uri" in item.romResource &&
-      typeof item.romResource.uri === "string"
-    ) {
-      const uri = item.romResource.uri;
+    const record =
+      item && typeof item === 'object' && !Array.isArray(item) ? toResourceRecord(item) : null;
+    const romResource =
+      record?.romResource && typeof record.romResource === 'object'
+        ? toResourceRecord(record.romResource)
+        : null;
+    if (typeof romResource?.uri === 'string') {
+      const uri = romResource.uri;
       return normalizeRemoteUrl(uri);
     }
 
     const itemString = JSON.stringify(item);
-    const match = itemString.match(
-      /(?:https?:\/\/)?download\.lenovo\.com\/[^"'\s<>]+?\.xml\.zip/i,
-    );
+    const match = itemString.match(/(?:https?:\/\/)?download\.lenovo\.com\/[^"'\s<>]+?\.xml\.zip/i);
 
     if (match?.[0]) {
       const uri = match[0];
@@ -31,41 +35,37 @@ export function extractRomUrl(content: unknown) {
   return null;
 }
 
-export function extractRecipeUrl(content: unknown) {
-  if (!Array.isArray(content)) return "";
+export function extractRecipeUrl<T>(content: T) {
+  if (!Array.isArray(content)) return '';
 
   for (const item of content) {
-    if (item && typeof item === "object") {
-      const record = item as Record<string, unknown>;
-      const direct = ["flashFlow", "recipe", "recipeResource"]
-        .map((key) => record[key])
-        .find((value): value is string => typeof value === "string");
-      if (direct?.trim()) {
-        return normalizeRemoteUrl(direct.trim());
-      }
+    const record =
+      item && typeof item === 'object' && !Array.isArray(item) ? toResourceRecord(item) : null;
+    const direct = ['flashFlow', 'recipe', 'recipeResource']
+      .map((key) => record?.[key])
+      .find((value): value is string => typeof value === 'string');
+    if (direct?.trim()) {
+      return normalizeRemoteUrl(direct.trim());
     }
 
     const itemString = JSON.stringify(item);
-    const match = itemString.match(
-      /"(?:flashFlow|recipe(?:Resource)?)"\s*:\s*"([^"]+)"/i,
-    );
+    const match = itemString.match(/"(?:flashFlow|recipe(?:Resource)?)"\s*:\s*"([^"]+)"/i);
     if (match?.[1]?.trim()) {
       return normalizeRemoteUrl(match[1].trim());
     }
   }
 
-  return "";
+  return '';
 }
 
-export function extractRomMatchIdentifier(content: unknown) {
-  if (!Array.isArray(content)) return "";
+export function extractRomMatchIdentifier<T>(content: T) {
+  if (!Array.isArray(content)) return '';
 
   for (const item of content) {
-    if (item && typeof item === "object") {
-      const record = item as Record<string, unknown>;
-      if (typeof record.romMatchId === "string" && record.romMatchId.trim()) {
-        return record.romMatchId.trim();
-      }
+    const record =
+      item && typeof item === 'object' && !Array.isArray(item) ? toResourceRecord(item) : null;
+    if (typeof record?.romMatchId === 'string' && record.romMatchId.trim()) {
+      return record.romMatchId.trim();
     }
 
     const itemString = JSON.stringify(item);
@@ -75,23 +75,21 @@ export function extractRomMatchIdentifier(content: unknown) {
     }
   }
 
-  return "";
+  return '';
 }
 
-export function extractPublishDate(content: unknown) {
-  if (!Array.isArray(content)) return "";
+export function extractPublishDate<T>(content: T) {
+  if (!Array.isArray(content)) return '';
 
   for (const item of content) {
-    if (
-      item &&
-      typeof item === "object" &&
-      "romResource" in item &&
-      item.romResource &&
-      typeof item.romResource === "object" &&
-      "publishDate" in item.romResource &&
-      typeof item.romResource.publishDate === "string"
-    ) {
-      return item.romResource.publishDate.trim();
+    const record =
+      item && typeof item === 'object' && !Array.isArray(item) ? toResourceRecord(item) : null;
+    const romResource =
+      record?.romResource && typeof record.romResource === 'object'
+        ? toResourceRecord(record.romResource)
+        : null;
+    if (typeof romResource?.publishDate === 'string') {
+      return romResource.publishDate.trim();
     }
 
     const itemString = JSON.stringify(item);
@@ -101,5 +99,5 @@ export function extractPublishDate(content: unknown) {
     }
   }
 
-  return "";
+  return '';
 }

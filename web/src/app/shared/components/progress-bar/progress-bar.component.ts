@@ -1,11 +1,11 @@
-import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, Input } from '@angular/core';
 
 @Component({
-    selector: 'app-progress-bar',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
+  selector: 'app-progress-bar',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
     <div class="h-2 w-full overflow-hidden rounded-full transition-colors"
          [class.bg-slate-200]="!isDark"
          [class.bg-slate-700]="isDark">
@@ -16,6 +16,6 @@ import { CommonModule } from '@angular/common';
   `,
 })
 export class ProgressBarComponent {
-    @Input({ required: true }) percent: number | null = 0;
-    @Input() isDark = false;
+  @Input({ required: true }) percent: number | null = 0;
+  @Input() isDark = false;
 }

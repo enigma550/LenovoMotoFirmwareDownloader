@@ -1,79 +1,57 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import type { FirmwareVariant, LocalDownloadedFile } from '../../../core/models/desktop-api.ts';
+import type { OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import type {
-  DataResetChoice,
-  DownloadHistoryEntry,
-} from '../../../core/state/workflow/workflow.types';
+  LocalDownloadedFile,
+  RescueFlashTransport,
+  RescueQdlStorage,
+} from '../../../core/models/desktop-api';
 import {
-  actionLabel as getActionLabel,
-  cancelButtonLabel as getCancelButtonLabel,
-  dataResetLabel as formatDataResetLabel,
-  findLookupVariantForLocalFile,
-  formatBytes as formatByteSize,
-  isCancelingStatus,
-  isInProgressStatus,
-  isRecipeGuidedEntry,
-  isRescueLiteEntry,
   rescueDialogDescription as getRescueDialogDescription,
   rescueDialogTitle as getRescueDialogTitle,
-  rescueExecutionLabel as getRescueExecutionLabel,
-  rescueStepText as getRescueStepText,
 } from '../../../core/state/workflow/download-utils';
-import { ProgressBarComponent } from '../../../shared/components/progress-bar/progress-bar.component';
+import { RescueDialogDefaultsService } from '../../../core/state/workflow/rescue-dialog-defaults.service';
 import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
-
+import type { DataResetChoice } from '../../../core/state/workflow/workflow.types';
+import { RescueDryRunPlanDialogComponent } from '../../../shared/components/rescue/rescue-dry-run-plan-dialog/rescue-dry-run-plan-dialog.component';
+import { RescueFlashConsoleComponent } from '../../../shared/components/rescue/rescue-flash-console/rescue-flash-console.component';
+import { RescueOptionsDialogComponent } from '../../../shared/components/rescue/rescue-options-dialog/rescue-options-dialog.component';
+import { UiActionButtonComponent } from '../../../shared/components/ui/ui-action-button/ui-action-button.component';
+import { DownloadHistoryEntryCardComponent } from './components/download-history-entry-card/download-history-entry-card.component';
+import { LocalDownloadedFileCardComponent } from './components/local-downloaded-file-card/local-downloaded-file-card.component';
 
 @Component({
   selector: 'app-downloads-panel',
   standalone: true,
-  imports: [ProgressBarComponent],
+  imports: [
+    DownloadHistoryEntryCardComponent,
+    LocalDownloadedFileCardComponent,
+    RescueDryRunPlanDialogComponent,
+    RescueFlashConsoleComponent,
+    RescueOptionsDialogComponent,
+    UiActionButtonComponent,
+  ],
   templateUrl: './downloads-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DownloadsPanelComponent implements OnInit {
   protected readonly store = inject(WorkflowStore);
-  protected readonly extractingFiles = signal<Record<string, boolean>>({});
-  protected readonly fetchingRecipeFiles = signal<Record<string, boolean>>({});
+  private readonly rescueDialogDefaults = inject(RescueDialogDefaultsService);
   protected rescueDialogOpen = false;
   protected rescueDialogFile: LocalDownloadedFile | null = null;
   protected rescueDialogDryRun = false;
   protected rescueDialogDataReset: DataResetChoice = 'yes';
-  protected readonly formatBytes = formatByteSize;
-  protected readonly dataResetLabel = formatDataResetLabel;
-  protected readonly isInProgress = (entry: DownloadHistoryEntry) =>
-    isInProgressStatus(entry.status);
-  protected readonly isRescueLite = isRescueLiteEntry;
-  protected readonly rescueExecutionLabel = (entry: DownloadHistoryEntry) =>
-    getRescueExecutionLabel(entry.dryRun);
-  protected readonly rescueStepText = getRescueStepText;
-  protected readonly isRecipeGuided = isRecipeGuidedEntry;
-  protected readonly actionLabel = getActionLabel;
-  protected readonly isCanceling = (entry: DownloadHistoryEntry) => isCancelingStatus(entry.status);
-  protected readonly cancelButtonLabel = (entry: DownloadHistoryEntry) =>
-    getCancelButtonLabel(entry.status);
-
-  protected downloadPercent(entry: DownloadHistoryEntry) {
-    if (!entry.totalBytes || entry.totalBytes <= 0) {
-      return null;
-    }
-    return Math.min(100, (entry.downloadedBytes / entry.totalBytes) * 100);
-  }
+  protected rescueDialogFlashTransport: RescueFlashTransport = 'fastboot';
+  protected rescueDialogQdlStorage: RescueQdlStorage = 'auto';
+  protected rescueDialogQdlSerial = '';
+  protected installingWindowsQdloaderDriver = false;
+  protected installingWindowsSpdDriver = false;
+  protected installingWindowsMtkDriver = false;
+  protected windowsQdloaderDriverInstalled = false;
+  protected windowsSpdDriverInstalled = false;
+  protected windowsMtkDriverInstalled = false;
 
   async ngOnInit() {
     await this.store.refreshLocalDownloadedFiles();
-  }
-
-  protected formatTime(timestamp: number) {
-    if (!timestamp) return '-';
-    return new Date(timestamp).toLocaleString();
-  }
-
-  protected cancelEntry(entry: DownloadHistoryEntry) {
-    void this.store.cancelDownloadById(entry.downloadId);
-  }
-
-  protected clearEntry(entry: DownloadHistoryEntry) {
-    this.store.clearDownloadById(entry.downloadId);
   }
 
   protected startRescueLiteFromLocal(file: LocalDownloadedFile) {
@@ -82,92 +60,6 @@ export class DownloadsPanelComponent implements OnInit {
 
   protected startRescueLiteDryRunFromLocal(file: LocalDownloadedFile) {
     this.openRescueDialog(file, true);
-  }
-
-  protected isExtracting(file: LocalDownloadedFile) {
-    return Boolean(this.extractingFiles()[file.fullPath]);
-  }
-
-  protected isFetchingRecipe(file: LocalDownloadedFile) {
-    return Boolean(this.fetchingRecipeFiles()[file.fullPath]);
-  }
-
-  protected hasRecipeMetadata(file: LocalDownloadedFile) {
-    return Boolean(file.recipeUrl);
-  }
-
-  protected hasLookupRecipeCandidate(file: LocalDownloadedFile) {
-    return Boolean(this.findLookupVariantForFile(file));
-  }
-
-  protected isFileActionInProgress(file: LocalDownloadedFile) {
-    const targetPath = this.normalizePath(file.fullPath);
-    const targetName = this.normalizeName(file.fileName);
-
-    return this.store.downloadHistory().some((entry) => {
-      if (!isInProgressStatus(entry.status)) {
-        return false;
-      }
-
-      const savePath = this.normalizePath(entry.savePath || '');
-      const romUrl = this.normalizePath(entry.romUrl || '');
-      const saveName = this.extractBaseName(savePath);
-      const romUrlName = this.extractBaseName(romUrl);
-
-      return (
-        (savePath !== '' && savePath === targetPath) ||
-        (romUrl !== '' && romUrl === targetPath) ||
-        (saveName !== '' && saveName === targetName) ||
-        (romUrlName !== '' && romUrlName === targetName)
-      );
-    });
-  }
-
-  protected async extractLocalFile(file: LocalDownloadedFile) {
-    this.extractingFiles.update((current) => ({ ...current, [file.fullPath]: true }));
-    try {
-      await this.store.extractLocalFirmware(file);
-    } finally {
-      this.extractingFiles.update((current) => ({ ...current, [file.fullPath]: false }));
-    }
-  }
-
-  protected async fetchRecipeFromSelectedModel(file: LocalDownloadedFile) {
-    const selectedModel = this.store.selectedModel();
-    if (!selectedModel) {
-      this.store.errorMessage.set(
-        'Select a model in Model Catalog first, then run "Fetch recipe".',
-      );
-      return;
-    }
-
-    this.fetchingRecipeFiles.update((current) => ({ ...current, [file.fullPath]: true }));
-    try {
-      await this.store.attachLocalRecipeFromModel(file, {
-        modelName: selectedModel.modelName,
-        marketName: selectedModel.marketName,
-        category: selectedModel.category,
-      });
-    } finally {
-      this.fetchingRecipeFiles.update((current) => ({ ...current, [file.fullPath]: false }));
-    }
-  }
-
-  protected async fetchRecipeFromLookup(file: LocalDownloadedFile) {
-    const variant = this.findLookupVariantForFile(file);
-    if (!variant) {
-      this.store.errorMessage.set(
-        'No recipe-enabled firmware variant in current lookup matches this local ZIP.',
-      );
-      return;
-    }
-
-    this.fetchingRecipeFiles.update((current) => ({ ...current, [file.fullPath]: true }));
-    try {
-      await this.store.attachLocalRecipeFromVariant(file, variant);
-    } finally {
-      this.fetchingRecipeFiles.update((current) => ({ ...current, [file.fullPath]: false }));
-    }
   }
 
   protected rescueDialogTitle() {
@@ -182,6 +74,25 @@ export class DownloadsPanelComponent implements OnInit {
     this.rescueDialogDataReset = choice;
   }
 
+  protected setRescueDialogFlashTransport(transport: RescueFlashTransport) {
+    this.rescueDialogFlashTransport = transport;
+  }
+
+  protected setRescueDialogQdlStorage(storage: RescueQdlStorage) {
+    this.rescueDialogQdlStorage = storage;
+  }
+
+  protected setRescueDialogQdlSerial(serial: string) {
+    this.rescueDialogQdlSerial = serial;
+  }
+
+  protected rescueDialogTargetLabel() {
+    if (!this.rescueDialogFile) {
+      return '';
+    }
+    return `${this.rescueDialogFile.fileName} | ${this.rescueDialogFile.fullPath}`;
+  }
+
   protected closeRescueDialog() {
     this.rescueDialogOpen = false;
     this.rescueDialogFile = null;
@@ -192,7 +103,14 @@ export class DownloadsPanelComponent implements OnInit {
     if (!file) {
       return;
     }
-    void this.store.rescueLiteLocalFile(file, this.rescueDialogDataReset, this.rescueDialogDryRun);
+    void this.store.rescueLiteLocalFile(
+      file,
+      this.rescueDialogDataReset,
+      this.rescueDialogDryRun,
+      this.rescueDialogFlashTransport,
+      this.rescueDialogQdlStorage,
+      this.rescueDialogQdlSerial,
+    );
     this.closeRescueDialog();
   }
 
@@ -200,42 +118,69 @@ export class DownloadsPanelComponent implements OnInit {
     this.store.clearRescueDryRunPlanDialog();
   }
 
-  protected async removeFile(file: LocalDownloadedFile) {
-    await this.store.deleteLocalFile(file);
+  protected async installWindowsQdloaderDriver() {
+    if (this.installingWindowsQdloaderDriver) {
+      return;
+    }
+
+    this.installingWindowsQdloaderDriver = true;
+    try {
+      const response = await this.store.installWindowsQdloaderDriver();
+      if (response.ok) {
+        this.windowsQdloaderDriverInstalled = true;
+      } else {
+        await this.refreshWindowsQdloaderDriverStatus();
+      }
+    } finally {
+      this.installingWindowsQdloaderDriver = false;
+    }
   }
 
-  protected pauseEntry(entry: DownloadHistoryEntry) {
-    void this.store.pauseDownload(entry.downloadId);
+  protected async installWindowsSpdDriver() {
+    if (this.installingWindowsSpdDriver) {
+      return;
+    }
+
+    this.installingWindowsSpdDriver = true;
+    try {
+      const response = await this.store.installWindowsSpdDriver();
+      this.windowsSpdDriverInstalled = response.ok;
+    } finally {
+      this.installingWindowsSpdDriver = false;
+    }
   }
 
-  protected resumeEntry(entry: DownloadHistoryEntry) {
-    void this.store.resumeDownload(entry.downloadId);
+  protected async installWindowsMtkDriver() {
+    if (this.installingWindowsMtkDriver) {
+      return;
+    }
+
+    this.installingWindowsMtkDriver = true;
+    try {
+      const response = await this.store.installWindowsMtkDriver();
+      this.windowsMtkDriverInstalled = response.ok;
+    } finally {
+      this.installingWindowsMtkDriver = false;
+    }
   }
 
   private openRescueDialog(file: LocalDownloadedFile, dryRun: boolean) {
+    const defaults = this.rescueDialogDefaults.createDefaults();
     this.rescueDialogFile = file;
     this.rescueDialogDryRun = dryRun;
-    this.rescueDialogDataReset = 'yes';
+    this.rescueDialogDataReset = defaults.dataReset;
+    this.rescueDialogFlashTransport = defaults.flashTransport;
+    this.rescueDialogQdlStorage = defaults.qdlStorage;
+    this.rescueDialogQdlSerial = defaults.qdlSerial;
+    this.windowsQdloaderDriverInstalled = false;
+    this.windowsSpdDriverInstalled = false;
+    this.windowsMtkDriverInstalled = false;
+    void this.refreshWindowsQdloaderDriverStatus();
     this.rescueDialogOpen = true;
   }
 
-  private findLookupVariantForFile(file: LocalDownloadedFile): FirmwareVariant | null {
-    return findLookupVariantForLocalFile(file, this.store.firmwareVariants());
-  }
-
-  private normalizePath(value: string) {
-    return value.trim().replace(/\\/g, '/').toLowerCase();
-  }
-
-  private normalizeName(value: string) {
-    return value.trim().toLowerCase();
-  }
-
-  private extractBaseName(path: string) {
-    if (!path) {
-      return '';
-    }
-    const parts = path.split('/');
-    return this.normalizeName(parts[parts.length - 1] || '');
+  private async refreshWindowsQdloaderDriverStatus() {
+    const status = await this.store.getWindowsQdloaderDriverStatus();
+    this.windowsQdloaderDriverInstalled = status.ok && status.installed;
   }
 }

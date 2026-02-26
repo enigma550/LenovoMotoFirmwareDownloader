@@ -69,7 +69,7 @@ export class WorkflowUiService {
     }
   }
 
-  getErrorMessage(error: unknown) {
+  getErrorMessage<ErrorValue>(error: ErrorValue) {
     if (error instanceof HttpErrorResponse) {
       const payload = error.error as { error?: string } | null;
       return payload?.error || error.message || 'Request failed.';

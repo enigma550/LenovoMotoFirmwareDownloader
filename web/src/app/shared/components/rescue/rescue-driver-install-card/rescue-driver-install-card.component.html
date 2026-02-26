@@ -1,0 +1,22 @@
+<div class="rounded-lg border p-3" [class.border-slate-200]="!isDark()" [class.border-slate-700]="isDark()">
+  <p class="text-sm font-semibold" [class.text-slate-700]="!isDark()" [class.text-slate-200]="isDark()">
+    {{ title() }}
+  </p>
+  <p class="mt-1 text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+    {{ description() }}
+  </p>
+  <div class="mt-2">
+    <app-rescue-dialog-button
+      [label]="buttonLabel()"
+      [isDark]="isDark()"
+      [disabled]="buttonDisabled()"
+      variant="secondary"
+      (clicked)="onInstall()"
+    />
+  </div>
+  @if (installed() && installedNote()) {
+    <p class="mt-2 text-xs" [class.text-emerald-700]="!isDark()" [class.text-emerald-300]="isDark()">
+      {{ installedNote() }}
+    </p>
+  }
+</div>

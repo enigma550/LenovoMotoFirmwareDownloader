@@ -1,0 +1,138 @@
+@if (entry(); as activeEntry) {
+  <article
+    class="rounded-xl border p-3 text-sm"
+    [class.border-slate-200]="!isDark()"
+    [class.bg-slate-50]="!isDark()"
+    [class.border-slate-700]="isDark()"
+    [class.bg-slate-800]="isDark()"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="font-semibold" [class.text-slate-900]="!isDark()" [class.text-slate-100]="isDark()">
+        {{ activeEntry.romName }}
+      </p>
+      <div class="flex items-center gap-2">
+        <span
+          class="rounded-lg border px-2 py-1 text-xs"
+          [class.border-sky-300]="!isDark()"
+          [class.text-sky-700]="!isDark()"
+          [class.border-sky-700]="isDark()"
+          [class.text-sky-300]="isDark()"
+        >
+          {{ actionLabel(activeEntry) }}
+        </span>
+        <span
+          class="rounded-lg border px-2 py-1 text-xs"
+          [class.border-slate-300]="!isDark()"
+          [class.text-slate-600]="!isDark()"
+          [class.border-slate-600]="isDark()"
+          [class.text-slate-300]="isDark()"
+        >
+          {{ activeEntry.status }}
+        </span>
+        @if (isRescueLite(activeEntry) && isRecipeGuided(activeEntry)) {
+          <span
+            class="rounded-lg border px-2 py-1 text-xs"
+            [class.border-emerald-300]="!isDark()"
+            [class.text-emerald-700]="!isDark()"
+            [class.border-emerald-700]="isDark()"
+            [class.text-emerald-300]="isDark()"
+          >
+            Recipe-guided
+          </span>
+        }
+
+        @if (isInProgress()) {
+          @if (activeEntry.status === 'downloading') {
+            <app-ui-action-button
+              label="Pause"
+              variant="warning"
+              appearance="solid"
+              [isDark]="isDark()"
+              [disabled]="isCanceling()"
+              (clicked)="onPause()"
+            />
+          } @else if (activeEntry.status === 'paused') {
+            <app-ui-action-button
+              label="Resume"
+              variant="success"
+              appearance="solid"
+              [isDark]="isDark()"
+              [disabled]="isCanceling()"
+              (clicked)="onResume()"
+            />
+          }
+
+          <app-ui-action-button
+            [label]="cancelButtonLabel()"
+            variant="danger"
+            appearance="solid"
+            [isDark]="isDark()"
+            [disabled]="isCanceling()"
+            (clicked)="onCancel()"
+          />
+        }
+
+        <app-ui-action-button
+          label="Clear"
+          variant="neutral"
+          appearance="outline"
+          [isDark]="isDark()"
+          (clicked)="onClear()"
+        />
+      </div>
+    </div>
+
+    <p class="mt-1 text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+      @if (activeEntry.totalBytes) {
+        <span>{{ formatBytes(activeEntry.totalBytes) }} | </span>
+      }
+      <span>Published: {{ activeEntry.publishDate || 'Unknown' }} | </span>
+      <span>Started: {{ formatTime(activeEntry.startedAt) }}</span>
+    </p>
+
+    @if (isInProgress()) {
+      <app-progress-bar class="mt-3" [percent]="downloadPercent() || 0" [isDark]="isDark()" />
+    }
+
+    <p class="mt-1 text-xs" [class.text-slate-600]="!isDark()" [class.text-slate-300]="isDark()">
+      {{ formatBytes(activeEntry.downloadedBytes) }}
+      @if (activeEntry.totalBytes) {
+        / {{ formatBytes(activeEntry.totalBytes) }}
+      }
+      @if (activeEntry.status === 'downloading') {
+        | {{ formatBytes(activeEntry.speedBytesPerSecond) }}/s
+      }
+    </p>
+
+    @if (activeEntry.savePath) {
+      <p
+        class="mt-1 break-all text-xs opacity-70"
+        [class.text-slate-500]="!isDark()"
+        [class.text-slate-400]="isDark()"
+      >
+        Saved to: {{ activeEntry.savePath }}
+      </p>
+    }
+
+    @if (isRescueLite(activeEntry)) {
+      <p class="mt-1 text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+        Execution: {{ rescueExecutionLabel() }} | Data reset:
+        {{ dataResetLabel(activeEntry.dataReset) }} | Transport:
+        {{ flashTransportLabel(activeEntry.flashTransport) }}
+      </p>
+      @if (rescueStepText(activeEntry)) {
+        <p
+          class="mt-1 break-all text-xs"
+          [class.text-slate-500]="!isDark()"
+          [class.text-slate-400]="isDark()"
+        >
+          {{ rescueStepText(activeEntry) }}
+        </p>
+      }
+    }
+
+    @if (activeEntry.error) {
+      <p class="mt-1 break-all text-xs text-rose-500">Error: {{ activeEntry.error }}</p>
+    }
+  </article>
+}

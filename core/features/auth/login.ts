@@ -1,33 +1,35 @@
-import { requestApi } from "../../infra/lmsa/api.ts";
-import type { AppConfig } from "../../shared/types/index.ts";
-import { saveConfig } from "../../infra/config.ts";
-import { session } from "../../infra/lmsa/state.ts";
-import { join } from "path";
-import { openExternalUrl } from "../../../runtime/bun/browser";
-import { loadConfig } from "../../infra/config";
+import { saveConfig } from '../../infra/config.ts';
+import { requestApi } from '../../infra/lmsa/api.ts';
+import { session } from '../../infra/lmsa/state.ts';
+import type { AppConfig, JsonObject, JsonValue } from '../../shared/types/index.ts';
 
 interface BasicApiResponse {
   code?: string;
   desc?: string;
-  content?: unknown;
+  content?: JsonValue;
 }
 
+function toJsonObject(value: JsonValue | null | undefined): JsonObject | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value;
+}
 
 function extractLoginUrl(tipData: BasicApiResponse) {
-  if (typeof tipData.content !== "string") return "";
+  if (typeof tipData.content !== 'string') return '';
 
   try {
-    const parsed = JSON.parse(tipData.content);
-    if (typeof parsed?.login_url === "string") return parsed.login_url;
+    const parsed = JSON.parse(tipData.content) as JsonValue;
+    const record = toJsonObject(parsed);
+    if (typeof record?.login_url === 'string') return record.login_url;
   } catch {
     // ignore
   }
-  return "";
+  return '';
 }
 
 export function extractWustToken(urlOrToken: string) {
   const trimmedValue = urlOrToken.trim();
-  if (!trimmedValue) return "";
+  if (!trimmedValue) return '';
 
   const match = trimmedValue.match(/lenovoid\.wust=([^&]+)/i);
   if (match?.[1]) {
@@ -38,38 +40,35 @@ export function extractWustToken(urlOrToken: string) {
 }
 
 async function fetchLoginUrl() {
-  const tipResponse = await requestApi("/dictionary/getApiInfo.jhtml", {
-    key: "TIP_URL",
+  const tipResponse = await requestApi('/dictionary/getApiInfo.jhtml', {
+    key: 'TIP_URL',
   });
   const tipData = (await tipResponse.json()) as BasicApiResponse;
   const loginUrl = extractLoginUrl(tipData);
 
   if (!loginUrl) {
-    throw new Error("Could not get login_url from TIP_URL response");
+    throw new Error('Could not get login_url from TIP_URL response');
   }
 
   return loginUrl;
 }
 
-export async function openLoginBrowser() {
+export async function openLoginBrowser(urlOpener: (url: string) => Promise<void>) {
   const loginUrl = await fetchLoginUrl();
-  await openExternalUrl(loginUrl);
+  await urlOpener(loginUrl);
   return loginUrl;
 }
 
-export async function authenticateWithWustToken(
-  config: AppConfig,
-  wustToken: string,
-) {
-  const loginResponse = await requestApi("/user/lenovoIdLogin.jhtml", {
+export async function authenticateWithWustToken(config: AppConfig, wustToken: string) {
+  const loginResponse = await requestApi('/user/lenovoIdLogin.jhtml', {
     wust: wustToken,
     guid: session.guid,
   });
   const loginData = (await loginResponse.json()) as BasicApiResponse;
-  const code = typeof loginData.code === "string" ? loginData.code : "";
-  const description = typeof loginData.desc === "string" ? loginData.desc : "";
+  const code = typeof loginData.code === 'string' ? loginData.code : '';
+  const description = typeof loginData.desc === 'string' ? loginData.desc : '';
 
-  if (code !== "0000") {
+  if (code !== '0000') {
     return {
       ok: false,
       code,
@@ -79,8 +78,8 @@ export async function authenticateWithWustToken(
 
   config.wustToken = wustToken;
   await saveConfig(config);
-  await requestApi("/common/rsa.jhtml", {}, { raw: true });
-  await requestApi("/client/initToken.jhtml", {});
+  await requestApi('/common/rsa.jhtml', {}, { raw: true });
+  await requestApi('/client/initToken.jhtml', {});
 
   return {
     ok: true,

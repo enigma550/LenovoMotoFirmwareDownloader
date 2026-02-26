@@ -1,0 +1,44 @@
+@if (shouldShow()) {
+  <section
+    #consoleSection
+    class="mt-4 rounded-2xl border p-3"
+    [class.border-slate-200]="!isDark()"
+    [class.bg-slate-50]="!isDark()"
+    [class.border-slate-700]="isDark()"
+    [class.bg-slate-900]="isDark()"
+  >
+    <div class="mb-2 flex items-center justify-between gap-2">
+      <p
+        class="text-xs font-semibold"
+        [class.text-slate-700]="!isDark()"
+        [class.text-slate-200]="isDark()"
+      >
+        Flash Console
+      </p>
+      <div class="flex items-center gap-2">
+        <app-ui-action-button
+          label="Cancel"
+          [isDark]="isDark()"
+          variant="danger"
+          appearance="outline"
+          [disabled]="!canCancelCurrentAction()"
+          (clicked)="requestCancelCurrentAction()"
+        />
+        <app-ui-action-button
+          label="Clear"
+          [isDark]="isDark()"
+          variant="neutral"
+          appearance="outline"
+          (clicked)="clearConsole()"
+        />
+      </div>
+    </div>
+    <div
+      class="h-56 overflow-hidden rounded-lg border"
+      [class.border-slate-300]="!isDark()"
+      [class.border-slate-700]="isDark()"
+    >
+      <ng-terminal #flashTerminal [xtermOptions]="terminalOptions()" />
+    </div>
+  </section>
+}

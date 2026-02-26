@@ -4,9 +4,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": [],
+    "types": []
   },
   "files": ["../node_modules/electrobun/dist/api/browser/global.d.ts"],
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts"],
+  "exclude": ["src/**/*.spec.ts"]
 }

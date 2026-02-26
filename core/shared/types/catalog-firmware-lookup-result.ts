@@ -1,4 +1,4 @@
-import type { FirmwareVariant } from "./firmware-variant.ts";
+import type { FirmwareVariant } from './firmware-variant.ts';
 
 export interface CatalogFirmwareLookupResult {
   variants: FirmwareVariant[];

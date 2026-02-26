@@ -1,4 +1,4 @@
-import { normalizeRemoteUrl } from "./firmware-package-utils.ts";
+import { type JsonObject, type JsonValue, normalizeRemoteUrl } from './firmware-package-utils.ts';
 
 export type FirmwarePackageMetadata = {
   version: 1;
@@ -12,17 +12,17 @@ export type FirmwarePackageMetadata = {
   selectedParameters?: Record<string, string>;
 };
 
-function toRecord(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  return value as Record<string, unknown>;
+function toRecord(value: JsonValue | undefined) {
+  if (!value || typeof value !== 'object') return null;
+  return value as JsonObject;
 }
 
-function sanitizeParameters(value: unknown) {
-  if (!value || typeof value !== "object") return undefined;
-  const raw = value as Record<string, unknown>;
+function sanitizeParameters(value: JsonValue | undefined) {
+  if (!value || typeof value !== 'object') return undefined;
+  const raw = value as JsonObject;
   const cleaned: Record<string, string> = {};
   for (const [key, entryValue] of Object.entries(raw)) {
-    if (!key || typeof entryValue !== "string") continue;
+    if (!key || typeof entryValue !== 'string') continue;
     const trimmed = entryValue.trim();
     if (!trimmed) continue;
     cleaned[key] = trimmed;
@@ -54,24 +54,18 @@ export async function readFirmwareMetadata(
     return {
       version: 1,
       savedAt:
-        typeof parsed.savedAt === "number" && Number.isFinite(parsed.savedAt)
+        typeof parsed.savedAt === 'number' && Number.isFinite(parsed.savedAt)
           ? parsed.savedAt
           : Date.now(),
-      source: typeof parsed.source === "string" ? parsed.source : undefined,
-      romUrl: typeof parsed.romUrl === "string" ? parsed.romUrl : undefined,
-      romName: typeof parsed.romName === "string" ? parsed.romName : undefined,
+      source: typeof parsed.source === 'string' ? parsed.source : undefined,
+      romUrl: typeof parsed.romUrl === 'string' ? parsed.romUrl : undefined,
+      romName: typeof parsed.romName === 'string' ? parsed.romName : undefined,
       publishDate:
-        typeof parsed.publishDate === "string"
-          ? sanitizeText(parsed.publishDate)
-          : undefined,
+        typeof parsed.publishDate === 'string' ? sanitizeText(parsed.publishDate) : undefined,
       romMatchIdentifier:
-        typeof parsed.romMatchIdentifier === "string"
-          ? parsed.romMatchIdentifier
-          : undefined,
+        typeof parsed.romMatchIdentifier === 'string' ? parsed.romMatchIdentifier : undefined,
       recipeUrl:
-        typeof parsed.recipeUrl === "string"
-          ? normalizeRemoteUrl(parsed.recipeUrl)
-          : undefined,
+        typeof parsed.recipeUrl === 'string' ? normalizeRemoteUrl(parsed.recipeUrl) : undefined,
       selectedParameters,
     };
   } catch {
@@ -99,15 +93,10 @@ export async function writeFirmwareMetadata(
     romUrl: sanitizeText(patch.romUrl) || existing?.romUrl,
     romName: sanitizeText(patch.romName) || existing?.romName,
     publishDate: sanitizeText(patch.publishDate) || existing?.publishDate,
-    romMatchIdentifier:
-      patch.romMatchIdentifier || existing?.romMatchIdentifier,
+    romMatchIdentifier: patch.romMatchIdentifier || existing?.romMatchIdentifier,
     recipeUrl: normalizeRemoteUrl(patch.recipeUrl || existing?.recipeUrl),
     selectedParameters:
-      sanitizeParameters(patch.selectedParameters) ||
-      existing?.selectedParameters,
+      sanitizeParameters(patch.selectedParameters) || existing?.selectedParameters,
   };
-  await Bun.write(
-    getFirmwareMetadataPath(packagePath),
-    JSON.stringify(merged, null, 2),
-  );
+  await Bun.write(getFirmwareMetadataPath(packagePath), JSON.stringify(merged, null, 2));
 }

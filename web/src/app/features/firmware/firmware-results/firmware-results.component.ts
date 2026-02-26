@@ -1,52 +1,52 @@
-import { KeyValuePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import type { FirmwareVariant } from '../../../core/models/desktop-api.ts';
+import type { OnInit } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import type {
-  DataResetChoice,
-  DownloadHistoryEntry,
-} from '../../../core/state/workflow/workflow.types';
+  FirmwareVariant,
+  RescueFlashTransport,
+  RescueQdlStorage,
+} from '../../../core/models/desktop-api';
 import {
-  actionLabel as getActionLabel,
-  cancelButtonLabel as getCancelButtonLabel,
-  dataResetLabel as formatDataResetLabel,
-  findBestLocalFileMatchForVariant,
-  formatBytes as formatByteSize,
-  isCancelingStatus,
-  isInProgressStatus,
-  isRecipeGuidedEntry,
-  isRescueLiteEntry,
   rescueDialogDescription as getRescueDialogDescription,
   rescueDialogTitle as getRescueDialogTitle,
-  rescueExecutionLabel as getRescueExecutionLabel,
-  rescueStepText as getRescueStepText,
+  isInProgressStatus,
 } from '../../../core/state/workflow/download-utils';
-import { ProgressBarComponent } from '../../../shared/components/progress-bar/progress-bar.component';
+import { RescueDialogDefaultsService } from '../../../core/state/workflow/rescue-dialog-defaults.service';
 import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
+import type { DataResetChoice } from '../../../core/state/workflow/workflow.types';
+import { RescueDryRunPlanDialogComponent } from '../../../shared/components/rescue/rescue-dry-run-plan-dialog/rescue-dry-run-plan-dialog.component';
+import { RescueFlashConsoleComponent } from '../../../shared/components/rescue/rescue-flash-console/rescue-flash-console.component';
+import { RescueOptionsDialogComponent } from '../../../shared/components/rescue/rescue-options-dialog/rescue-options-dialog.component';
+import { FirmwareActiveDownloadCardComponent } from './components/firmware-active-download-card/firmware-active-download-card.component';
+import { FirmwareVariantCardComponent } from './components/firmware-variant-card/firmware-variant-card.component';
 
 @Component({
   selector: 'app-firmware-results',
   standalone: true,
-  imports: [KeyValuePipe, ProgressBarComponent],
+  imports: [
+    FirmwareActiveDownloadCardComponent,
+    FirmwareVariantCardComponent,
+    RescueDryRunPlanDialogComponent,
+    RescueFlashConsoleComponent,
+    RescueOptionsDialogComponent,
+  ],
   templateUrl: './firmware-results.component.html',
 })
 export class FirmwareResultsComponent implements OnInit {
   protected readonly store = inject(WorkflowStore);
-  protected readonly linkingVariantRecipes = signal<Record<string, boolean>>({});
+  private readonly rescueDialogDefaults = inject(RescueDialogDefaultsService);
   protected rescueDialogOpen = false;
   protected rescueDialogVariant: FirmwareVariant | null = null;
   protected rescueDialogDryRun = false;
   protected rescueDialogDataReset: DataResetChoice = 'yes';
-  protected readonly formatBytes = formatByteSize;
-  protected readonly dataResetLabel = formatDataResetLabel;
-  protected readonly isCanceling = (entry: DownloadHistoryEntry) => isCancelingStatus(entry.status);
-  protected readonly cancelButtonLabel = (entry: DownloadHistoryEntry) =>
-    getCancelButtonLabel(entry.status);
-  protected readonly isRescueLite = isRescueLiteEntry;
-  protected readonly isRecipeGuided = isRecipeGuidedEntry;
-  protected readonly actionLabel = getActionLabel;
-  protected readonly rescueExecutionLabel = (entry: DownloadHistoryEntry) =>
-    getRescueExecutionLabel(entry.dryRun);
-  protected readonly rescueStepText = getRescueStepText;
+  protected rescueDialogFlashTransport: RescueFlashTransport = 'fastboot';
+  protected rescueDialogQdlStorage: RescueQdlStorage = 'auto';
+  protected rescueDialogQdlSerial = '';
+  protected installingWindowsQdloaderDriver = false;
+  protected installingWindowsSpdDriver = false;
+  protected installingWindowsMtkDriver = false;
+  protected windowsQdloaderDriverInstalled = false;
+  protected windowsSpdDriverInstalled = false;
+  protected windowsMtkDriverInstalled = false;
   protected readonly activeVariantDownloads = computed(() => {
     const variantUrls = new Set(this.store.firmwareVariants().map((variant) => variant.romUrl));
     return this.store
@@ -56,10 +56,6 @@ export class FirmwareResultsComponent implements OnInit {
 
   async ngOnInit() {
     await this.store.refreshLocalDownloadedFiles();
-  }
-
-  protected startDownload(variant: FirmwareVariant) {
-    void this.store.downloadFirmwareVariant(variant);
   }
 
   protected startRescueLite(variant: FirmwareVariant) {
@@ -79,6 +75,18 @@ export class FirmwareResultsComponent implements OnInit {
     this.rescueDialogDataReset = choice;
   }
 
+  protected setRescueDialogFlashTransport(transport: RescueFlashTransport) {
+    this.rescueDialogFlashTransport = transport;
+  }
+
+  protected setRescueDialogQdlStorage(storage: RescueQdlStorage) {
+    this.rescueDialogQdlStorage = storage;
+  }
+
+  protected setRescueDialogQdlSerial(serial: string) {
+    this.rescueDialogQdlSerial = serial;
+  }
+
   protected confirmRescueDialog() {
     const variant = this.rescueDialogVariant;
     if (!variant) {
@@ -88,12 +96,61 @@ export class FirmwareResultsComponent implements OnInit {
       variant,
       this.rescueDialogDataReset,
       this.rescueDialogDryRun,
+      this.rescueDialogFlashTransport,
+      this.rescueDialogQdlStorage,
+      this.rescueDialogQdlSerial,
     );
     this.closeRescueDialog();
   }
 
   protected closeDryRunPlanDialog() {
     this.store.clearRescueDryRunPlanDialog();
+  }
+
+  protected async installWindowsQdloaderDriver() {
+    if (this.installingWindowsQdloaderDriver) {
+      return;
+    }
+
+    this.installingWindowsQdloaderDriver = true;
+    try {
+      const response = await this.store.installWindowsQdloaderDriver();
+      if (response.ok) {
+        this.windowsQdloaderDriverInstalled = true;
+      } else {
+        await this.refreshWindowsQdloaderDriverStatus();
+      }
+    } finally {
+      this.installingWindowsQdloaderDriver = false;
+    }
+  }
+
+  protected async installWindowsSpdDriver() {
+    if (this.installingWindowsSpdDriver) {
+      return;
+    }
+
+    this.installingWindowsSpdDriver = true;
+    try {
+      const response = await this.store.installWindowsSpdDriver();
+      this.windowsSpdDriverInstalled = response.ok;
+    } finally {
+      this.installingWindowsSpdDriver = false;
+    }
+  }
+
+  protected async installWindowsMtkDriver() {
+    if (this.installingWindowsMtkDriver) {
+      return;
+    }
+
+    this.installingWindowsMtkDriver = true;
+    try {
+      const response = await this.store.installWindowsMtkDriver();
+      this.windowsMtkDriverInstalled = response.ok;
+    } finally {
+      this.installingWindowsMtkDriver = false;
+    }
   }
 
   protected rescueDialogTitle() {
@@ -105,105 +162,22 @@ export class FirmwareResultsComponent implements OnInit {
   }
 
   private openRescueDialog(variant: FirmwareVariant, dryRun: boolean) {
+    const defaults = this.rescueDialogDefaults.createDefaults();
     this.rescueDialogVariant = variant;
     this.rescueDialogDryRun = dryRun;
-    this.rescueDialogDataReset = 'yes';
+    this.rescueDialogDataReset = defaults.dataReset;
+    this.rescueDialogFlashTransport = defaults.flashTransport;
+    this.rescueDialogQdlStorage = defaults.qdlStorage;
+    this.rescueDialogQdlSerial = defaults.qdlSerial;
+    this.windowsQdloaderDriverInstalled = false;
+    this.windowsSpdDriverInstalled = false;
+    this.windowsMtkDriverInstalled = false;
+    void this.refreshWindowsQdloaderDriverStatus();
     this.rescueDialogOpen = true;
   }
 
-  protected cancelDownloadById(downloadId: string) {
-    void this.store.cancelDownloadById(downloadId);
-  }
-
-  protected pauseEntry(entry: DownloadHistoryEntry) {
-    void this.store.pauseDownload(entry.downloadId);
-  }
-
-  protected resumeEntry(entry: DownloadHistoryEntry) {
-    void this.store.resumeDownload(entry.downloadId);
-  }
-
-  protected clearDownloadById(downloadId: string) {
-    this.store.clearDownloadById(downloadId);
-  }
-
-  protected downloadPercent(entry: DownloadHistoryEntry) {
-    if (!entry.totalBytes || entry.totalBytes <= 0) {
-      return null;
-    }
-    return Math.min(100, (entry.downloadedBytes / entry.totalBytes) * 100);
-  }
-
-  protected isVariantDownloadActive(variant: FirmwareVariant) {
-    return this.store
-      .downloadHistory()
-      .some((entry) => entry.romUrl === variant.romUrl && isInProgressStatus(entry.status));
-  }
-
-  protected isVariantDownloadTracked(variant: FirmwareVariant) {
-    return this.getLatestVariantDownload(variant)?.status !== undefined;
-  }
-
-  protected getVariantStatus(variant: FirmwareVariant) {
-    return this.getLatestVariantDownload(variant)?.status || '';
-  }
-
-  protected getVariantMode(variant: FirmwareVariant) {
-    return this.getLatestVariantDownload(variant)?.mode || 'download';
-  }
-
-  protected getVariantDryRun(variant: FirmwareVariant) {
-    return this.getLatestVariantDownload(variant)?.dryRun ?? false;
-  }
-
-  protected hasRecipeAvailable(variant: FirmwareVariant) {
-    return Boolean(variant.recipeUrl);
-  }
-
-  protected canAttachRecipeToLocalZip(variant: FirmwareVariant) {
-    if (!variant.recipeUrl) {
-      return false;
-    }
-    const match = this.findLocalFileMatchForVariant(variant);
-    return Boolean(match && !match.recipeUrl);
-  }
-
-  protected hasLocalZipForVariant(variant: FirmwareVariant) {
-    return Boolean(this.findLocalFileMatchForVariant(variant));
-  }
-
-  protected isAttachingRecipeToLocalZip(variant: FirmwareVariant) {
-    return Boolean(this.linkingVariantRecipes()[variant.romUrl]);
-  }
-
-  protected attachRecipeToLocalZip(variant: FirmwareVariant) {
-    if (this.isAttachingRecipeToLocalZip(variant)) {
-      return;
-    }
-    this.linkingVariantRecipes.update((current) => ({ ...current, [variant.romUrl]: true }));
-    void (async () => {
-      try {
-        if (this.store.localDownloadedFiles().length === 0) {
-          await this.store.refreshLocalDownloadedFiles();
-        }
-        await this.store.attachVariantRecipeToMatchingLocalZip(variant);
-      } finally {
-        this.linkingVariantRecipes.update((current) => ({ ...current, [variant.romUrl]: false }));
-      }
-    })();
-  }
-
-  private getLatestVariantDownload(variant: FirmwareVariant): DownloadHistoryEntry | undefined {
-    const matches = this.store.downloadHistory().filter((entry) => entry.romUrl === variant.romUrl);
-    if (matches.length === 0) {
-      return undefined;
-    }
-    return matches.reduce((latest, current) =>
-      current.updatedAt > latest.updatedAt ? current : latest,
-    );
-  }
-
-  private findLocalFileMatchForVariant(variant: FirmwareVariant) {
-    return findBestLocalFileMatchForVariant(variant, this.store.localDownloadedFiles());
+  private async refreshWindowsQdloaderDriverStatus() {
+    const status = await this.store.getWindowsQdloaderDriverStatus();
+    this.windowsQdloaderDriverInstalled = status.ok && status.installed;
   }
 }

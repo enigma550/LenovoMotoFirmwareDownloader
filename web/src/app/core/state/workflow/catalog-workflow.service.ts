@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import { AuthApiService } from '../../api/auth-api.service';
 import type {
   CatalogCountryOptions,
@@ -8,13 +8,13 @@ import type {
   ModelCatalogEntry,
   ReadSupportFirmwareLookupResult,
 } from '../../models/desktop-api.ts';
-import { WorkflowUiService } from './workflow-ui.service';
 import type {
   CategoryFilter,
   ReadSupportFilter,
   ReadSupportMode,
   SourceMode,
 } from './workflow.types';
+import { WorkflowUiService } from './workflow-ui.service';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogWorkflowService {

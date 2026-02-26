@@ -1,0 +1,169 @@
+@if (file(); as activeFile) {
+  <article
+    class="rounded-lg border p-3 text-xs"
+    [class.border-slate-200]="!isDark()"
+    [class.bg-slate-50]="!isDark()"
+    [class.border-slate-700]="isDark()"
+    [class.bg-slate-800]="isDark()"
+  >
+    <p class="font-semibold" [class.text-slate-900]="!isDark()" [class.text-slate-100]="isDark()">
+      {{ activeFile.fileName }}
+    </p>
+    <p class="mt-1" [class.text-slate-600]="!isDark()" [class.text-slate-300]="isDark()">
+      {{ formatBytes(activeFile.sizeBytes) }} | Published: {{ activeFile.publishDate || 'Unknown' }}
+    </p>
+    <p
+      class="mt-0.5 flex flex-wrap gap-1 opacity-70"
+      [class.text-slate-600]="!isDark()"
+      [class.text-slate-300]="isDark()"
+    >
+      @if (activeFile.romMatchIdentifier) {
+        <span class="whitespace-nowrap">ROM match ID: {{ activeFile.romMatchIdentifier }} | </span>
+      }
+      <span class="whitespace-nowrap">Local file date: {{ formatTime(activeFile.modifiedAt) }}</span>
+    </p>
+    <p
+      class="mt-1 break-all"
+      [class.text-emerald-600]="hasRecipeMetadata() && !isDark()"
+      [class.text-emerald-300]="hasRecipeMetadata() && isDark()"
+      [class.text-amber-600]="!hasRecipeMetadata() && !isDark()"
+      [class.text-amber-300]="!hasRecipeMetadata() && isDark()"
+    >
+      Recipe metadata:
+      @if (hasRecipeMetadata()) {
+        Available
+        @if (activeFile.metadataSource) {
+          ({{ activeFile.metadataSource }})
+        }
+      } @else {
+        Not linked yet
+        @if (hasLookupRecipeCandidate()) {
+          (can be fetched from current lookup)
+        }
+      }
+    </p>
+
+    <div class="mt-2 flex flex-wrap gap-2">
+      @if (!hasRecipeMetadata()) {
+        @if (hasLookupRecipeCandidate()) {
+          <button
+            class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
+            [class.border-sky-300]="!isDark()"
+            [class.text-sky-700]="!isDark()"
+            [class.hover:bg-sky-50]="!isDark()"
+            [class.border-sky-700]="isDark()"
+            [class.text-sky-300]="isDark()"
+            [class.hover:bg-sky-900]="isDark()"
+            [disabled]="isExtracting() || isFetchingRecipe() || isFileActionInProgress()"
+            type="button"
+            (click)="onFetchRecipeFromLookup()"
+          >
+            {{ isFetchingRecipe() ? 'Linking recipe...' : 'Use recipe from current lookup' }}
+          </button>
+        }
+        <button
+          class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
+          [class.border-sky-300]="!isDark()"
+          [class.text-sky-700]="!isDark()"
+          [class.hover:bg-sky-50]="!isDark()"
+          [class.border-sky-700]="isDark()"
+          [class.text-sky-300]="isDark()"
+          [class.hover:bg-sky-900]="isDark()"
+          [disabled]="isExtracting() || isFetchingRecipe() || isFileActionInProgress()"
+          type="button"
+          (click)="onFetchRecipeFromSelectedModel()"
+        >
+          {{ isFetchingRecipe() ? 'Fetching recipe...' : 'Fetch recipe (selected model)' }}
+        </button>
+      }
+
+      @if (!activeFile.hasExtractedDir) {
+        <button
+          class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
+          [class.border-sky-300]="!isDark()"
+          [class.text-sky-700]="!isDark()"
+          [class.hover:bg-sky-50]="!isDark()"
+          [class.border-sky-700]="isDark()"
+          [class.text-sky-300]="isDark()"
+          [class.hover:bg-sky-900]="isDark()"
+          [disabled]="isExtracting() || isFetchingRecipe() || isFileActionInProgress()"
+          type="button"
+          (click)="onExtract()"
+        >
+          {{ isExtracting() ? 'Extracting...' : 'Extract' }}
+        </button>
+      }
+
+      <button
+        class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
+        [class.border-emerald-300]="!isDark()"
+        [class.text-emerald-700]="!isDark()"
+        [class.hover:bg-emerald-50]="!isDark()"
+        [class.border-emerald-700]="isDark()"
+        [class.text-emerald-300]="isDark()"
+        [class.hover:bg-emerald-900]="isDark()"
+        [disabled]="isExtracting() || isFetchingRecipe() || isFileActionInProgress()"
+        type="button"
+        (click)="onRescueLite()"
+      >
+        Rescue Lite
+      </button>
+      <button
+        class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
+        [class.border-emerald-300]="!isDark()"
+        [class.text-emerald-700]="!isDark()"
+        [class.hover:bg-emerald-50]="!isDark()"
+        [class.border-emerald-700]="isDark()"
+        [class.text-emerald-300]="isDark()"
+        [class.hover:bg-emerald-900]="isDark()"
+        [disabled]="isExtracting() || isFetchingRecipe() || isFileActionInProgress()"
+        type="button"
+        (click)="onRescueLiteDryRun()"
+      >
+        Rescue Lite (Dry run)
+      </button>
+    </div>
+
+    @if (activeFile.recipeUrl) {
+      <p class="mt-1 break-all" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+        {{ activeFile.recipeUrl }}
+      </p>
+    }
+
+    <p
+      class="mt-2 break-all text-xs"
+      [class.text-emerald-600]="activeFile.hasExtractedDir && !isDark()"
+      [class.text-emerald-300]="activeFile.hasExtractedDir && isDark()"
+      [class.text-slate-500]="!activeFile.hasExtractedDir && !isDark()"
+      [class.text-slate-400]="!activeFile.hasExtractedDir && isDark()"
+    >
+      Extracted dir:
+      @if (activeFile.hasExtractedDir && activeFile.extractedDir) {
+        {{ activeFile.relativeExtractedDir || activeFile.extractedDir }}
+      } @else {
+        Not found (will extract on first run)
+      }
+    </p>
+
+    <p class="break-all text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+      ROM Location: {{ activeFile.relativePath || activeFile.fullPath }}
+    </p>
+
+    <div class="mt-2 flex justify-end">
+      <button
+        class="rounded-lg border px-2 py-0.5 text-[10px] font-semibold transition"
+        [class.border-rose-300]="!isDark()"
+        [class.text-rose-700]="!isDark()"
+        [class.hover:bg-rose-50]="!isDark()"
+        [class.border-rose-700]="isDark()"
+        [class.text-rose-300]="isDark()"
+        [class.hover:bg-rose-900]="isDark()"
+        [disabled]="isExtracting() || isFetchingRecipe() || isFileActionInProgress()"
+        type="button"
+        (click)="onRemove()"
+      >
+        Remove
+      </button>
+    </div>
+  </article>
+}

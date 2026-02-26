@@ -1,6 +1,6 @@
 export const session = {
   guid: crypto.randomUUID(),
-  jwt: "",
+  jwt: '',
 };
 
 export const cookieJar = new Map<string, string>();

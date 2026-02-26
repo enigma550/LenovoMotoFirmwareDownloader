@@ -1,387 +1,139 @@
-<section class="rounded-3xl border p-6" [class.border-slate-200]="!store.isDark()" [class.bg-white]="!store.isDark()"
-  [class.shadow-sm]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()">
+<section
+  class="rounded-3xl border p-6"
+  [class.border-slate-200]="!store.isDark()"
+  [class.bg-white]="!store.isDark()"
+  [class.shadow-sm]="!store.isDark()"
+  [class.border-slate-700]="store.isDark()"
+  [class.bg-slate-900]="store.isDark()"
+>
   <div class="flex items-center justify-between gap-3">
-    <h3 class="text-lg font-bold" [class.text-slate-900]="!store.isDark()" [class.text-white]="store.isDark()">
+    <h3
+      class="text-lg font-bold"
+      [class.text-slate-900]="!store.isDark()"
+      [class.text-white]="store.isDark()"
+    >
       Downloads
     </h3>
 
     <div class="flex items-center gap-2">
-      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
-        [class.border-slate-300]="!store.isDark()" [class.text-slate-700]="!store.isDark()"
-        [class.hover:bg-slate-100]="!store.isDark()" [class.border-slate-600]="store.isDark()"
-        [class.text-slate-200]="store.isDark()" [class.hover:bg-slate-700]="store.isDark()" type="button"
-        (click)="store.refreshLocalDownloadedFiles()">
-        Refresh local files
-      </button>
-      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
-        [class.border-slate-300]="!store.isDark()" [class.text-slate-700]="!store.isDark()"
-        [class.hover:bg-slate-100]="!store.isDark()" [class.border-slate-600]="store.isDark()"
-        [class.text-slate-200]="store.isDark()" [class.hover:bg-slate-700]="store.isDark()" type="button"
-        (click)="store.clearDownloadHistory()" [disabled]="store.downloadHistory().length === 0">
-        Clear actions
-      </button>
+      <app-ui-action-button
+        label="Refresh local files"
+        [isDark]="store.isDark()"
+        size="sm"
+        (clicked)="store.refreshLocalDownloadedFiles()"
+      />
+      <app-ui-action-button
+        label="Clear actions"
+        [isDark]="store.isDark()"
+        size="sm"
+        [disabled]="store.downloadHistory().length === 0"
+        (clicked)="store.clearDownloadHistory()"
+      />
     </div>
   </div>
 
-  <p class="mt-2 text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
+  <p
+    class="mt-2 text-xs"
+    [class.text-slate-500]="!store.isDark()"
+    [class.text-slate-400]="store.isDark()"
+  >
     Downloads: {{ store.localDownloadedFiles().length }} | Actions:
     {{ store.downloadHistory().length }}
   </p>
 
   @if (store.localDownloadedFiles().length > 0) {
-  <div class="mt-5">
-    <h4 class="text-sm font-semibold" [class.text-slate-800]="!store.isDark()" [class.text-slate-100]="store.isDark()">
-      Downloads (ZIP files) ({{ store.localDownloadedFiles().length }})
-    </h4>
-    <div class="mt-2 grid gap-2">
-      @for (file of store.localDownloadedFiles(); track file.fullPath) {
-      <article class="rounded-lg border p-3 text-xs" [class.border-slate-200]="!store.isDark()"
-        [class.bg-slate-50]="!store.isDark()" [class.border-slate-700]="store.isDark()"
-        [class.bg-slate-800]="store.isDark()">
-        <p class="font-semibold" [class.text-slate-900]="!store.isDark()" [class.text-slate-100]="store.isDark()">
-          {{ file.fileName }}
-        </p>
-        <p class="mt-1" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
-          {{ formatBytes(file.sizeBytes) }} | Published: {{ file.publishDate || 'Unknown' }}
-        </p>
-        <p class="mt-0.5 opacity-70 flex flex-wrap gap-1" [class.text-slate-600]="!store.isDark()"
-          [class.text-slate-300]="store.isDark()">
-          @if (file.romMatchIdentifier) {
-          <span class="whitespace-nowrap">ROM match ID: {{ file.romMatchIdentifier }} | </span>
-          }
-          <span class="whitespace-nowrap">Local file date: {{ formatTime(file.modifiedAt) }}</span>
-        </p>
-        <p class="mt-1 break-all" [class.text-emerald-600]="hasRecipeMetadata(file) && !store.isDark()"
-          [class.text-emerald-300]="hasRecipeMetadata(file) && store.isDark()"
-          [class.text-amber-600]="!hasRecipeMetadata(file) && !store.isDark()"
-          [class.text-amber-300]="!hasRecipeMetadata(file) && store.isDark()">
-          Recipe metadata:
-          @if (hasRecipeMetadata(file)) {
-          Available
-          @if (file.metadataSource) {
-          ({{ file.metadataSource }})
-          }
-          } @else {
-          Not linked yet
-          @if (hasLookupRecipeCandidate(file)) {
-          (can be fetched from current lookup)
-          }
-          }
-        </p>
-        <div class="mt-2 flex flex-wrap gap-2">
-          @if (!hasRecipeMetadata(file)) {
-          @if (hasLookupRecipeCandidate(file)) {
-          <button class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
-            [class.border-sky-300]="!store.isDark()" [class.text-sky-700]="!store.isDark()"
-            [class.hover:bg-sky-50]="!store.isDark()" [class.border-sky-700]="store.isDark()"
-            [class.text-sky-300]="store.isDark()" [class.hover:bg-sky-900]="store.isDark()" [disabled]="
-                      isExtracting(file) || isFetchingRecipe(file) || isFileActionInProgress(file)
-                    " type="button" (click)="fetchRecipeFromLookup(file)">
-            {{
-            isFetchingRecipe(file)
-            ? 'Linking recipe...'
-            : 'Use recipe from current lookup'
-            }}
-          </button>
-          }
-          <button class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
-            [class.border-sky-300]="!store.isDark()" [class.text-sky-700]="!store.isDark()"
-            [class.hover:bg-sky-50]="!store.isDark()" [class.border-sky-700]="store.isDark()"
-            [class.text-sky-300]="store.isDark()" [class.hover:bg-sky-900]="store.isDark()" [disabled]="
-                    isExtracting(file) || isFetchingRecipe(file) || isFileActionInProgress(file)
-                  " type="button" (click)="fetchRecipeFromSelectedModel(file)">
-            {{
-            isFetchingRecipe(file) ? 'Fetching recipe...' : 'Fetch recipe (selected model)'
-            }}
-          </button>
-          }
-          @if (!file.hasExtractedDir) {
-          <button class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
-            [class.border-sky-300]="!store.isDark()" [class.text-sky-700]="!store.isDark()"
-            [class.hover:bg-sky-50]="!store.isDark()" [class.border-sky-700]="store.isDark()"
-            [class.text-sky-300]="store.isDark()" [class.hover:bg-sky-900]="store.isDark()" [disabled]="
-                    isExtracting(file) || isFetchingRecipe(file) || isFileActionInProgress(file)
-                  " type="button" (click)="extractLocalFile(file)">
-            {{ isExtracting(file) ? 'Extracting...' : 'Extract' }}
-          </button>
-          }
-          <button class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
-            [class.border-emerald-300]="!store.isDark()" [class.text-emerald-700]="!store.isDark()"
-            [class.hover:bg-emerald-50]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
-            [class.text-emerald-300]="store.isDark()" [class.hover:bg-emerald-900]="store.isDark()" [disabled]="
-                  isExtracting(file) || isFetchingRecipe(file) || isFileActionInProgress(file)
-                " type="button" (click)="startRescueLiteFromLocal(file)">
-            Rescue Lite
-          </button>
-          <button class="rounded-lg border px-2 py-1 text-xs font-semibold transition"
-            [class.border-emerald-300]="!store.isDark()" [class.text-emerald-700]="!store.isDark()"
-            [class.hover:bg-emerald-50]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
-            [class.text-emerald-300]="store.isDark()" [class.hover:bg-emerald-900]="store.isDark()" [disabled]="
-                  isExtracting(file) || isFetchingRecipe(file) || isFileActionInProgress(file)
-                " type="button" (click)="startRescueLiteDryRunFromLocal(file)">
-            Rescue Lite (Dry run)
-          </button>
-        </div>
-        @if (file.recipeUrl) {
-        <p class="mt-1 break-all" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
-          {{ file.recipeUrl }}
-        </p>
+    <div class="mt-5">
+      <h4
+        class="text-sm font-semibold"
+        [class.text-slate-800]="!store.isDark()"
+        [class.text-slate-100]="store.isDark()"
+      >
+        Downloads (archive files) ({{ store.localDownloadedFiles().length }})
+      </h4>
+      <div class="mt-2 grid gap-2">
+        @for (file of store.localDownloadedFiles(); track file.fullPath) {
+          <app-local-downloaded-file-card
+            [file]="file"
+            [isDark]="store.isDark()"
+            (rescueRequested)="startRescueLiteFromLocal($event)"
+            (rescueDryRunRequested)="startRescueLiteDryRunFromLocal($event)"
+          />
         }
-        <p class="mt-2 break-all text-xs" [class.text-emerald-600]="file.hasExtractedDir && !store.isDark()"
-          [class.text-emerald-300]="file.hasExtractedDir && store.isDark()"
-          [class.text-slate-500]="!file.hasExtractedDir && !store.isDark()"
-          [class.text-slate-400]="!file.hasExtractedDir && store.isDark()">
-          Extracted dir:
-          @if (file.hasExtractedDir && file.extractedDir) {
-          {{ file.relativeExtractedDir || file.extractedDir }}
-          } @else {
-          Not found (will extract on first run)
-          }
-        </p>
-        <p class="break-all text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
-          ROM Location: {{ file.relativePath || file.fullPath }}
-        </p>
-        <div class="mt-2 flex justify-end">
-          <button class="rounded-lg border px-2 py-0.5 text-[10px] font-semibold transition"
-            [class.border-rose-300]="!store.isDark()" [class.text-rose-700]="!store.isDark()"
-            [class.hover:bg-rose-50]="!store.isDark()" [class.border-rose-700]="store.isDark()"
-            [class.text-rose-300]="store.isDark()" [class.hover:bg-rose-900]="store.isDark()"
-            [disabled]="isExtracting(file) || isFetchingRecipe(file) || isFileActionInProgress(file)" type="button"
-            (click)="removeFile(file)">
-            Remove
-          </button>
-        </div>
-      </article>
-      }
+      </div>
     </div>
-  </div>
   } @else {
-  <p class="mt-4 text-sm" [class.text-slate-500]="!store.isDark()" [class.text-slate-300]="store.isDark()">
-    No downloaded ZIP files found in ~/Downloads/LenovoMotoFirmwareDownloader.
-  </p>
+    <p
+      class="mt-4 text-sm"
+      [class.text-slate-500]="!store.isDark()"
+      [class.text-slate-300]="store.isDark()"
+    >
+      No downloaded archive files found in ~/Downloads/LenovoMotoFirmwareDownloader.
+    </p>
   }
 
-  <h4 class="mt-6 text-sm font-semibold" [class.text-slate-800]="!store.isDark()"
-    [class.text-slate-100]="store.isDark()">
+  <h4
+    class="mt-6 text-sm font-semibold"
+    [class.text-slate-800]="!store.isDark()"
+    [class.text-slate-100]="store.isDark()"
+  >
     Actions ({{ store.downloadHistory().length }})
   </h4>
+
+  <app-rescue-flash-console
+    [isDark]="store.isDark()"
+    [download]="store.firmwareDownload()"
+    [statusText]="store.status()"
+    (cancelRequested)="store.cancelDownloadById($event)"
+  />
+
   @if (store.downloadHistory().length > 0) {
-  <div class="mt-4 grid gap-3">
-    @for (entry of store.downloadHistory(); track entry.downloadId) {
-    <article class="rounded-xl border p-3 text-sm" [class.border-slate-200]="!store.isDark()"
-      [class.bg-slate-50]="!store.isDark()" [class.border-slate-700]="store.isDark()"
-      [class.bg-slate-800]="store.isDark()">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <p class="font-semibold" [class.text-slate-900]="!store.isDark()" [class.text-slate-100]="store.isDark()">
-          {{ entry.romName }}
-        </p>
-        <div class="flex items-center gap-2">
-          <span class="rounded-lg border px-2 py-1 text-xs" [class.border-sky-300]="!store.isDark()"
-            [class.text-sky-700]="!store.isDark()" [class.border-sky-700]="store.isDark()"
-            [class.text-sky-300]="store.isDark()">
-            {{ actionLabel(entry) }}
-          </span>
-          <span class="rounded-lg border px-2 py-1 text-xs" [class.border-slate-300]="!store.isDark()"
-            [class.text-slate-600]="!store.isDark()" [class.border-slate-600]="store.isDark()"
-            [class.text-slate-300]="store.isDark()">
-            {{ entry.status }}
-          </span>
-          @if (isRescueLite(entry) && isRecipeGuided(entry)) {
-          <span class="rounded-lg border px-2 py-1 text-xs" [class.border-emerald-300]="!store.isDark()"
-            [class.text-emerald-700]="!store.isDark()" [class.border-emerald-700]="store.isDark()"
-            [class.text-emerald-300]="store.isDark()">
-            Recipe-guided
-          </span>
-          }
-
-          @if (isInProgress(entry)) {
-          @if (entry.status === 'downloading') {
-          <button
-            class="rounded-lg bg-amber-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-amber-500 disabled:opacity-60"
-            type="button" [disabled]="isCanceling(entry)" (click)="pauseEntry(entry)">
-            Pause
-          </button>
-          } @else if (entry.status === 'paused') {
-          <button
-            class="rounded-lg bg-emerald-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-60"
-            type="button" [disabled]="isCanceling(entry)" (click)="resumeEntry(entry)">
-            Resume
-          </button>
-          }
-
-          <button
-            class="rounded-lg bg-rose-700 px-2 py-1 text-xs font-semibold text-white transition hover:bg-rose-600 disabled:opacity-60"
-            type="button" [disabled]="isCanceling(entry)" (click)="cancelEntry(entry)">
-            {{ cancelButtonLabel(entry) }}
-          </button>
-          }
-
-          <button class="rounded-lg border px-2 py-1 text-xs transition" [class.border-slate-300]="!store.isDark()"
-            [class.text-slate-700]="!store.isDark()" [class.hover:bg-slate-100]="!store.isDark()"
-            [class.border-slate-600]="store.isDark()" [class.text-slate-200]="store.isDark()"
-            [class.hover:bg-slate-700]="store.isDark()" type="button" (click)="clearEntry(entry)">
-            Clear
-          </button>
-        </div>
-      </div>
-
-      <p class="mt-1 text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
-        @if (entry.totalBytes) {
-        <span>{{ formatBytes(entry.totalBytes) }} | </span>
-        }
-        <span>Published: {{ entry.publishDate || 'Unknown' }} | </span>
-        <span>Started: {{ formatTime(entry.startedAt) }}</span>
-      </p>
-
-
-      @if (isInProgress(entry)) {
-      <app-progress-bar class="mt-3" [percent]="downloadPercent(entry) || 0" [isDark]="store.isDark()" />
+    <div class="mt-4 grid gap-3">
+      @for (entry of store.downloadHistory(); track entry.downloadId) {
+        <app-download-history-entry-card [entry]="entry" [isDark]="store.isDark()" />
       }
-
-      <p class="mt-1 text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
-        {{ formatBytes(entry.downloadedBytes) }}
-        @if (entry.totalBytes) {
-        / {{ formatBytes(entry.totalBytes) }}
-        }
-        @if (entry.status === 'downloading') {
-        | {{ formatBytes(entry.speedBytesPerSecond) }}/s
-        }
-      </p>
-
-      @if (entry.savePath) {
-      <p class="mt-1 break-all text-xs opacity-70" [class.text-slate-500]="!store.isDark()"
-        [class.text-slate-400]="store.isDark()">
-        Saved to: {{ entry.savePath }}
-      </p>
-      }
-
-      @if (isRescueLite(entry)) {
-      <p class="mt-1 text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
-        Execution: {{ rescueExecutionLabel(entry) }} | Data reset:
-        {{ dataResetLabel(entry.dataReset) }}
-      </p>
-      @if (rescueStepText(entry)) {
-      <p class="mt-1 break-all text-xs" [class.text-slate-500]="!store.isDark()"
-        [class.text-slate-400]="store.isDark()">
-        {{ rescueStepText(entry) }}
-      </p>
-      }
-      }
-
-      @if (entry.error) {
-      <p class="mt-1 break-all text-xs text-rose-500">Error: {{ entry.error }}</p>
-      }
-    </article>
-    }
-  </div>
+    </div>
   } @else {
-  <p class="mt-4 text-sm" [class.text-slate-500]="!store.isDark()" [class.text-slate-300]="store.isDark()">
-    No actions yet.
-  </p>
+    <p
+      class="mt-4 text-sm"
+      [class.text-slate-500]="!store.isDark()"
+      [class.text-slate-300]="store.isDark()"
+    >
+      No actions yet.
+    </p>
   }
 </section>
 
-@if (rescueDialogOpen) {
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" (click)="closeRescueDialog()">
-  <div class="w-full max-w-xl rounded-2xl border p-5 shadow-xl" [class.border-slate-200]="!store.isDark()"
-    [class.bg-white]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()"
-    (click)="$event.stopPropagation()">
-    <h4 class="text-base font-bold" [class.text-slate-900]="!store.isDark()" [class.text-slate-100]="store.isDark()">
-      {{ rescueDialogTitle() }}
-    </h4>
-    <p class="mt-2 text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
-      {{ rescueDialogDescription() }}
-    </p>
-    @if (rescueDialogFile) {
-    <p class="mt-2 break-all text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
-      {{ rescueDialogFile.fileName }} | {{ rescueDialogFile.fullPath }}
-    </p>
-    }
+<app-rescue-options-dialog
+  [isOpen]="rescueDialogOpen"
+  [isDark]="store.isDark()"
+  [title]="rescueDialogTitle()"
+  [description]="rescueDialogDescription()"
+  [targetLabel]="rescueDialogTargetLabel()"
+  [dryRun]="rescueDialogDryRun"
+  [dataReset]="rescueDialogDataReset"
+  [flashTransport]="rescueDialogFlashTransport"
+  [qdlStorage]="rescueDialogQdlStorage"
+  [qdlSerial]="rescueDialogQdlSerial"
+  [qdloaderDriverInstallBusy]="installingWindowsQdloaderDriver"
+  [qdloaderDriverInstalled]="windowsQdloaderDriverInstalled"
+  [spdDriverInstallBusy]="installingWindowsSpdDriver"
+  [spdDriverInstalled]="windowsSpdDriverInstalled"
+  [mtkDriverInstallBusy]="installingWindowsMtkDriver"
+  [mtkDriverInstalled]="windowsMtkDriverInstalled"
+  [showWindowsDriverInstall]="store.appInfo()?.platform === 'win32'"
+  (close)="closeRescueDialog()"
+  (confirm)="confirmRescueDialog()"
+  (installWindowsQdloaderDriver)="installWindowsQdloaderDriver()"
+  (installWindowsSpdDriver)="installWindowsSpdDriver()"
+  (installWindowsMtkDriver)="installWindowsMtkDriver()"
+  (dataResetChange)="setRescueDialogDataReset($event)"
+  (flashTransportChange)="setRescueDialogFlashTransport($event)"
+  (qdlStorageChange)="setRescueDialogQdlStorage($event)"
+  (qdlSerialChange)="setRescueDialogQdlSerial($event)"
+/>
 
-    <p class="mt-2 text-sm" [class.text-slate-700]="!store.isDark()" [class.text-slate-200]="store.isDark()">
-      Data reset
-    </p>
-    <div class="mt-3 flex flex-wrap gap-2">
-      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
-        [class.border-sky-500]="rescueDialogDataReset === 'yes'" [class.bg-sky-700]="rescueDialogDataReset === 'yes'"
-        [class.text-white]="rescueDialogDataReset === 'yes'"
-        [class.border-slate-300]="rescueDialogDataReset !== 'yes' && !store.isDark()"
-        [class.text-slate-700]="rescueDialogDataReset !== 'yes' && !store.isDark()"
-        [class.hover:bg-slate-100]="rescueDialogDataReset !== 'yes' && !store.isDark()"
-        [class.border-slate-600]="rescueDialogDataReset !== 'yes' && store.isDark()"
-        [class.text-slate-200]="rescueDialogDataReset !== 'yes' && store.isDark()"
-        [class.hover:bg-slate-700]="rescueDialogDataReset !== 'yes' && store.isDark()" type="button"
-        (click)="setRescueDialogDataReset('yes')">
-        Yes
-      </button>
-      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
-        [class.border-sky-500]="rescueDialogDataReset === 'no'" [class.bg-sky-700]="rescueDialogDataReset === 'no'"
-        [class.text-white]="rescueDialogDataReset === 'no'"
-        [class.border-slate-300]="rescueDialogDataReset !== 'no' && !store.isDark()"
-        [class.text-slate-700]="rescueDialogDataReset !== 'no' && !store.isDark()"
-        [class.hover:bg-slate-100]="rescueDialogDataReset !== 'no' && !store.isDark()"
-        [class.border-slate-600]="rescueDialogDataReset !== 'no' && store.isDark()"
-        [class.text-slate-200]="rescueDialogDataReset !== 'no' && store.isDark()"
-        [class.hover:bg-slate-700]="rescueDialogDataReset !== 'no' && store.isDark()" type="button"
-        (click)="setRescueDialogDataReset('no')">
-        No
-      </button>
-    </div>
-
-    <div class="mt-5 flex items-center justify-end gap-2">
-      <button class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
-        [class.border-slate-300]="!store.isDark()" [class.text-slate-700]="!store.isDark()"
-        [class.hover:bg-slate-100]="!store.isDark()" [class.border-slate-600]="store.isDark()"
-        [class.text-slate-200]="store.isDark()" [class.hover:bg-slate-700]="store.isDark()" type="button"
-        (click)="closeRescueDialog()">
-        Cancel
-      </button>
-      <button class="rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-sky-600"
-        type="button" (click)="confirmRescueDialog()">
-        @if (rescueDialogDryRun) {
-        Start dry run
-        } @else {
-        Start rescue
-        }
-      </button>
-    </div>
-  </div>
-</div>
-}
-
-@if (store.rescueDryRunPlanDialog(); as plan) {
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" (click)="closeDryRunPlanDialog()">
-  <div class="w-full max-w-3xl rounded-2xl border p-5 shadow-xl" [class.border-slate-200]="!store.isDark()"
-    [class.bg-white]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()"
-    (click)="$event.stopPropagation()">
-    <h4 class="text-base font-bold" [class.text-slate-900]="!store.isDark()" [class.text-slate-100]="store.isDark()">
-      Rescue Lite Dry Run Command Plan
-    </h4>
-    <p class="mt-2 text-xs" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
-      {{ plan.romName }} | source={{ plan.commandSource }} | data reset:
-      {{ plan.dataReset === 'yes' ? 'Yes' : 'No' }}
-    </p>
-    @if (plan.localFilePath) {
-    <p class="mt-1 break-all text-xs" [class.text-slate-500]="!store.isDark()" [class.text-slate-400]="store.isDark()">
-      {{ plan.localFilePath }}
-    </p>
-    }
-
-    <div class="mt-3 max-h-[55vh] overflow-auto rounded-xl border p-3 font-mono text-xs"
-      [class.border-slate-200]="!store.isDark()" [class.bg-slate-50]="!store.isDark()"
-      [class.border-slate-700]="store.isDark()" [class.bg-slate-800]="store.isDark()"
-      [class.text-slate-800]="!store.isDark()" [class.text-slate-100]="store.isDark()">
-      @for (command of plan.commands; track $index) {
-      <p class="break-all">{{ command }}</p>
-      }
-    </div>
-
-    <div class="mt-5 flex items-center justify-end gap-2">
-      <button class="rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-sky-600"
-        type="button" (click)="closeDryRunPlanDialog()">
-        Close
-      </button>
-    </div>
-  </div>
-</div>
-}
+<app-rescue-dry-run-plan-dialog
+  [isDark]="store.isDark()"
+  [plan]="store.rescueDryRunPlanDialog()"
+  (close)="closeDryRunPlanDialog()"
+/>

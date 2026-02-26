@@ -1,0 +1,310 @@
+<section
+  class="rounded-3xl border p-6"
+  [class.border-slate-200]="!store.isDark()"
+  [class.bg-white]="!store.isDark()"
+  [class.shadow-sm]="!store.isDark()"
+  [class.border-slate-700]="store.isDark()"
+  [class.bg-slate-900]="store.isDark()"
+>
+  <h3
+    class="text-lg font-bold"
+    [class.text-slate-900]="!store.isDark()"
+    [class.text-white]="store.isDark()"
+  >
+    Catalog Workspace
+  </h3>
+  <p class="mt-1 text-sm" [class.text-slate-500]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+    Filter models, select one, and run firmware lookups.
+  </p>
+
+  <div class="mt-4 flex flex-wrap gap-3">
+    <button
+      class="rounded-xl border px-4 py-2 text-sm font-semibold transition"
+      [class.border-slate-300]="!store.isDark()"
+      [class.bg-white]="!store.isDark()"
+      [class.text-slate-800]="!store.isDark()"
+      [class.hover:bg-slate-100]="!store.isDark()"
+      [class.border-slate-600]="store.isDark()"
+      [class.bg-slate-800]="store.isDark()"
+      [class.text-slate-100]="store.isDark()"
+      [class.hover:bg-slate-700]="store.isDark()"
+      type="button"
+      (click)="store.loadCatalog(false)"
+    >
+      Load local catalog
+    </button>
+    <button
+      class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+      type="button"
+      (click)="store.loadCatalog(true)"
+    >
+      Refresh catalog from LMSA
+    </button>
+  </div>
+
+  @if (store.models().length > 0) {
+    <div class="mt-6 grid gap-3 md:grid-cols-4">
+      <div>
+        <label
+          class="block text-xs font-semibold uppercase tracking-wide"
+          [class.text-slate-500]="!store.isDark()"
+          [class.text-slate-400]="store.isDark()"
+        >
+          Category
+        </label>
+        <div class="relative mt-1 w-full">
+          <button
+            #categoryTrigger
+            class="flex w-full items-center justify-between rounded-xl border px-2 py-2 text-left text-sm"
+            [class.border-slate-300]="!store.isDark()"
+            [class.bg-white]="!store.isDark()"
+            [class.text-slate-900]="!store.isDark()"
+            [class.border-slate-600]="store.isDark()"
+            [class.bg-slate-800]="store.isDark()"
+            [class.text-slate-100]="store.isDark()"
+            type="button"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="isMenuOpen('category')"
+            (click)="toggleCategoryMenu($event)"
+          >
+            <span class="truncate">{{ selectedCategoryLabel() }}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+
+          @if (isMenuOpen('category')) {
+            <div
+              class="absolute z-30 max-h-64 w-full overflow-auto rounded-xl border py-1 shadow-lg"
+              [class.bottom-full]="isMenuUpward('category')"
+              [class.mb-1]="isMenuUpward('category')"
+              [class.top-full]="!isMenuUpward('category')"
+              [class.mt-1]="!isMenuUpward('category')"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              role="listbox"
+            >
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectCategory('all', $event)"
+              >
+                All
+              </button>
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectCategory('phone', $event)"
+              >
+                Phone
+              </button>
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectCategory('tablet', $event)"
+              >
+                Tablet
+              </button>
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectCategory('smart', $event)"
+              >
+                Smart
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div>
+        <label
+          class="block text-xs font-semibold uppercase tracking-wide"
+          [class.text-slate-500]="!store.isDark()"
+          [class.text-slate-400]="store.isDark()"
+        >
+          readSupport
+        </label>
+        <div class="relative mt-1 w-full">
+          <button
+            #readSupportTrigger
+            class="flex w-full items-center justify-between rounded-xl border px-2 py-2 text-left text-sm"
+            [class.border-slate-300]="!store.isDark()"
+            [class.bg-white]="!store.isDark()"
+            [class.text-slate-900]="!store.isDark()"
+            [class.border-slate-600]="store.isDark()"
+            [class.bg-slate-800]="store.isDark()"
+            [class.text-slate-100]="store.isDark()"
+            type="button"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="isMenuOpen('readSupport')"
+            (click)="toggleReadSupportMenu($event)"
+          >
+            <span class="truncate">{{ selectedReadSupportLabel() }}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+
+          @if (isMenuOpen('readSupport')) {
+            <div
+              class="absolute z-30 max-h-64 w-full overflow-auto rounded-xl border py-1 shadow-lg"
+              [class.bottom-full]="isMenuUpward('readSupport')"
+              [class.mb-1]="isMenuUpward('readSupport')"
+              [class.top-full]="!isMenuUpward('readSupport')"
+              [class.mt-1]="!isMenuUpward('readSupport')"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              role="listbox"
+            >
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectReadSupport('all', $event)"
+              >
+                All
+              </button>
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectReadSupport('true', $event)"
+              >
+                true
+              </button>
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectReadSupport('false', $event)"
+              >
+                false
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="md:col-span-2">
+        <label
+          class="block text-xs font-semibold uppercase tracking-wide"
+          [class.text-slate-500]="!store.isDark()"
+          [class.text-slate-400]="store.isDark()"
+        >
+          Search
+        </label>
+        <input
+          class="mt-1 w-full rounded-xl border px-2 py-2 text-sm"
+          [class.border-slate-300]="!store.isDark()"
+          [class.bg-white]="!store.isDark()"
+          [class.text-slate-900]="!store.isDark()"
+          [class.border-slate-600]="store.isDark()"
+          [class.bg-slate-800]="store.isDark()"
+          [class.text-slate-100]="store.isDark()"
+          [ngModel]="store.searchText()"
+          (ngModelChange)="store.setSearchText($event)"
+          placeholder="model, market, platform..."
+        />
+      </div>
+    </div>
+
+    <div
+      class="mt-4 overflow-hidden rounded-2xl border"
+      [class.border-slate-200]="!store.isDark()"
+      [class.bg-white]="!store.isDark()"
+      [class.border-slate-700]="store.isDark()"
+      [class.bg-slate-900]="store.isDark()"
+    >
+      <div
+        class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_6.5rem] gap-3 border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide"
+        [class.border-slate-200]="!store.isDark()"
+        [class.bg-slate-100]="!store.isDark()"
+        [class.text-slate-500]="!store.isDark()"
+        [class.border-slate-700]="store.isDark()"
+        [class.bg-slate-800]="store.isDark()"
+        [class.text-slate-300]="store.isDark()"
+      >
+        <span class="min-w-0">Model</span>
+        <span class="min-w-0">Market</span>
+        <span class="min-w-0">Platform</span>
+        <span class="min-w-0">Category</span>
+        <span class="text-right">readSupport</span>
+      </div>
+
+      @for (model of store.visibleModels(); track model.modelName + model.marketName) {
+        <button
+          class="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_6.5rem] items-center gap-3 border-b px-3 py-2 text-left text-sm transition"
+          [class.border-slate-100]="!store.isDark()"
+          [class.text-slate-700]="!store.isDark()"
+          [class.hover:bg-sky-50]="!store.isDark()"
+          [class.border-slate-800]="store.isDark()"
+          [class.text-slate-200]="store.isDark()"
+          [class.hover:bg-slate-800]="store.isDark()"
+          [class.bg-sky-100]="
+            !store.isDark() &&
+            store.selectedModel()?.modelName === model.modelName &&
+            store.selectedModel()?.marketName === model.marketName
+          "
+          [class.bg-slate-700]="
+            store.isDark() &&
+            store.selectedModel()?.modelName === model.modelName &&
+            store.selectedModel()?.marketName === model.marketName
+          "
+          type="button"
+          (click)="onSelectModel(model)"
+        >
+          <span class="min-w-0 truncate">{{ model.modelName }}</span>
+          <span class="min-w-0 truncate">{{ model.marketName }}</span>
+          <span class="min-w-0 truncate">{{ model.platform }}</span>
+          <span class="min-w-0 truncate">{{ model.category }}</span>
+          <span class="text-right">{{ model.readSupport ? 'true' : 'false' }}</span>
+        </button>
+      } @empty {
+        <p class="p-3 text-sm" [class.text-slate-500]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+          No models match current filters.
+        </p>
+      }
+    </div>
+
+    <div class="mt-3 flex items-center gap-3">
+      <button class="rounded-lg border border-slate-300 px-3 py-1 text-sm" type="button" (click)="store.prevPage()">
+        Previous
+      </button>
+      <button class="rounded-lg border border-slate-300 px-3 py-1 text-sm" type="button" (click)="store.nextPage()">
+        Next
+      </button>
+      <span class="text-sm" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+        Page {{ store.pageIndex() + 1 }} / {{ store.totalPages() }}
+      </span>
+      <span class="text-sm" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+        Matches: {{ store.filteredModels().length }}
+      </span>
+    </div>
+  }
+</section>

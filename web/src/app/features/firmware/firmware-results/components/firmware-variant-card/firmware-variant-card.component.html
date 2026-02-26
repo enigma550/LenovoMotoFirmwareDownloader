@@ -1,0 +1,170 @@
+@if (variant(); as activeVariant) {
+  <article
+    class="rounded-xl border p-3 text-sm"
+    [class.border-slate-200]="!isDark()"
+    [class.bg-slate-50]="!isDark()"
+    [class.border-slate-700]="isDark()"
+    [class.bg-slate-800]="isDark()"
+  >
+    <div class="flex items-center gap-2">
+      <p class="font-semibold" [class.text-slate-900]="!isDark()" [class.text-slate-100]="isDark()">
+        {{ activeVariant.romName }}
+      </p>
+
+      @if (activeVariant.selectedParameters && activeVariant.selectedParameters['country']) {
+        <span
+          class="rounded bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-800"
+          [class.text-white]="isDark()"
+          [class.bg-sky-900]="isDark()"
+        >
+          {{ activeVariant.selectedParameters['country'] }}
+        </span>
+      }
+    </div>
+
+    <p class="mt-1 text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+      Published: {{ activeVariant.publishDate || 'Unknown' }}
+    </p>
+    <p class="mt-0.5 text-xs opacity-70" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+      ROM match ID: {{ activeVariant.romMatchIdentifier || 'N/A' }}
+    </p>
+
+    @if (hasRecipeAvailable()) {
+      <p class="mt-1 text-xs" [class.text-emerald-700]="!isDark()" [class.text-emerald-300]="isDark()">
+        Recipe available
+      </p>
+    } @else {
+      <p class="mt-1 text-xs" [class.text-amber-600]="!isDark()" [class.text-amber-300]="isDark()">
+        Recipe unavailable (will fallback to local XML/script detection).
+      </p>
+    }
+
+    @if (activeVariant.selectedParameters?.['lmsaCode'] === '3040') {
+      <p class="mt-1 text-xs text-amber-500">
+        LMSA code 3040: often requires extra confirmation in full rescue.
+      </p>
+    }
+
+    <div class="mt-2 flex flex-wrap gap-2">
+      @if (!isVariantDownloadActive()) {
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-emerald-300]="!isDark()"
+          [class.text-emerald-700]="!isDark()"
+          [class.hover:bg-emerald-50]="!isDark()"
+          [class.border-emerald-700]="isDark()"
+          [class.text-emerald-300]="isDark()"
+          [class.hover:bg-emerald-900]="isDark()"
+          type="button"
+          (click)="onRequestRescue()"
+        >
+          Rescue Lite
+        </button>
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-emerald-300]="!isDark()"
+          [class.text-emerald-700]="!isDark()"
+          [class.hover:bg-emerald-50]="!isDark()"
+          [class.border-emerald-700]="isDark()"
+          [class.text-emerald-300]="isDark()"
+          [class.hover:bg-emerald-900]="isDark()"
+          type="button"
+          (click)="onRequestRescueDryRun()"
+        >
+          Rescue Lite (Dry run)
+        </button>
+      }
+
+      @if (canAttachRecipeToLocalZip() || linkingVariantRecipe()) {
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-sky-300]="!isDark()"
+          [class.text-sky-700]="!isDark()"
+          [class.hover:bg-sky-50]="!isDark()"
+          [class.border-sky-700]="isDark()"
+          [class.text-sky-300]="isDark()"
+          [class.hover:bg-sky-900]="isDark()"
+          [disabled]="linkingVariantRecipe()"
+          type="button"
+          (click)="onAttachRecipeToLocalZip()"
+        >
+          {{ linkingVariantRecipe() ? 'Linking recipe...' : 'Use local archive (no re-download)' }}
+        </button>
+      }
+
+      @if (!hasLocalZipForVariant()) {
+        <button
+          class="rounded-lg bg-sky-700 px-3 py-1 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+          type="button"
+          (click)="onStartDownload()"
+        >
+          @if (isVariantDownloadActive() && getVariantStatus() === 'canceling') {
+            Cancelling...
+          } @else if (isVariantDownloadActive()) {
+            @if (getVariantMode() === 'rescue-lite') {
+              @if (getVariantDryRun()) {
+                Dry run...
+              } @else {
+                Running...
+              }
+            } @else {
+              Downloading...
+            }
+          } @else {
+            Download
+          }
+        </button>
+      } @else {
+        <span
+          class="rounded-lg border px-2 py-1 text-xs"
+          [class.border-emerald-300]="!isDark()"
+          [class.text-emerald-700]="!isDark()"
+          [class.border-emerald-700]="isDark()"
+          [class.text-emerald-300]="isDark()"
+        >
+          Archive already in Downloads
+        </span>
+      }
+
+      @if (isVariantDownloadTracked()) {
+        <span
+          class="rounded-lg border px-2 py-1 text-xs"
+          [class.border-slate-300]="!isDark()"
+          [class.text-slate-600]="!isDark()"
+          [class.border-slate-600]="isDark()"
+          [class.text-slate-300]="isDark()"
+        >
+          {{ getVariantStatus() }}
+        </span>
+        @if (getVariantMode() === 'rescue-lite' && isVariantDownloadActive()) {
+          <span
+            class="rounded-lg border px-2 py-1 text-xs"
+            [class.border-emerald-300]="!isDark()"
+            [class.text-emerald-700]="!isDark()"
+            [class.border-emerald-700]="isDark()"
+            [class.text-emerald-300]="isDark()"
+          >
+            Rescue Lite{{ getVariantDryRun() ? ' (Dry run)' : '' }}
+          </span>
+        }
+      }
+    </div>
+
+    <a class="mt-1 block break-all text-sky-700 underline" [href]="activeVariant.romUrl" target="_blank" rel="noopener">
+      {{ activeVariant.romUrl }}
+    </a>
+
+    @if (activeVariant.recipeUrl) {
+      <p class="mt-1 break-all text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+        recipe: {{ activeVariant.recipeUrl }}
+      </p>
+    }
+
+    <p class="mt-1 break-all text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+      params:
+      @for (entry of activeVariant.selectedParameters || {} | keyvalue; track entry.key) {
+        <span>{{ entry.key }}={{ entry.value }} </span>
+      }
+    </p>
+  </article>
+}

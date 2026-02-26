@@ -1,11 +1,13 @@
-import { requestApi } from "../../infra/lmsa/api.ts";
+import { requestApi } from '../../infra/lmsa/api.ts';
 import type {
   CatalogCountryOptions,
   CatalogFirmwareLookupResult,
   FirmwareVariant,
+  JsonObject,
+  JsonValue,
   ModelCatalogEntry,
-} from "../../shared/types/index.ts";
-import { createFirmwareVariantFromResourceItem } from "./resource-variant.ts";
+} from '../../shared/types/index.ts';
+import { createFirmwareVariantFromResourceItem } from './resource-variant.ts';
 
 interface ManualMatchParameterProperty {
   property: string;
@@ -41,15 +43,20 @@ interface RomMatchParamsResponse {
 }
 
 const maximumExplorationDepth = 15;
-const countryParameterKeys = new Set(["country", "countryCode"]);
+const countryParameterKeys = new Set(['country', 'countryCode']);
 
-function toManualMatchResponse(value: unknown) {
-  if (!value || typeof value !== "object") return null;
+function toJsonObject(value: JsonValue | null | undefined): JsonObject | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value;
+}
+
+function toManualMatchResponse(value: JsonValue) {
+  if (!toJsonObject(value)) return null;
   return value as ManualMatchResponse;
 }
 
-function toRomMatchParamsResponse(value: unknown) {
-  if (!value || typeof value !== "object") return null;
+function toRomMatchParamsResponse(value: JsonValue) {
+  if (!toJsonObject(value)) return null;
   return value as RomMatchParamsResponse;
 }
 
@@ -58,8 +65,8 @@ function uniqueValues(values: string[]) {
 }
 
 function serializeParameterState(parameters: Record<string, string>) {
-  const sortedEntries = Object.entries(parameters).sort(
-    ([leftKey], [rightKey]) => leftKey.localeCompare(rightKey),
+  const sortedEntries = Object.entries(parameters).sort(([leftKey], [rightKey]) =>
+    leftKey.localeCompare(rightKey),
   );
   return JSON.stringify(sortedEntries);
 }
@@ -79,9 +86,7 @@ function buildInitialParameters(
   selectedModel: ModelCatalogEntry,
   initialParametersOverride?: Record<string, string>,
 ) {
-  const initialParameters = initialParametersOverride
-    ? { ...initialParametersOverride }
-    : {};
+  const initialParameters = initialParametersOverride ? { ...initialParametersOverride } : {};
 
   if (!initialParameters.modelName) {
     initialParameters.modelName = selectedModel.modelName;
@@ -94,29 +99,24 @@ function buildInitialParameters(
 }
 
 async function fetchAutoMatchParameterHints(modelName: string) {
-  const response = await requestApi("/rescueDevice/getRomMatchParams.jhtml", {
+  const response = await requestApi('/rescueDevice/getRomMatchParams.jhtml', {
     modelName,
   });
   const payload = toRomMatchParamsResponse(await response.json());
 
-  if (!payload || payload.code !== "0000" || !payload.content) {
+  if (!payload || payload.code !== '0000' || !payload.content) {
     return {
-      platform: "",
+      platform: '',
       requiredParameters: [],
     };
   }
 
   const requiredParameters = Array.isArray(payload.content.params)
-    ? payload.content.params.filter(
-      (parameter) => typeof parameter === "string",
-    )
+    ? payload.content.params.filter((parameter) => typeof parameter === 'string')
     : [];
 
   return {
-    platform:
-      typeof payload.content.platform === "string"
-        ? payload.content.platform
-        : "",
+    platform: typeof payload.content.platform === 'string' ? payload.content.platform : '',
     requiredParameters,
   };
 }
@@ -136,44 +136,36 @@ async function exploreManualMatchTree(
 ) {
   if (depth > maximumExplorationDepth) {
     return {
-      code: "MAX_DEPTH",
-      description: "Manual match exploration reached maximum depth.",
+      code: 'MAX_DEPTH',
+      description: 'Manual match exploration reached maximum depth.',
     };
   }
 
   const parameterState = serializeParameterState(parameters);
   if (seenParameterStates.has(parameterState)) {
     return {
-      code: "SEEN_STATE",
-      description: "Manual match state already explored.",
+      code: 'SEEN_STATE',
+      description: 'Manual match state already explored.',
     };
   }
   seenParameterStates.add(parameterState);
 
-  const response = await requestApi(
-    "/rescueDevice/getResource.jhtml",
-    parameters,
-  );
+  const response = await requestApi('/rescueDevice/getResource.jhtml', parameters);
   const payload = toManualMatchResponse(await response.json());
 
-  const code = typeof payload?.code === "string" ? payload.code : "";
-  const description = typeof payload?.desc === "string" ? payload.desc : "";
+  const code = typeof payload?.code === 'string' ? payload.code : '';
+  const description = typeof payload?.desc === 'string' ? payload.desc : '';
 
-  if (code !== "0000") {
+  if (code !== '0000') {
     return { code, description };
   }
 
-  const firstContent = Array.isArray(payload?.content)
-    ? payload.content[0]
-    : undefined;
+  const firstContent = Array.isArray(payload?.content) ? payload.content[0] : undefined;
   if (!firstContent) {
     return { code, description };
   }
 
-  const variant = createFirmwareVariantFromResourceItem(
-    firstContent,
-    parameters,
-  );
+  const variant = createFirmwareVariantFromResourceItem(firstContent, parameters);
   if (variant) {
     pushUniqueVariant(variants, seenRomUrls, variant);
     return { code, description };
@@ -182,7 +174,7 @@ async function exploreManualMatchTree(
   const nextParameterKey = firstContent.paramProperty?.property;
   const nextParameterValues = firstContent.paramValues;
   if (
-    typeof nextParameterKey !== "string" ||
+    typeof nextParameterKey !== 'string' ||
     nextParameterKey.length === 0 ||
     !Array.isArray(nextParameterValues) ||
     nextParameterValues.length === 0
@@ -190,13 +182,8 @@ async function exploreManualMatchTree(
     return { code, description };
   }
 
-  const valuesToExplore = getValuesToExplore(
-    nextParameterKey,
-    nextParameterValues,
-  );
-  const branchValues = exploreAllBranches
-    ? valuesToExplore
-    : valuesToExplore.slice(0, 1);
+  const valuesToExplore = getValuesToExplore(nextParameterKey, nextParameterValues);
+  const branchValues = exploreAllBranches ? valuesToExplore : valuesToExplore.slice(0, 1);
 
   for (const valueToExplore of branchValues) {
     const nextParameters = {
@@ -221,10 +208,7 @@ export async function fetchFirmwareVariantsForCatalogModel(
   initialParametersOverride?: Record<string, string>,
   exploreAllBranches: boolean = false,
 ) {
-  const initialParameters = buildInitialParameters(
-    selectedModel,
-    initialParametersOverride,
-  );
+  const initialParameters = buildInitialParameters(selectedModel, initialParametersOverride);
 
   const variants: FirmwareVariant[] = [];
   const seenParameterStates = new Set<string>();
@@ -244,8 +228,8 @@ export async function fetchFirmwareVariantsForCatalogModel(
   );
 
   variants.sort((leftVariant, rightVariant) => {
-    const leftDate = leftVariant.publishDate || "";
-    const rightDate = rightVariant.publishDate || "";
+    const leftDate = leftVariant.publishDate || '';
+    const rightDate = rightVariant.publishDate || '';
     const byDate = rightDate.localeCompare(leftDate);
     if (byDate !== 0) return byDate;
     return leftVariant.romName.localeCompare(rightVariant.romName);
@@ -261,31 +245,24 @@ export async function fetchFirmwareVariantsForCatalogModel(
   } as CatalogFirmwareLookupResult;
 }
 
-export async function discoverCountryOptionsForCatalogModel(
-  selectedModel: ModelCatalogEntry,
-) {
+export async function discoverCountryOptionsForCatalogModel(selectedModel: ModelCatalogEntry) {
   const parameters = buildInitialParameters(selectedModel);
-  let discoveryResponseCode = "";
-  let discoveryResponseDescription = "";
+  let discoveryResponseCode = '';
+  let discoveryResponseDescription = '';
 
   for (let depth = 0; depth < maximumExplorationDepth; depth += 1) {
-    const response = await requestApi(
-      "/rescueDevice/getResource.jhtml",
-      parameters,
-    );
+    const response = await requestApi('/rescueDevice/getResource.jhtml', parameters);
     const payload = toManualMatchResponse(await response.json());
 
     discoveryResponseCode =
-      typeof payload?.code === "string" ? payload.code : discoveryResponseCode;
+      typeof payload?.code === 'string' ? payload.code : discoveryResponseCode;
     discoveryResponseDescription =
-      typeof payload?.desc === "string"
-        ? payload.desc
-        : discoveryResponseDescription;
+      typeof payload?.desc === 'string' ? payload.desc : discoveryResponseDescription;
 
-    if (discoveryResponseCode !== "0000") {
+    if (discoveryResponseCode !== '0000') {
       return {
         foundCountrySelector: false,
-        countryParameterKey: "",
+        countryParameterKey: '',
         countryValues: [],
         baseParametersBeforeCountry: { ...parameters },
         discoveryResponseCode,
@@ -293,13 +270,11 @@ export async function discoverCountryOptionsForCatalogModel(
       } as CatalogCountryOptions;
     }
 
-    const firstContent = Array.isArray(payload?.content)
-      ? payload.content[0]
-      : undefined;
+    const firstContent = Array.isArray(payload?.content) ? payload.content[0] : undefined;
     if (!firstContent) {
       return {
         foundCountrySelector: false,
-        countryParameterKey: "",
+        countryParameterKey: '',
         countryValues: [],
         baseParametersBeforeCountry: { ...parameters },
         discoveryResponseCode,
@@ -308,10 +283,10 @@ export async function discoverCountryOptionsForCatalogModel(
     }
 
     const romUri = firstContent.romResource?.uri;
-    if (typeof romUri === "string" && romUri.length > 0) {
+    if (typeof romUri === 'string' && romUri.length > 0) {
       return {
         foundCountrySelector: false,
-        countryParameterKey: "",
+        countryParameterKey: '',
         countryValues: [],
         baseParametersBeforeCountry: { ...parameters },
         discoveryResponseCode,
@@ -322,14 +297,14 @@ export async function discoverCountryOptionsForCatalogModel(
     const nextParameterKey = firstContent.paramProperty?.property;
     const nextParameterValues = firstContent.paramValues;
     if (
-      typeof nextParameterKey !== "string" ||
+      typeof nextParameterKey !== 'string' ||
       nextParameterKey.length === 0 ||
       !Array.isArray(nextParameterValues) ||
       nextParameterValues.length === 0
     ) {
       return {
         foundCountrySelector: false,
-        countryParameterKey: "",
+        countryParameterKey: '',
         countryValues: [],
         baseParametersBeforeCountry: { ...parameters },
         discoveryResponseCode,
@@ -352,7 +327,7 @@ export async function discoverCountryOptionsForCatalogModel(
     if (!firstValue) {
       return {
         foundCountrySelector: false,
-        countryParameterKey: "",
+        countryParameterKey: '',
         countryValues: [],
         baseParametersBeforeCountry: { ...parameters },
         discoveryResponseCode,
@@ -365,11 +340,10 @@ export async function discoverCountryOptionsForCatalogModel(
 
   return {
     foundCountrySelector: false,
-    countryParameterKey: "",
+    countryParameterKey: '',
     countryValues: [],
     baseParametersBeforeCountry: { ...parameters },
-    discoveryResponseCode: "MAX_DEPTH",
-    discoveryResponseDescription:
-      "Manual country discovery reached maximum depth.",
+    discoveryResponseCode: 'MAX_DEPTH',
+    discoveryResponseDescription: 'Manual country discovery reached maximum depth.',
   } as CatalogCountryOptions;
 }
