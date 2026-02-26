@@ -1,0 +1,18 @@
+<button
+  class="rounded-lg px-3 py-1 text-xs font-semibold transition"
+  [class.border]="variant() === 'secondary'"
+  [class.border-slate-300]="variant() === 'secondary' && !isDark()"
+  [class.text-slate-700]="variant() === 'secondary' && !isDark()"
+  [class.hover:bg-slate-100]="variant() === 'secondary' && !isDark()"
+  [class.border-slate-600]="variant() === 'secondary' && isDark()"
+  [class.text-slate-200]="variant() === 'secondary' && isDark()"
+  [class.hover:bg-slate-700]="variant() === 'secondary' && isDark()"
+  [class.bg-sky-700]="variant() === 'primary'"
+  [class.text-white]="variant() === 'primary'"
+  [class.hover:bg-sky-600]="variant() === 'primary'"
+  [attr.type]="buttonType()"
+  [disabled]="disabled()"
+  (click)="onClick()"
+>
+  {{ label() }}
+</button>

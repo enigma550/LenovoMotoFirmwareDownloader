@@ -1,11 +1,9 @@
 import {
+  createDesktopApiFromInvoker,
   createDesktopRpcClient,
   type DesktopBridgeWindowGlobals,
-} from '../../../../../runtime/shared/desktop-rpc-client';
-import {
-  createDesktopApiFromInvoker,
   type DesktopRpcInvoker,
-} from '../../../../../runtime/shared/desktop-api-mapping';
+} from '../../../../../core/shared/bridge';
 
 let initializationPromise: Promise<boolean> | null = null;
 let lastInitializationError = '';
@@ -18,7 +16,15 @@ const DEFAULT_RPC_TIMEOUT_MS = 120_000;
 const DOWNLOAD_RPC_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
 type BridgeWindowGlobals = DesktopBridgeWindowGlobals & {
-  __electrobunWebviewId?: unknown;
+  __electrobunWebviewId?: number | string;
+};
+
+type WebView2Window = Window & {
+  chrome?: {
+    webview?: {
+      postMessage?: (message: string) => void;
+    };
+  };
 };
 
 function isDesktopViewsRuntime() {
@@ -35,6 +41,11 @@ const bunBridgeRpcClient = createDesktopRpcClient({
   downloadRpcTimeoutMs: DOWNLOAD_RPC_TIMEOUT_MS,
 });
 
+function getWebView2Bridge() {
+  const webView2Window = window as WebView2Window;
+  return webView2Window.chrome?.webview;
+}
+
 function tryInstallFallbackDesktopApi() {
   if (window.desktopApi?.isDesktop) {
     fallbackInstalled = true;
@@ -47,13 +58,18 @@ function tryInstallFallbackDesktopApi() {
 
   if (!bunBridgeRpcClient.hasBunBridge()) {
     // Attempt WebView2 polyfill since native bridge is missing
-    if (typeof (window as any).chrome?.webview?.postMessage === 'function') {
+    const webView2Bridge = getWebView2Bridge();
+    if (typeof webView2Bridge?.postMessage === 'function') {
       const globals = window as BridgeWindowGlobals;
       if (!globals.__electrobunWebviewId) {
         globals.__electrobunWebviewId = 1; // Assuming mainview is webview 1
       }
       if (!globals.__electrobunBunBridge) {
-        globals.__electrobunBunBridge = (window as any).chrome.webview;
+        globals.__electrobunBunBridge = {
+          postMessage: (message: string) => {
+            webView2Bridge.postMessage?.(message);
+          },
+        };
       }
     }
 
@@ -142,7 +158,7 @@ function resetDesktopBridgeState() {
   fallbackInstalled = false;
   lastInitializationError = '';
   try {
-    delete (window as { desktopApi?: unknown }).desktopApi;
+    delete (window as { desktopApi?: NonNullable<typeof window.desktopApi> }).desktopApi;
   } catch {
     // Ignore reset failures on readonly globals.
   }

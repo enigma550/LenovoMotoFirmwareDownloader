@@ -1,30 +1,35 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import type {
+  FirmwareVariant,
+  LocalDownloadedFile,
+  RescueFlashTransport,
+  RescueQdlStorage,
+} from '../../models/desktop-api.ts';
 import { AuthWorkflowService } from './auth-workflow.service';
 import { CatalogWorkflowService } from './catalog-workflow.service';
 import { DownloadWorkflowService } from './download-workflow.service';
-import { WorkflowUiService } from './workflow-ui.service';
+import { SystemWorkflowService } from './system-workflow.service';
 import type {
   CategoryFilter,
   DataResetChoice,
   ReadSupportFilter,
   ReadSupportMode,
-  RescueDryRunPlanDialog,
   SourceMode,
 } from './workflow.types';
-import type { FirmwareVariant, LocalDownloadedFile, AppInfo, FrameworkUpdateInfo, DesktopIntegrationStatus } from '../../models/desktop-api.ts';
+import { WorkflowUiService } from './workflow-ui.service';
 
 export type {
   CategoryFilter,
-  DownloadStatus,
   DataResetChoice,
+  DownloadStatus,
+  FirmwareDownloadState,
   ReadSupportFilter,
   ReadSupportMode,
+  RescueDryRunPlanDialog,
   SourceMode,
   ThemeMode,
   ToastMessage,
   ToastVariant,
-  FirmwareDownloadState,
-  RescueDryRunPlanDialog,
 } from './workflow.types';
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +38,7 @@ export class WorkflowStore {
   private readonly auth = inject(AuthWorkflowService);
   private readonly catalog = inject(CatalogWorkflowService);
   private readonly download = inject(DownloadWorkflowService);
+  private readonly system = inject(SystemWorkflowService);
 
   readonly callbackUrlOrToken = this.auth.callbackUrlOrToken;
   readonly loginUrl = this.auth.loginUrl;
@@ -74,26 +80,16 @@ export class WorkflowStore {
   readonly recommendedReadSupportMode = this.catalog.recommendedReadSupportMode;
 
   readonly downloadHistory = this.download.downloadHistory;
+  readonly firmwareDownload = this.download.firmwareDownload;
   readonly localDownloadedFiles = this.download.localDownloadedFiles;
   readonly rescueDryRunPlanDialog = this.download.rescueDryRunPlanDialog;
 
-  readonly showDesktopPrompt = signal(false);
-  readonly desktopPromptReason = signal<'missing' | 'wrong_wmclass'>('missing');
-  readonly appInfo = signal<AppInfo | null>(null);
-
-  readonly bridgeHealthy = signal(true);
-  readonly bridgeLatencyMs = signal<number | null>(null);
-  readonly bridgeStatus = signal('Bridge connected');
-  private bridgeReconnectInFlight = false;
-
-  constructor() {
-    if (window.location.protocol === 'views:') {
-      void this.checkBridgeHealth(true);
-      setInterval(() => {
-        void this.checkBridgeHealth(true);
-      }, 15000);
-    }
-  }
+  readonly showDesktopPrompt = this.system.showDesktopPrompt;
+  readonly desktopPromptReason = this.system.desktopPromptReason;
+  readonly appInfo = this.system.appInfo;
+  readonly bridgeHealthy = this.system.bridgeHealthy;
+  readonly bridgeLatencyMs = this.system.bridgeLatencyMs;
+  readonly bridgeStatus = this.system.bridgeStatus;
 
   toggleTheme() {
     this.ui.toggleTheme();
@@ -188,12 +184,36 @@ export class WorkflowStore {
     variant: Parameters<DownloadWorkflowService['rescueLiteDownloadVariant']>[0],
     dataReset: DataResetChoice,
     dryRun = false,
+    flashTransport: RescueFlashTransport = 'fastboot',
+    qdlStorage: RescueQdlStorage = 'auto',
+    qdlSerial = '',
   ) {
-    await this.download.rescueLiteDownloadVariant(variant, dataReset, dryRun);
+    await this.download.rescueLiteDownloadVariant(
+      variant,
+      dataReset,
+      dryRun,
+      flashTransport,
+      qdlStorage,
+      qdlSerial,
+    );
   }
 
-  async rescueLiteLocalFile(file: LocalDownloadedFile, dataReset: DataResetChoice, dryRun = false) {
-    await this.download.rescueLiteLocalFile(file, dataReset, dryRun);
+  async rescueLiteLocalFile(
+    file: LocalDownloadedFile,
+    dataReset: DataResetChoice,
+    dryRun = false,
+    flashTransport: RescueFlashTransport = 'fastboot',
+    qdlStorage: RescueQdlStorage = 'auto',
+    qdlSerial = '',
+  ) {
+    await this.download.rescueLiteLocalFile(
+      file,
+      dataReset,
+      dryRun,
+      flashTransport,
+      qdlStorage,
+      qdlSerial,
+    );
   }
 
   async extractLocalFirmware(file: LocalDownloadedFile) {
@@ -248,123 +268,54 @@ export class WorkflowStore {
   }
 
   async checkDesktopIntegration() {
-    if (window.desktopApi) {
-      return window.desktopApi.checkDesktopIntegration();
-    }
-    return { ok: false, status: 'missing' } as DesktopIntegrationStatus;
+    return this.system.checkDesktopIntegration();
   }
 
   async createDesktopIntegration() {
-    if (window.desktopApi) {
-      return window.desktopApi.createDesktopIntegration();
-    }
-    return { ok: false, status: 'missing' } as DesktopIntegrationStatus;
+    return this.system.createDesktopIntegration();
   }
 
   async getDesktopPromptPreference() {
-    if (window.desktopApi) {
-      return window.desktopApi.getDesktopPromptPreference();
-    }
-    return false;
+    return this.system.getDesktopPromptPreference();
   }
 
   async setDesktopPromptPreference(ask: boolean) {
-    if (window.desktopApi) {
-      return window.desktopApi.setDesktopPromptPreference({ ask });
-    }
-    return false;
+    return this.system.setDesktopPromptPreference(ask);
   }
 
   async loadAppInfo() {
-    if (window.desktopApi) {
-      const info = await window.desktopApi.getAppInfo();
-      this.appInfo.set(info);
-      return info;
-    }
-    return null;
+    return this.system.loadAppInfo();
   }
 
   async openUrl(url: string) {
-    if (window.desktopApi) {
-      return window.desktopApi.openUrl(url);
-    }
-    return { ok: false, error: 'Desktop API not available' };
+    return this.system.openUrl(url);
   }
 
-  async checkFrameworkUpdate(): Promise<FrameworkUpdateInfo | null> {
-    if (window.desktopApi) {
-      return await window.desktopApi.checkFrameworkUpdate();
-    }
-    return null;
+  async checkFrameworkUpdate() {
+    return this.system.checkFrameworkUpdate();
   }
 
   async downloadFrameworkUpdate() {
-    if (window.desktopApi) {
-      return await window.desktopApi.downloadFrameworkUpdate();
-    }
+    return this.system.downloadFrameworkUpdate();
   }
 
   async applyFrameworkUpdate() {
-    if (window.desktopApi) {
-      return await window.desktopApi.applyFrameworkUpdate();
-    }
+    return this.system.applyFrameworkUpdate();
   }
 
-  private async checkBridgeHealth(silent: boolean) {
-    const startedAt = performance.now();
-    try {
-      const response = await this.auth.ping();
-      if (!response.ok) {
-        throw new Error(response.error || 'Bridge ping failed.');
-      }
+  async getWindowsQdloaderDriverStatus() {
+    return this.system.getWindowsQdloaderDriverStatus();
+  }
 
-      const latency = Math.max(0, Math.round(performance.now() - startedAt));
-      this.bridgeHealthy.set(true);
-      this.bridgeLatencyMs.set(latency);
-      this.bridgeStatus.set(`Bridge connected (${latency} ms)`);
-      return;
-    } catch {
-      this.bridgeHealthy.set(false);
-      this.bridgeLatencyMs.set(null);
-      this.bridgeStatus.set('Bridge disconnected. Reconnecting...');
-    }
+  async installWindowsQdloaderDriver() {
+    return this.system.installWindowsQdloaderDriver();
+  }
 
-    if (this.bridgeReconnectInFlight) {
-      return;
-    }
+  async installWindowsSpdDriver() {
+    return this.system.installWindowsSpdDriver();
+  }
 
-    this.bridgeReconnectInFlight = true;
-    try {
-      const reconnected = await this.auth.reconnectDesktopBridge();
-      if (!reconnected) {
-        this.bridgeStatus.set('Bridge reconnect failed. Retry on next check.');
-        if (!silent) {
-          this.ui.showToast('Desktop bridge reconnect failed.', 'error', 2600);
-        }
-        return;
-      }
-
-      const startedAt = performance.now();
-      const response = await this.auth.ping();
-      if (!response.ok) {
-        throw new Error(response.error || 'Bridge ping failed after reconnect.');
-      }
-      const latency = Math.max(0, Math.round(performance.now() - startedAt));
-      this.bridgeHealthy.set(true);
-      this.bridgeLatencyMs.set(latency);
-      this.bridgeStatus.set(`Bridge reconnected (${latency} ms)`);
-      if (!silent) {
-        this.ui.showToast('Desktop bridge reconnected.', 'success', 2200);
-      }
-    } catch {
-      this.bridgeHealthy.set(false);
-      this.bridgeLatencyMs.set(null);
-      this.bridgeStatus.set('Bridge reconnect failed. Retry on next check.');
-      if (!silent) {
-        this.ui.showToast('Desktop bridge reconnect failed.', 'error', 2600);
-      }
-    } finally {
-      this.bridgeReconnectInFlight = false;
-    }
+  async installWindowsMtkDriver() {
+    return this.system.installWindowsMtkDriver();
   }
 }

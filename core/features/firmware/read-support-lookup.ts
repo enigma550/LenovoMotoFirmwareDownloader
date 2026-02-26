@@ -1,10 +1,12 @@
-import { requestApi } from "../../infra/lmsa/api.ts";
+import { requestApi } from '../../infra/lmsa/api.ts';
 import type {
   FirmwareVariant,
+  JsonObject,
+  JsonValue,
   ModelCatalogEntry,
   ReadSupportFirmwareLookupResult,
-} from "../../shared/types/index.ts";
-import { createFirmwareVariantFromResourceItem } from "./resource-variant.ts";
+} from '../../shared/types/index.ts';
+import { createFirmwareVariantFromResourceItem } from './resource-variant.ts';
 
 interface RomMatchParamsApiResponse {
   code?: string;
@@ -32,17 +34,34 @@ interface GetNewResourceApiResponse {
   content?: GetNewResourceApiResponseItem[];
 }
 
+interface ReadSupportNewResourceRequest {
+  modelName: string;
+  marketName: string;
+  category: string;
+  params: Record<string, string>;
+  matchType: number;
+  imei?: string;
+  imei2?: string;
+  sn?: string;
+  channelId?: string;
+}
+
+function toJsonObject(value: JsonValue | null | undefined): JsonObject | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value;
+}
+
 function generateEncryptCode() {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
-function toRomMatchParamsApiResponse(value: unknown) {
-  if (!value || typeof value !== "object") return null;
+function toRomMatchParamsApiResponse(value: JsonValue) {
+  if (!toJsonObject(value)) return null;
   return value as RomMatchParamsApiResponse;
 }
 
-function toGetNewResourceApiResponse(value: unknown) {
-  if (!value || typeof value !== "object") return null;
+function toGetNewResourceApiResponse(value: JsonValue) {
+  if (!toJsonObject(value)) return null;
   return value as GetNewResourceApiResponse;
 }
 
@@ -56,10 +75,7 @@ function mapFirmwareVariants(
   }
 
   for (const item of content) {
-    const variant = createFirmwareVariantFromResourceItem(
-      item,
-      selectedParameters,
-    );
+    const variant = createFirmwareVariantFromResourceItem(item, selectedParameters);
     if (variant) {
       variants.push(variant);
     }
@@ -69,21 +85,16 @@ function mapFirmwareVariants(
 }
 
 export async function getReadSupportRequiredParameters(modelName: string) {
-  const response = await requestApi("/rescueDevice/getRomMatchParams.jhtml", {
+  const response = await requestApi('/rescueDevice/getRomMatchParams.jhtml', {
     modelName,
   });
   const payload = toRomMatchParamsApiResponse(await response.json());
 
-  const code = typeof payload?.code === "string" ? payload.code : "";
-  const description = typeof payload?.desc === "string" ? payload.desc : "";
-  const platform =
-    typeof payload?.content?.platform === "string"
-      ? payload.content.platform
-      : "";
+  const code = typeof payload?.code === 'string' ? payload.code : '';
+  const description = typeof payload?.desc === 'string' ? payload.desc : '';
+  const platform = typeof payload?.content?.platform === 'string' ? payload.content.platform : '';
   const requiredParameters = Array.isArray(payload?.content?.params)
-    ? payload.content.params.filter(
-        (parameter) => typeof parameter === "string",
-      )
+    ? payload.content.params.filter((parameter) => typeof parameter === 'string')
     : [];
 
   return {
@@ -104,7 +115,7 @@ export async function fetchReadSupportFirmwareForModel(
     channelId?: string;
   } = {},
 ) {
-  const dparams: Record<string, unknown> = {
+  const dparams: ReadSupportNewResourceRequest = {
     modelName: selectedModel.modelName,
     marketName: selectedModel.marketName,
     category: selectedModel.category,
@@ -125,13 +136,10 @@ export async function fetchReadSupportFirmwareForModel(
     dparams.channelId = optionalIdentifiers.channelId;
   }
 
-  const response = await requestApi(
-    "/rescueDevice/getNewResource.jhtml",
-    dparams,
-  );
+  const response = await requestApi('/rescueDevice/getNewResource.jhtml', dparams);
   const payload = toGetNewResourceApiResponse(await response.json());
-  const code = typeof payload?.code === "string" ? payload.code : "";
-  const description = typeof payload?.desc === "string" ? payload.desc : "";
+  const code = typeof payload?.code === 'string' ? payload.code : '';
+  const description = typeof payload?.desc === 'string' ? payload.desc : '';
 
   const variants = mapFirmwareVariants(payload?.content, params);
 
@@ -155,7 +163,7 @@ export async function fetchFirmwareByImeiForModel(
   const dparams: Record<string, string> = {
     imei: identifiers.imei,
     modelCode: selectedModel.modelName,
-    roCarrier: identifiers.roCarrier || "reteu",
+    roCarrier: identifiers.roCarrier || 'reteu',
     encryptCode: generateEncryptCode(),
     sku: selectedModel.modelName,
     carrierSku: selectedModel.modelName,
@@ -171,18 +179,15 @@ export async function fetchFirmwareByImeiForModel(
     dparams.channelId = identifiers.channelId;
   }
 
-  const response = await requestApi(
-    "/rescueDevice/getNewResourceByImei.jhtml",
-    dparams,
-  );
+  const response = await requestApi('/rescueDevice/getNewResourceByImei.jhtml', dparams);
   const payload = toGetNewResourceApiResponse(await response.json());
-  const code = typeof payload?.code === "string" ? payload.code : "";
-  const description = typeof payload?.desc === "string" ? payload.desc : "";
+  const code = typeof payload?.code === 'string' ? payload.code : '';
+  const description = typeof payload?.desc === 'string' ? payload.desc : '';
 
   const variants = mapFirmwareVariants(payload?.content, {
     imei: identifiers.imei,
     modelCode: selectedModel.modelName,
-    roCarrier: identifiers.roCarrier || "reteu",
+    roCarrier: identifiers.roCarrier || 'reteu',
   });
 
   return {
@@ -207,13 +212,10 @@ export async function fetchFirmwareBySnForModel(
     dparams.channelId = identifiers.channelId;
   }
 
-  const response = await requestApi(
-    "/rescueDevice/getNewResourceBySN.jhtml",
-    dparams,
-  );
+  const response = await requestApi('/rescueDevice/getNewResourceBySN.jhtml', dparams);
   const payload = toGetNewResourceApiResponse(await response.json());
-  const code = typeof payload?.code === "string" ? payload.code : "";
-  const description = typeof payload?.desc === "string" ? payload.desc : "";
+  const code = typeof payload?.code === 'string' ? payload.code : '';
+  const description = typeof payload?.desc === 'string' ? payload.desc : '';
 
   const variants = mapFirmwareVariants(payload?.content, {
     sn: identifiers.sn,

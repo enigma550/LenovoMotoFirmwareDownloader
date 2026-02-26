@@ -1,97 +1,115 @@
+import { type Dirent, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { copyFile, mkdir, readdir, stat } from 'node:fs/promises';
+import { basename, extname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
 import {
-  existsSync,
-  readFileSync,
-  readdirSync,
-  statSync,
-  type Dirent,
-} from "fs";
-import { join, normalize, isAbsolute, resolve, relative, basename, extname } from "path";
-import { mkdir, readdir, stat } from "fs/promises";
+  getFirmwareArchiveExtension,
+  isSupportedFirmwareArchive,
+  SUPPORTED_FIRMWARE_ARCHIVE_EXTENSIONS,
+  stripFirmwareArchiveExtension,
+} from './features/rescue/extractors/archive-format.ts';
+import { extractFirmwareArchive } from './features/rescue/extractors/extract-firmware-archive.ts';
+
+export {
+  SUPPORTED_FIRMWARE_ARCHIVE_EXTENSIONS,
+  getFirmwareArchiveExtension,
+  isSupportedFirmwareArchive,
+  stripFirmwareArchiveExtension,
+};
 
 export const KNOWN_XML_FLASH_SCRIPT_NAMES = [
-  "flashfile.xml",
-  "servicefile.xml",
-  "softwareupgrade.xml",
-  "efuse.xml",
-  "lkbin.xml",
+  'flashfile.xml',
+  'servicefile.xml',
+  'softwareupgrade.xml',
+  'flashinfo.xml',
+  'flashinfo_rsa.xml',
+  'efuse.xml',
+  'lkbin.xml',
 ] as const;
-const KNOWN_XML_FLASH_SCRIPT_SET = new Set<string>(
-  KNOWN_XML_FLASH_SCRIPT_NAMES,
-);
+const KNOWN_XML_FLASH_SCRIPT_SET = new Set<string>(KNOWN_XML_FLASH_SCRIPT_NAMES);
+
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+export type JsonObject = {
+  [key: string]: JsonValue | undefined;
+};
 
 export function getDownloadDirectory() {
   const homeDirectory =
-    Bun.env.HOME ||
-    Bun.env.USERPROFILE ||
-    process.env.HOME ||
-    process.env.USERPROFILE ||
-    ".";
-  return join(homeDirectory, "Downloads", "LenovoMotoFirmwareDownloader");
+    Bun.env.HOME || Bun.env.USERPROFILE || process.env.HOME || process.env.USERPROFILE || '.';
+  return join(homeDirectory, 'Downloads', 'LenovoMotoFirmwareDownloader');
 }
 
 export function getRescueDirectory() {
-  return join(getDownloadDirectory(), ".rescue-lite");
+  return join(getDownloadDirectory(), '.rescue-lite');
 }
 
 export function getRescueExtractDirectoryRoot() {
-  return join(getRescueDirectory(), "extracted");
+  return join(getRescueDirectory(), 'extracted');
 }
 
 export function getExtractDirForPackagePath(packagePath: string) {
   const base = basename(packagePath);
-  const withoutZip = base.replace(/\.zip$/i, "");
-  return join(
-    getRescueExtractDirectoryRoot(),
-    sanitizeDirectoryName(withoutZip),
-  );
+  const withoutArchiveExtension = stripFirmwareArchiveExtension(base) || base;
+  return join(getRescueExtractDirectoryRoot(), sanitizeDirectoryName(withoutArchiveExtension));
 }
 
-export function sanitizeFileName(fileName: string, fallback = "firmware.zip") {
-  const sanitized = fileName
-    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
-    .replace(/\s+/g, " ")
+export function sanitizeFileName(fileName: string, fallback = 'firmware.zip') {
+  const sanitized = Array.from(fileName, (character) => {
+    const code = character.charCodeAt(0);
+    if (
+      code <= 0x1f ||
+      character === '<' ||
+      character === '>' ||
+      character === ':' ||
+      character === '"' ||
+      character === '/' ||
+      character === '\\' ||
+      character === '|' ||
+      character === '?' ||
+      character === '*'
+    ) {
+      return '_';
+    }
+    return character;
+  })
+    .join('')
+    .replace(/\s+/g, ' ')
     .trim();
   return sanitized || fallback;
 }
 
 export function sanitizeDirectoryName(name: string) {
-  return (
-    sanitizeFileName(name, "firmware").replace(/\.+$/g, "").slice(0, 160) ||
-    "firmware"
-  );
+  return sanitizeFileName(name, 'firmware').replace(/\.+$/g, '').slice(0, 160) || 'firmware';
 }
 
 export function normalizePathForLookup(value: string) {
-  return normalize(value).replace(/\\/g, "/");
+  return normalize(value).replace(/\\/g, '/');
 }
 
 export function normalizeRemoteUrl(value: string | undefined | null) {
-  if (!value) return "";
+  if (!value) return '';
   const trimmed = value.trim();
-  if (!trimmed) return "";
-  return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+  if (!trimmed) return '';
+  return trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
 }
 
-export function asRecord(value: unknown) {
-  if (!value || typeof value !== "object") return null;
-  return value as Record<string, unknown>;
+export function asRecord(value: JsonValue | undefined) {
+  if (!value || typeof value !== 'object') return null;
+  return value as JsonObject;
 }
 
-export function firstStringField(
-  record: Record<string, unknown> | null,
-  names: string[],
-) {
-  if (!record) return "";
+export function firstStringField(record: JsonObject | null, names: string[]) {
+  if (!record) return '';
   for (const name of names) {
     const value = record[name];
-    if (typeof value === "string" && value.trim()) {
+    if (typeof value === 'string' && value.trim()) {
       return value.trim();
     }
   }
-  return "";
+  return '';
 }
 
-export function getRecipeSteps(recipeContent: unknown) {
+export function getRecipeSteps(recipeContent: JsonValue | undefined) {
   const recipe = asRecord(recipeContent);
   if (!recipe) return [];
   if (Array.isArray(recipe.Steps)) return recipe.Steps;
@@ -99,18 +117,15 @@ export function getRecipeSteps(recipeContent: unknown) {
   return [];
 }
 
-export function isRescueRecipeContent(recipeContent: unknown) {
+export function isRescueRecipeContent(recipeContent: JsonValue | undefined) {
   const recipe = asRecord(recipeContent);
-  const useCase = firstStringField(recipe, [
-    "UseCase",
-    "useCase",
-  ]).toLowerCase();
-  const isRescueUseCase = useCase.includes("rescue");
+  const useCase = firstStringField(recipe, ['UseCase', 'useCase']).toLowerCase();
+  const isRescueUseCase = useCase.includes('rescue');
   const hasFastbootFlashStep = getRecipeSteps(recipeContent).some((stepRaw) => {
     const step = asRecord(stepRaw);
     if (!step) return false;
-    const stepName = firstStringField(step, ["Step", "step"]).toLowerCase();
-    return stepName.includes("fastbootflash");
+    const stepName = firstStringField(step, ['Step', 'step']).toLowerCase();
+    return stepName.includes('fastbootflash');
   });
   return isRescueUseCase && hasFastbootFlashStep;
 }
@@ -132,7 +147,7 @@ export function hasUsableExtractedRescueScripts(extractDir: string) {
     try {
       entries = readdirSync(current, {
         withFileTypes: true,
-        encoding: "utf8",
+        encoding: 'utf8',
       });
     } catch {
       continue;
@@ -152,7 +167,16 @@ export function hasUsableExtractedRescueScripts(extractDir: string) {
       if (KNOWN_XML_FLASH_SCRIPT_SET.has(lowerName)) {
         return true;
       }
-      if (!lowerName.endsWith(".xml")) {
+      if (lowerName.endsWith('.pac')) {
+        return true;
+      }
+      if (lowerName.endsWith('.xml') && lowerName.includes('_cfc')) {
+        return true;
+      }
+      if (lowerName.endsWith('.xml') && lowerName.includes('rawprogram')) {
+        return true;
+      }
+      if (!lowerName.endsWith('.xml')) {
         continue;
       }
       if (xmlInspected >= maxXmlInspected) {
@@ -165,11 +189,18 @@ export function hasUsableExtractedRescueScripts(extractDir: string) {
         if (sizeBytes <= 0 || sizeBytes > 4 * 1024 * 1024) {
           continue;
         }
-        const xmlText = readFileSync(fullPath, "utf8");
+        const xmlText = readFileSync(fullPath, 'utf8');
         if (
           xmlText.includes('operation="flash"') ||
           xmlText.includes("operation='flash'") ||
-          /<step\b/i.test(xmlText)
+          /<step\b/i.test(xmlText) ||
+          /<program\b/i.test(xmlText) ||
+          /\boperation\s*=\s*["'](?:flash|flash_sparse|flashsparse|erase|format|oem|getvar|reboot(?:-bootloader|-fastboot)?|boot|update|continue|set[-_]?active)["']/i.test(
+            xmlText,
+          ) ||
+          /<(flash|erase|format|oem|getvar|reboot|boot|update|continue|set_active|set-active)\b/i.test(
+            xmlText,
+          )
         ) {
           return true;
         }
@@ -193,10 +224,8 @@ export async function findReusableFirmwarePackagePath(
     return preferredPath;
   }
 
-  const extension = extname(preferredFileName);
-  const baseName = extension
-    ? preferredFileName.slice(0, -extension.length)
-    : preferredFileName;
+  const extension = getFirmwareArchiveExtension(preferredFileName);
+  const baseName = extension ? preferredFileName.slice(0, -extension.length) : preferredFileName;
 
   const entries = await readdir(downloadDirectory, { withFileTypes: true });
   const candidates = entries
@@ -205,15 +234,15 @@ export async function findReusableFirmwarePackagePath(
       if (entry.name === preferredFileName) return true;
       if (!entry.name.startsWith(`${baseName}-`)) return false;
       if (!extension) return true;
-      return entry.name.endsWith(extension);
+      return entry.name.toLowerCase().endsWith(extension);
     })
     .map((entry) => join(downloadDirectory, entry.name));
 
   if (candidates.length === 0) {
-    return "";
+    return '';
   }
 
-  let latestPath = "";
+  let latestPath = '';
   let latestMtime = -1;
   for (const candidatePath of candidates) {
     try {
@@ -235,10 +264,10 @@ export async function ensureExtractedFirmwarePackage(options: {
   extractedDir?: string;
   signal?: AbortSignal;
   onProcess?: (process: Bun.Subprocess | null) => void;
+  onLog?: (line: string) => void;
 }) {
   const extractDir =
-    options.extractedDir?.trim() ||
-    getExtractDirForPackagePath(options.packagePath);
+    options.extractedDir?.trim() || getExtractDirForPackagePath(options.packagePath);
   await mkdir(extractDir, { recursive: true });
 
   if (hasUsableExtractedRescueScripts(extractDir)) {
@@ -248,63 +277,25 @@ export async function ensureExtractedFirmwarePackage(options: {
     };
   }
 
-  if (process.platform === "win32") {
-    // Windows 10 and 11 have 'tar' built-in natively. 
-    // It is significantly faster and more reliable than PowerShell's Expand-Archive module.
-    const proc = Bun.spawn([
-      "tar",
-      "-xf",
-      options.packagePath,
-      "-C",
-      extractDir
-    ], {
-      cwd: getDownloadDirectory(),
-      stdout: "pipe",
-      stderr: "pipe"
-    });
-
-    if (options.onProcess) options.onProcess(proc);
-
-    const exitCode = await proc.exited;
-    if (exitCode !== 0) {
-      // Read the actual error message from tar
-      const errorMessage = await new Response(proc.stderr).text();
-
-      // Fallback/Error handling if tar fails for some reason
-      throw new Error(`Windows tar extraction failed (Code ${exitCode}). Details: ${errorMessage.trim()}`);
+  if (basename(options.packagePath).toLowerCase().endsWith('.pac')) {
+    const targetPacPath = join(extractDir, basename(options.packagePath));
+    if (!existsSync(targetPacPath)) {
+      await copyFile(options.packagePath, targetPacPath);
     }
-  } else {
-    // Linux/macOS
-    try {
-      const proc = Bun.spawn(["unzip", "-o", options.packagePath, "-d", extractDir], {
-        cwd: getDownloadDirectory(),
-        stdout: "pipe",
-        stderr: "pipe"
-      });
-
-      if (options.onProcess) options.onProcess(proc);
-
-      const exitCode = await proc.exited;
-      if (exitCode !== 0) {
-        // unzip returns 1 for minor warnings (e.g. extra bytes at start of zip). 
-        // We might want to allow 1, but let's capture the error first.
-        const errorMessage = await new Response(proc.stderr).text();
-        throw new Error(`Unzip failed (Code ${exitCode}). Details: ${errorMessage.trim()}`);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (
-        message.includes("End-of-central-directory signature not found") ||
-        message.includes("zipfile directory") ||
-        message.includes("cannot find zipfile directory")
-      ) {
-        throw new Error(
-          "The firmware file is incomplete or corrupt. Please finish the download or try again.",
-        );
-      }
-      throw error;
-    }
+    return {
+      extractDir,
+      reusedExtraction: false,
+    };
   }
+
+  await extractFirmwareArchive({
+    packagePath: options.packagePath,
+    extractDir,
+    workingDirectory: getDownloadDirectory(),
+    signal: options.signal,
+    onProcess: options.onProcess,
+    onLog: options.onLog,
+  });
 
   return {
     extractDir,
@@ -313,21 +304,19 @@ export async function ensureExtractedFirmwarePackage(options: {
 }
 
 export function formatFastbootArgs(args: string[]) {
-  return ["fastboot", ...args].join(" ");
+  return ['fastboot', ...args].join(' ');
 }
 
 export function isWipeSensitivePartition(partition: string) {
   const lowerPartition = partition.toLowerCase();
   return (
-    lowerPartition === "userdata" ||
-    lowerPartition === "cache" ||
-    lowerPartition === "metadata"
+    lowerPartition === 'userdata' || lowerPartition === 'cache' || lowerPartition === 'metadata'
   );
 }
 
 export function parseCommandTokens(rawLine: string) {
   const tokens: string[] = [];
-  let current = "";
+  let current = '';
   let quote: '"' | "'" | null = null;
 
   for (let index = 0; index < rawLine.length; index += 1) {
@@ -349,7 +338,7 @@ export function parseCommandTokens(rawLine: string) {
     if (/\s/.test(char)) {
       if (current) {
         tokens.push(current);
-        current = "";
+        current = '';
       }
       continue;
     }
@@ -363,16 +352,16 @@ export function parseCommandTokens(rawLine: string) {
   return tokens;
 }
 
-export function shouldSkipForDataReset(args: string[], dataReset: "yes" | "no") {
-  if (dataReset !== "no" || args.length < 2) {
+export function shouldSkipForDataReset(args: string[], dataReset: 'yes' | 'no') {
+  if (dataReset !== 'no' || args.length < 2) {
     return false;
   }
-  const command = (args[0] || "").toLowerCase();
-  const partition = (args[1] || "").toLowerCase();
-  if (command === "erase" || command === "format") {
+  const command = (args[0] || '').toLowerCase();
+  const partition = (args[1] || '').toLowerCase();
+  if (command === 'erase' || command === 'format') {
     return isWipeSensitivePartition(partition);
   }
-  if (command === "flash" && partition) {
+  if (command === 'flash' && partition) {
     return isWipeSensitivePartition(partition);
   }
   return false;
@@ -387,16 +376,16 @@ export async function maybeResolveCommandFileArgument(
     return args;
   }
 
-  const command = (args[0] || "").toLowerCase();
+  const command = (args[0] || '').toLowerCase();
   const next = args.slice();
 
   const resolveAtIndex = async (index: number) => {
-    const raw = (next[index] || "").trim();
-    if (!raw || raw.startsWith("-")) {
+    const raw = (next[index] || '').trim();
+    if (!raw || raw.startsWith('-')) {
       return;
     }
-    const cleaned = raw.replace(/^["']|["']$/g, "");
-    if (!cleaned || cleaned.includes("=")) {
+    const cleaned = raw.replace(/^["']|["']$/g, '');
+    if (!cleaned || cleaned.includes('=')) {
       return;
     }
 
@@ -414,12 +403,12 @@ export async function maybeResolveCommandFileArgument(
     }
   };
 
-  if (command === "flash" && args.length >= 3) {
+  if (command === 'flash' && args.length >= 3) {
     await resolveAtIndex(args.length - 1);
     return next;
   }
 
-  if ((command === "update" || command === "boot") && args.length >= 2) {
+  if ((command === 'update' || command === 'boot') && args.length >= 2) {
     await resolveAtIndex(1);
     return next;
   }
@@ -431,15 +420,13 @@ export async function resolveStepFilePath(
   extractDir: string,
   rawPath: string,
   fileIndex: Map<string, string[]>,
-) {
+): Promise<string> {
   const cleaned = normalizePathForLookup(rawPath.trim());
   if (!cleaned) {
-    throw new Error("Flash step has an empty filename.");
+    throw new Error('Flash step has an empty filename.');
   }
 
-  const preferredPath = isAbsolute(cleaned)
-    ? cleaned
-    : resolve(extractDir, cleaned);
+  const preferredPath = isAbsolute(cleaned) ? cleaned : resolve(extractDir, cleaned);
   if (await Bun.file(preferredPath).exists()) {
     return preferredPath;
   }
@@ -458,7 +445,11 @@ export async function resolveStepFilePath(
     return exactSuffixMatch;
   }
 
-  return indexed.slice().sort((left, right) => left.length - right.length)[0];
+  const shortestMatch = indexed.slice().sort((left, right) => left.length - right.length)[0];
+  if (!shortestMatch) {
+    throw new Error(`Missing firmware payload file: ${rawPath}`);
+  }
+  return shortestMatch;
 }
 
 export async function collectFilesRecursive(rootDir: string) {
@@ -499,11 +490,11 @@ export function inferFirmwareFileName(romUrl: string, romName: string) {
       const pathname = new URL(romUrl).pathname;
       return basename(pathname);
     } catch {
-      return "";
+      return '';
     }
   })();
 
-  const chosenName = urlFileName || `${romName || "firmware"}.zip`;
+  const chosenName = urlFileName || `${romName || 'firmware'}.zip`;
   const sanitized = sanitizeFileName(chosenName);
   return extname(sanitized) ? sanitized : `${sanitized}.zip`;
 }

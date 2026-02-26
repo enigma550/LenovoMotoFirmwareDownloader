@@ -1,15 +1,13 @@
-import type { DesktopRpcSchema } from "../shared/rpc.ts";
-import type { DownloadProgressMessage } from "../../core/shared/types/desktop-api.ts";
-import {
-  createDesktopRpcClient,
-  type DesktopBridgeWindowGlobals,
-} from "../shared/desktop-rpc-client.ts";
 import {
   createDesktopApiFromInvoker,
+  createDesktopRpcClient,
+  type DesktopBridgeWindowGlobals,
   type DesktopRpcInvoker,
-} from "../shared/desktop-api-mapping.ts";
+} from '../../core/shared/bridge/index.ts';
+import type { DownloadProgressMessage } from '../../core/shared/types/desktop-api.ts';
+import type { DesktopRpcSchema } from '../shared/rpc.ts';
 
-const DOWNLOAD_PROGRESS_EVENT_NAME = "desktop-download-progress";
+const DOWNLOAD_PROGRESS_EVENT_NAME = 'desktop-download-progress';
 const MAX_INIT_ATTEMPTS = 600;
 const RETRY_DELAY_MS = 50;
 const DEFAULT_RPC_TIMEOUT_MS = 120_000;
@@ -17,16 +15,17 @@ const DOWNLOAD_RPC_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 let bridgeReady = false;
 let bridgeInitializing = false;
 
+type BridgeRpcPayload = object | string | number | boolean | null;
+
 type BridgeWindowGlobals = DesktopBridgeWindowGlobals & {
-  __electrobunWebviewId?: unknown;
-  __electrobunRpcSocketPort?: unknown;
+  __electrobunWebviewId?: BridgeRpcPayload;
+  __electrobunRpcSocketPort?: BridgeRpcPayload;
 };
 
-function dispatchDownloadProgress(payload: unknown) {
-  const event = new CustomEvent<DownloadProgressMessage>(
-    DOWNLOAD_PROGRESS_EVENT_NAME,
-    { detail: payload as DownloadProgressMessage },
-  );
+function dispatchDownloadProgress(payload: DownloadProgressMessage) {
+  const event = new CustomEvent<DownloadProgressMessage>(DOWNLOAD_PROGRESS_EVENT_NAME, {
+    detail: payload,
+  });
   window.dispatchEvent(event);
 }
 
@@ -38,14 +37,14 @@ const bunBridgeRpcClient = createDesktopRpcClient({
 
 function setupDesktopApiViaBunBridge() {
   if (!bunBridgeRpcClient.attachBunBridgeMessageHandler()) {
-    throw new Error("Electrobun bun bridge is missing.");
+    throw new Error('Electrobun bun bridge is missing.');
   }
 
   window.desktopApi = createDesktopApiFromInvoker(((method, params) =>
     bunBridgeRpcClient.postRpcRequest(method, params)) as DesktopRpcInvoker);
 }
 
-import { Electroview } from "electrobun/view";
+import { Electroview } from 'electrobun/view';
 
 async function setupDesktopApiViaElectroview() {
   const rpc = Electroview.defineRPC<DesktopRpcSchema>({
@@ -62,13 +61,11 @@ async function setupDesktopApiViaElectroview() {
 
   window.desktopApi = createDesktopApiFromInvoker(((method, params) => {
     const request = (
-      rpc.request as Record<string, (payload?: unknown) => Promise<unknown>>
+      rpc.request as Record<string, (payload?: BridgeRpcPayload) => Promise<BridgeRpcPayload>>
     )[String(method)];
 
-    if (typeof request !== "function") {
-      return Promise.reject(
-        new Error(`Electroview RPC handler is missing: ${String(method)}`),
-      );
+    if (typeof request !== 'function') {
+      return Promise.reject(new Error(`Electroview RPC handler is missing: ${String(method)}`));
     }
 
     return params === undefined ? request() : request(params);
@@ -90,9 +87,7 @@ function initializeDesktopBridge(attempt = 0) {
   try {
     if (!hasElectrobunGlobals()) {
       if (attempt >= MAX_INIT_ATTEMPTS) {
-        console.error(
-          "[DesktopBridge] Electrobun globals were not ready in time (webviewId).",
-        );
+        console.error('[DesktopBridge] Electrobun globals were not ready in time (webviewId).');
         return;
       }
       setTimeout(() => initializeDesktopBridge(attempt + 1), RETRY_DELAY_MS);
@@ -100,9 +95,7 @@ function initializeDesktopBridge(attempt = 0) {
     }
 
     bridgeInitializing = true;
-    const rpcPort = Number(
-      (window as BridgeWindowGlobals).__electrobunRpcSocketPort,
-    );
+    const rpcPort = Number((window as BridgeWindowGlobals).__electrobunRpcSocketPort);
     const shouldUseElectroview = Number.isFinite(rpcPort) && rpcPort > 0;
 
     const setupPromise = bunBridgeRpcClient.hasBunBridge()
@@ -110,10 +103,8 @@ function initializeDesktopBridge(attempt = 0) {
       : shouldUseElectroview
         ? setupDesktopApiViaElectroview()
         : Promise.reject(
-          new Error(
-            "Neither bun bridge nor electroview socket transport is available yet.",
-          ),
-        );
+            new Error('Neither bun bridge nor electroview socket transport is available yet.'),
+          );
 
     void setupPromise
       .then(() => {
@@ -121,7 +112,7 @@ function initializeDesktopBridge(attempt = 0) {
       })
       .catch((error) => {
         if (attempt >= MAX_INIT_ATTEMPTS) {
-          console.error("[DesktopBridge] Initialization failed:", error);
+          console.error('[DesktopBridge] Initialization failed:', error);
           return;
         }
         setTimeout(() => initializeDesktopBridge(attempt + 1), RETRY_DELAY_MS);
@@ -129,9 +120,9 @@ function initializeDesktopBridge(attempt = 0) {
       .finally(() => {
         bridgeInitializing = false;
       });
-  } catch (error: unknown) {
+  } catch (error) {
     if (attempt >= MAX_INIT_ATTEMPTS) {
-      console.error("[DesktopBridge] Initialization failed:", error);
+      console.error('[DesktopBridge] Initialization failed:', error);
       return;
     }
     setTimeout(() => initializeDesktopBridge(attempt + 1), RETRY_DELAY_MS);

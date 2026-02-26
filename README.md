@@ -22,6 +22,14 @@ The Rescue Lite (experimental) feature in this app performs firmware flashing op
 Rescue Lite *(Optional)* (Not fully functional):
 - Use **Rescue Lite** *(experimental)* to flash firmware onto a device in fastboot mode.
 - Use **Rescue Lite (Dry run)** *(experimental)* to see flashboot commands used for Rescue Lite without execution.
+- QDL/EDL rescue mode uses bundled `qdl` in official builds. Local/dev runs can still use `qdl` from `PATH`.
+
+Rescue Lite Requirements:
+- **Fastboot mode**: `fastboot` must be available in `PATH`.
+- **QDL/EDL mode**: bundled `qdl` is included in packaged releases; source/dev builds can use `qdl` from `PATH`.
+- **Linux and Windows use the same `qdl` arguments** (driver setup is the main platform difference).
+- **Firehose programmer selection (`.mbn` / `.elf` / `.bin`)** is resolved automatically from package metadata (`loadinfo.xml`) and filename heuristics, including nested programmer archives (for example `*.elf.zip`).
+- QDL project: [linux-msm/qdl](https://github.com/linux-msm/qdl)
 
 All data is stored locally on your machine - nothing is sent to any third-party server.
 
@@ -59,6 +67,9 @@ bun run start:clean
 | `bun run build:canary` | Canary build for the current platform |
 | `bun run build:dev` | Development build for the current platform |
 | `bun run check` | Type-check the codebase |
+### Code Style
+- Naming convention: variables/parameters use `camelCase`
+- Design pattern mapping: `DESIGN_PATTERN_MAP.md`
 
 ### Build Hooks
 - `scripts/finalize-app.ts` - Patches app icons and Linux manifests (postBuild).

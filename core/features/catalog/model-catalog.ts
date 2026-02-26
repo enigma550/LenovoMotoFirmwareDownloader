@@ -1,20 +1,26 @@
-import { requestApi } from "../../infra/lmsa/api.ts";
-import {
-  MODEL_CATALOG_PATH,
-  ensureProjectStorageReady,
-} from "../../infra/storage.ts";
-import type { ModelCatalogEntry } from "../../shared/types/index.ts";
+import { requestApi } from '../../infra/lmsa/api.ts';
+import { ensureProjectStorageReady, MODEL_CATALOG_PATH } from '../../infra/storage.ts';
+import type {
+  JsonArray,
+  JsonObject,
+  JsonValue,
+  ModelCatalogEntry,
+} from '../../shared/types/index.ts';
 
-function parseBoolean(value: unknown) {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") return value.toLowerCase() === "true";
+function parseBoolean(value: JsonValue | undefined) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value.toLowerCase() === 'true';
   return false;
 }
 
-function mapModelCatalogEntry(value: unknown) {
-  if (!value || typeof value !== "object") return null;
+function toJsonObject(value: JsonValue | null | undefined): JsonObject | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value;
+}
 
-  const record = value as Record<string, unknown>;
+function mapModelCatalogEntry(value: JsonValue) {
+  const record = toJsonObject(value);
+  if (!record) return null;
   const modelName = record.modelName;
   const marketName = record.marketName;
   const platform = record.platform;
@@ -22,40 +28,40 @@ function mapModelCatalogEntry(value: unknown) {
   const brand = record.brand;
 
   if (
-    typeof modelName !== "string" ||
-    typeof marketName !== "string" ||
-    typeof platform !== "string" ||
-    typeof category !== "string" ||
-    typeof brand !== "string"
+    typeof modelName !== 'string' ||
+    typeof marketName !== 'string' ||
+    typeof platform !== 'string' ||
+    typeof category !== 'string' ||
+    typeof brand !== 'string'
   ) {
     return null;
   }
 
-  return {
+  const modelCatalogEntry: ModelCatalogEntry = {
     category,
     brand,
     modelName,
     marketName,
     platform,
     readSupport: parseBoolean(record.readSupport),
-    readFlow: typeof record.readFlow === "string" ? record.readFlow : "",
-  } as ModelCatalogEntry;
+    readFlow: typeof record.readFlow === 'string' ? record.readFlow : '',
+  };
+
+  return modelCatalogEntry;
 }
 
-function extractModelArray(content: unknown) {
+function extractModelArray(content: JsonValue | undefined) {
   if (Array.isArray(content)) return content;
 
-  if (content && typeof content === "object") {
-    const record = content as Record<string, unknown>;
-    if (Array.isArray(record.models)) {
-      return record.models;
-    }
+  const record = toJsonObject(content);
+  if (Array.isArray(record?.models)) {
+    return record.models;
   }
 
-  return [];
+  return [] as JsonArray;
 }
 
-function normalizeModelCatalog(content: unknown) {
+function normalizeModelCatalog(content: JsonValue | undefined) {
   const rawModels = extractModelArray(content);
   const modelCatalog: ModelCatalogEntry[] = [];
 
@@ -70,13 +76,13 @@ function normalizeModelCatalog(content: unknown) {
 }
 
 async function fetchModelCatalogFromApi() {
-  const response = await requestApi("/rescueDevice/getModelNames.jhtml", {});
+  const response = await requestApi('/rescueDevice/getModelNames.jhtml', {});
   const data = (await response.json()) as {
     code?: string;
-    content?: unknown;
+    content?: JsonValue;
   };
-  if (data?.code !== "0000") {
-    throw new Error(`getModelNames failed: ${data?.code ?? "unknown"}`);
+  if (data?.code !== '0000') {
+    throw new Error(`getModelNames failed: ${data?.code ?? 'missing_code'}`);
   }
 
   return normalizeModelCatalog(data.content);
@@ -88,8 +94,7 @@ async function loadModelCatalogFromFile() {
   if (!(await file.exists())) return [];
 
   try {
-    const data: unknown = await file.json();
-    if (!Array.isArray(data)) return [];
+    const data = (await file.json()) as JsonValue;
     return normalizeModelCatalog(data);
   } catch {
     return [];

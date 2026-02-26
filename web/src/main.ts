@@ -1,9 +1,9 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
 import { App } from './app/app';
+import { appConfig } from './app/app.config';
 import { ensureDesktopBridgeReady } from './app/core/bridge/electrobun-bridge';
 
-const renderFatal = (title: string, error: unknown) => {
+const renderFatal = <ErrorValue>(title: string, error: ErrorValue) => {
   const container = document.createElement('pre');
   container.style.margin = '16px';
   container.style.padding = '12px';

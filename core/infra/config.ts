@@ -1,5 +1,5 @@
-import { CONFIG_PATH, ensureProjectStorageReady } from "./storage.ts";
-import type { AppConfig } from "../shared/types/index.ts";
+import type { AppConfig } from '../shared/types/index.ts';
+import { CONFIG_PATH, ensureProjectStorageReady } from './storage.ts';
 
 export async function loadConfig() {
   await ensureProjectStorageReady();
@@ -10,9 +10,7 @@ export async function loadConfig() {
     const config: AppConfig = await file.json();
     return config;
   } catch {
-    console.error(
-      `[WARN] Could not parse config file at ${CONFIG_PATH}. Starting fresh.`,
-    );
+    console.error(`[WARN] Could not parse config file at ${CONFIG_PATH}. Starting fresh.`);
     return {};
   }
 }

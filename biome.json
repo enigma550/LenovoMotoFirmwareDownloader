@@ -1,0 +1,57 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["runtime/**", "core/**", "web/**", "types/electrobun/**"]
+  },
+  "formatter": {
+    "enabled": true,
+    "includes": ["runtime/**/*.ts", "core/**/*.ts", "web/**/*.ts"],
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "includes": ["runtime/**/*.ts", "core/**/*.ts", "web/**/*.ts"],
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
+      "correctness": {
+        "noUnknownTypeSelector": "error"
+      },
+      "style": {
+        "useNamingConvention": "error"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "includes": ["runtime/**/*.ts", "core/**/*.ts", "web/**/*.ts"],
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "html": {
+    "parser": {
+      "interpolation": true
+    }
+  }
+}
