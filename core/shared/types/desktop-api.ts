@@ -1,9 +1,9 @@
-import type { CatalogCountryOptions } from "./catalog-country-options";
-import type { CatalogFirmwareLookupResult } from "./catalog-firmware-lookup-result";
-import type { DeviceInfo } from "./device-info";
-import type { FirmwareVariant } from "./firmware-variant";
-import type { ModelCatalogEntry } from "./model-catalog-entry";
-import type { ReadSupportFirmwareLookupResult } from "./read-support-firmware-lookup-result";
+import type { CatalogCountryOptions } from './catalog-country-options';
+import type { CatalogFirmwareLookupResult } from './catalog-firmware-lookup-result';
+import type { DeviceInfo } from './device-info';
+import type { FirmwareVariant } from './firmware-variant';
+import type { ModelCatalogEntry } from './model-catalog-entry';
+import type { ReadSupportFirmwareLookupResult } from './read-support-firmware-lookup-result';
 
 export type {
   CatalogCountryOptions,
@@ -41,7 +41,7 @@ export interface CatalogModelsResponse {
 }
 
 interface ConnectedLookupAttempt {
-  mode: "IMEI" | "SN";
+  mode: 'IMEI' | 'SN';
   code: string;
   description: string;
   romUrl?: string;
@@ -102,6 +102,9 @@ export interface RescueLiteFirmwareResponse extends DownloadFirmwareResponse {
   dryRun?: boolean;
   reusedPackage?: boolean;
   reusedExtraction?: boolean;
+  flashTransport?: RescueFlashTransport;
+  qdlStorage?: RescueQdlStorage;
+  qdlSerial?: string;
   commandSource?: string;
   commandPlan?: string[];
 }
@@ -156,13 +159,13 @@ export interface BridgePingResponse {
 export interface CancelDownloadResponse {
   ok: boolean;
   downloadId: string;
-  status: "canceling" | "not_found";
+  status: 'canceling' | 'not_found';
   error?: string;
 }
 
 export interface DesktopIntegrationStatus {
   ok: boolean;
-  status: "ok" | "missing" | "wrong_wmclass" | "not_linux";
+  status: 'ok' | 'missing' | 'wrong_wmclass' | 'not_linux';
   error?: string;
 }
 
@@ -180,19 +183,31 @@ export interface FrameworkUpdateInfo {
   error: string;
 }
 
+export interface WindowsEdlDriverInstallResponse {
+  ok: boolean;
+  attempted: boolean;
+  method: 'qdloader-setup' | 'wdi-simple';
+  detail?: string;
+  error?: string;
+}
+
 export interface SetDesktopPromptPreferenceRequest {
   ask: boolean;
 }
 
 export type FirmwareTaskStatus =
-  | "starting"
-  | "downloading"
-  | "paused"
-  | "preparing"
-  | "flashing"
-  | "completed"
-  | "failed"
-  | "canceled";
+  | 'starting'
+  | 'downloading'
+  | 'paused'
+  | 'preparing'
+  | 'flashing'
+  | 'completed'
+  | 'failed'
+  | 'canceled';
+
+export type RescueQdlStorage = 'auto' | 'emmc' | 'ufs';
+
+export type RescueFlashTransport = 'fastboot' | 'qdl' | 'unisoc';
 
 export interface DownloadProgressMessage {
   downloadId: string;
@@ -200,11 +215,14 @@ export interface DownloadProgressMessage {
   romName: string;
   status: FirmwareTaskStatus;
   dryRun?: boolean;
+  flashTransport?: RescueFlashTransport;
+  qdlStorage?: RescueQdlStorage;
+  qdlSerial?: string;
   savePath?: string;
   downloadedBytes: number;
   totalBytes?: number;
   speedBytesPerSecond?: number;
-  phase?: "download" | "prepare" | "flash";
+  phase?: 'download' | 'prepare' | 'flash';
   stepIndex?: number;
   stepTotal?: number;
   stepLabel?: string;
@@ -288,8 +306,11 @@ export interface RescueLiteFirmwareRequest {
   romMatchIdentifier?: string;
   selectedParameters?: Record<string, string>;
   recipeUrl?: string;
-  dataReset: "yes" | "no";
+  dataReset: 'yes' | 'no';
   dryRun?: boolean;
+  flashTransport?: RescueFlashTransport;
+  qdlStorage?: RescueQdlStorage;
+  qdlSerial?: string;
 }
 
 export interface RescueLiteFirmwareFromLocalRequest {
@@ -301,8 +322,11 @@ export interface RescueLiteFirmwareFromLocalRequest {
   romMatchIdentifier?: string;
   selectedParameters?: Record<string, string>;
   recipeUrl?: string;
-  dataReset: "yes" | "no";
+  dataReset: 'yes' | 'no';
   dryRun?: boolean;
+  flashTransport?: RescueFlashTransport;
+  qdlStorage?: RescueQdlStorage;
+  qdlSerial?: string;
 }
 
 export interface ExtractLocalFirmwareRequest {
@@ -339,25 +363,25 @@ export interface DesktopApi {
   isDesktop: true;
   startAuth: () => Promise<AuthStartResponse>;
   completeAuth: (
-    callbackUrlOrToken: AuthCompleteRequest["callbackUrlOrToken"],
+    callbackUrlOrToken: AuthCompleteRequest['callbackUrlOrToken'],
   ) => Promise<AuthCompleteResponse>;
   getStoredAuthState: () => Promise<StoredAuthStateResponse>;
   authWithStoredToken: () => Promise<AuthCompleteResponse>;
   ping: () => Promise<BridgePingResponse>;
   getCatalogModels: (
-    refresh?: GetCatalogModelsRequest["refresh"],
+    refresh?: GetCatalogModelsRequest['refresh'],
   ) => Promise<CatalogModelsResponse>;
   lookupConnectedDeviceFirmware: () => Promise<ConnectedLookupResponse>;
   discoverCountryOptions: (
-    model: DiscoverCountryOptionsRequest["model"],
+    model: DiscoverCountryOptionsRequest['model'],
   ) => Promise<CountryOptionsResponse>;
   lookupCatalogManual: (
-    model: LookupCatalogManualRequest["model"],
-    countryValue?: LookupCatalogManualRequest["countryValue"],
-    allCountries?: LookupCatalogManualRequest["allCountries"],
+    model: LookupCatalogManualRequest['model'],
+    countryValue?: LookupCatalogManualRequest['countryValue'],
+    allCountries?: LookupCatalogManualRequest['allCountries'],
   ) => Promise<ManualCatalogLookupResponse>;
   getReadSupportHints: (
-    modelName: ReadSupportHintsRequest["modelName"],
+    modelName: ReadSupportHintsRequest['modelName'],
   ) => Promise<ReadSupportHintsResponse>;
   lookupReadSupportByImei: (
     payload: LookupReadSupportByImeiRequest,
@@ -368,12 +392,8 @@ export interface DesktopApi {
   lookupReadSupportByParams: (
     payload: LookupReadSupportByParamsRequest,
   ) => Promise<ReadSupportLookupResponse>;
-  downloadFirmware: (
-    payload: DownloadFirmwareRequest,
-  ) => Promise<DownloadFirmwareResponse>;
-  rescueLiteFirmware: (
-    payload: RescueLiteFirmwareRequest,
-  ) => Promise<RescueLiteFirmwareResponse>;
+  downloadFirmware: (payload: DownloadFirmwareRequest) => Promise<DownloadFirmwareResponse>;
+  rescueLiteFirmware: (payload: RescueLiteFirmwareRequest) => Promise<RescueLiteFirmwareResponse>;
   rescueLiteFirmwareFromLocal: (
     payload: RescueLiteFirmwareFromLocalRequest,
   ) => Promise<RescueLiteFirmwareResponse>;
@@ -386,21 +406,18 @@ export interface DesktopApi {
   attachLocalRecipeMetadata: (
     payload: AttachLocalRecipeMetadataRequest,
   ) => Promise<AttachLocalRecipeResponse>;
-  cancelDownload: (
-    payload: CancelDownloadRequest,
-  ) => Promise<CancelDownloadResponse>;
+  cancelDownload: (payload: CancelDownloadRequest) => Promise<CancelDownloadResponse>;
   checkDesktopIntegration: () => Promise<DesktopIntegrationStatus>;
   createDesktopIntegration: () => Promise<DesktopIntegrationStatus>;
   getDesktopPromptPreference: () => Promise<boolean>;
-  setDesktopPromptPreference: (
-    payload: SetDesktopPromptPreferenceRequest,
-  ) => Promise<boolean>;
+  setDesktopPromptPreference: (payload: SetDesktopPromptPreferenceRequest) => Promise<boolean>;
   getAppInfo: () => Promise<AppInfo>;
   listLocalDownloadedFiles: () => Promise<LocalDownloadedFilesResponse>;
   openUrl: (url: string) => Promise<{ ok: boolean; error?: string }>;
   checkFrameworkUpdate: () => Promise<FrameworkUpdateInfo>;
   downloadFrameworkUpdate: () => Promise<void>;
   applyFrameworkUpdate: () => Promise<void>;
+  installWindowsEdlDriver: () => Promise<WindowsEdlDriverInstallResponse>;
   deleteLocalFile: (payload: DeleteLocalFileRequest) => Promise<{ ok: boolean; error?: string }>;
   pauseDownload: (payload: PauseDownloadRequest) => Promise<{ ok: boolean; error?: string }>;
   resumeDownload: (payload: ResumeDownloadRequest) => Promise<DownloadFirmwareResponse>;

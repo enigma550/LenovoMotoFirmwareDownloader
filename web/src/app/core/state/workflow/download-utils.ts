@@ -1,4 +1,16 @@
-import type { FirmwareVariant, LocalDownloadedFile } from '../../models/desktop-api.ts';
+import {
+  fileNameFromUrl,
+  findBestLocalFileMatchForVariant as findBestLocalFileMatchForVariantInCore,
+  findLookupVariantForLocalFile as findLookupVariantForLocalFileInCore,
+  getPreferredVariantFileName,
+  getVariantCandidateFileNames as getVariantCandidateFileNamesInCore,
+  normalizeFileName,
+} from '../../../../../../core/features/downloads/index';
+import type {
+  FirmwareVariant,
+  LocalDownloadedFile,
+  RescueFlashTransport,
+} from '../../models/desktop-api.ts';
 import type {
   DataResetChoice,
   DownloadHistoryEntry,
@@ -47,13 +59,23 @@ export function rescueDialogTitle(dryRun: boolean) {
 
 export function rescueDialogDescription(dryRun: boolean) {
   if (dryRun) {
-    return 'Dry run only parses rescue commands and prints planned fastboot commands. No flashing is executed.';
+    return 'Dry run only parses rescue commands and prints the planned command sequence. No flashing is executed.';
   }
-  return 'Rescue Lite executes fastboot commands from the selected firmware package.';
+  return 'Rescue Lite executes firmware rescue commands from the selected package.';
 }
 
 export function rescueExecutionLabel(dryRun: boolean) {
   return dryRun ? 'Dry run' : 'Live flash';
+}
+
+export function flashTransportLabel(transport: RescueFlashTransport) {
+  if (transport === 'qdl') {
+    return 'QDL (EDL/Firehose)';
+  }
+  if (transport === 'unisoc') {
+    return 'Unisoc PAC';
+  }
+  return 'Fastboot';
 }
 
 export function actionLabelFromMode(mode: DownloadMode, dryRun: boolean) {
@@ -108,77 +130,22 @@ export function rescueStepText(entry: DownloadHistoryEntry) {
   return entry.stepLabel;
 }
 
-export function normalizeFileName(name: string) {
-  return name.trim().toLowerCase();
-}
-
-export function fileNameFromUrl(url: string) {
-  try {
-    const pathname = new URL(url).pathname;
-    const value = pathname.split('/').pop() || '';
-    return decodeURIComponent(value);
-  } catch {
-    return '';
-  }
-}
+export { fileNameFromUrl, getPreferredVariantFileName, normalizeFileName };
 
 export function getVariantCandidateFileNames(variant: FirmwareVariant) {
-  const names = new Set<string>();
-  const fromName = normalizeFileName(variant.romName || '');
-  if (fromName) {
-    names.add(fromName);
-  }
-  const fromUrl = normalizeFileName(fileNameFromUrl(variant.romUrl || ''));
-  if (fromUrl) {
-    names.add(fromUrl);
-  }
-  return names;
-}
-
-export function getPreferredVariantFileName(variant: FirmwareVariant) {
-  const fromUrl = fileNameFromUrl(variant.romUrl || '').trim();
-  if (fromUrl) return fromUrl;
-  return variant.romName || 'firmware.zip';
+  return getVariantCandidateFileNamesInCore(variant);
 }
 
 export function findBestLocalFileMatchForVariant(
   variant: FirmwareVariant,
   files: LocalDownloadedFile[],
 ) {
-  const candidates = getVariantCandidateFileNames(variant);
-  if (candidates.size === 0) {
-    return null;
-  }
-
-  const matches = files.filter((file) => candidates.has(normalizeFileName(file.fileName)));
-  if (matches.length === 0) {
-    return null;
-  }
-
-  return matches.reduce((latest, current) =>
-    current.modifiedAt > latest.modifiedAt ? current : latest,
-  );
+  return findBestLocalFileMatchForVariantInCore(variant, files);
 }
 
 export function findLookupVariantForLocalFile(
   file: LocalDownloadedFile,
   variants: FirmwareVariant[],
 ) {
-  const target = normalizeFileName(file.fileName);
-  if (!target) {
-    return null;
-  }
-
-  const matches = variants
-    .filter((variant) => Boolean(variant.recipeUrl))
-    .filter((variant) => {
-      const byName = normalizeFileName(variant.romName || '');
-      const byUrl = normalizeFileName(fileNameFromUrl(variant.romUrl || ''));
-      return byName === target || byUrl === target;
-    });
-
-  if (matches.length === 0) {
-    return null;
-  }
-  return matches[matches.length - 1];
+  return findLookupVariantForLocalFileInCore(file.fileName, variants);
 }

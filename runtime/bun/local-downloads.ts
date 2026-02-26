@@ -1,16 +1,10 @@
-import { existsSync } from "node:fs";
-import { readdir, stat } from "fs/promises";
-import { basename, join, relative } from "node:path";
-import { homedir } from "node:os";
-import { requestApi } from "../../core/infra/lmsa/api.ts";
-import type {
-  AttachLocalRecipeResponse,
-  LocalDownloadedFilesResponse,
-} from "../shared/rpc.ts";
-import {
-  readFirmwareMetadata,
-  writeFirmwareMetadata,
-} from "./firmware-metadata.ts";
+import { existsSync } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { basename, join, relative } from 'node:path';
+import { requestApi } from '../../core/infra/lmsa/api.ts';
+import type { AttachLocalRecipeResponse, LocalDownloadedFilesResponse } from '../shared/rpc.ts';
+import { readFirmwareMetadata, writeFirmwareMetadata } from './firmware-metadata.ts';
 import {
   asRecord,
   firstStringField,
@@ -19,18 +13,18 @@ import {
   getRescueExtractDirectoryRoot,
   hasUsableExtractedRescueScripts,
   isRescueRecipeContent,
+  isSupportedFirmwareArchive,
   normalizeRemoteUrl,
   sanitizeDirectoryName,
-} from "./firmware-package-utils.ts";
+  stripFirmwareArchiveExtension,
+} from './firmware-package-utils.ts';
 
 async function fetchRecipeContent(recipeUrl: string) {
   const response = await fetch(recipeUrl, {
-    method: "GET",
+    method: 'GET',
   });
   if (!response.ok) {
-    throw new Error(
-      `Recipe request failed (${response.status} ${response.statusText}).`,
-    );
+    throw new Error(`Recipe request failed (${response.status} ${response.statusText}).`);
   }
   const text = await response.text();
   return JSON.parse(text) as unknown;
@@ -40,72 +34,68 @@ async function assertRescueRecipeUrl(recipeUrl: string) {
   const recipeContent = await fetchRecipeContent(recipeUrl);
   if (!isRescueRecipeContent(recipeContent)) {
     throw new Error(
-      "Recipe is not a rescue/flash recipe (expected LMSA_Rescue with FastbootFlash step).",
+      'Recipe is not a rescue/flash recipe (expected LMSA_Rescue with FastbootFlash step).',
     );
   }
 }
 
 function extractRecipeUrlFromModelRecipeResponse(payload: unknown) {
-  if (!payload || typeof payload !== "object") return "";
+  if (!payload || typeof payload !== 'object') return '';
   const root = payload as Record<string, unknown>;
   const content =
-    root.content && typeof root.content === "object"
+    root.content && typeof root.content === 'object'
       ? (root.content as Record<string, unknown>)
       : null;
   const candidateValues = [content?.flashFlow, content?.recipe];
   const first = candidateValues.find(
-    (value): value is string =>
-      typeof value === "string" && value.trim().length > 0,
+    (value): value is string => typeof value === 'string' && value.trim().length > 0,
   );
-  return first ? normalizeRemoteUrl(first) : "";
+  return first ? normalizeRemoteUrl(first) : '';
 }
 
 function isFirmwareArchive(name: string) {
-  return name.toLowerCase().endsWith(".zip");
+  return isSupportedFirmwareArchive(name);
 }
 
-async function findLegacyExtractDirForZip(zipFileName: string) {
+async function findLegacyExtractDirForArchive(archiveFileName: string) {
   const rescueDir = getRescueDirectory();
   if (!existsSync(rescueDir)) {
-    return "";
+    return '';
   }
 
-  const normalizedZipBase = basename(zipFileName).replace(/\.zip$/i, "");
+  const normalizedArchiveBase =
+    stripFirmwareArchiveExtension(basename(archiveFileName)) || basename(archiveFileName);
   const legacyInfoCandidates = [
-    `${normalizedZipBase}.info.txt`.toLowerCase(),
-    `${normalizedZipBase.replace(/\.xml$/i, "")}.info.txt`.toLowerCase(),
+    `${normalizedArchiveBase}.info.txt`.toLowerCase(),
+    `${normalizedArchiveBase.replace(/\.xml$/i, '')}.info.txt`.toLowerCase(),
   ];
 
   const entries = await readdir(rescueDir, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    if (entry.name === "extracted") continue;
+    if (entry.name === 'extracted') continue;
     const candidateDir = join(rescueDir, entry.name);
     const inner = await readdir(candidateDir, { withFileTypes: true });
-    const innerFiles = inner
-      .filter((item) => item.isFile())
-      .map((item) => item.name.toLowerCase());
+    const innerFiles = inner.filter((item) => item.isFile()).map((item) => item.name.toLowerCase());
 
-    const hasInfoLink = legacyInfoCandidates.some((name) =>
-      innerFiles.includes(name),
-    );
+    const hasInfoLink = legacyInfoCandidates.some((name) => innerFiles.includes(name));
     if (hasInfoLink && hasUsableExtractedRescueScripts(candidateDir)) {
       return candidateDir;
     }
   }
-  return "";
+  return '';
 }
 
-async function resolveLinkedExtractDir(zipFileName: string) {
-  const withoutZip = zipFileName.replace(/\.zip$/i, "");
+async function resolveLinkedExtractDir(archiveFileName: string) {
+  const withoutArchiveExtension = stripFirmwareArchiveExtension(archiveFileName) || archiveFileName;
   const expectedDir = join(
     getRescueExtractDirectoryRoot(),
-    sanitizeDirectoryName(withoutZip),
+    sanitizeDirectoryName(withoutArchiveExtension),
   );
   if (hasUsableExtractedRescueScripts(expectedDir)) {
     return { extractedDir: expectedDir, hasExtractedDir: true };
   }
-  const legacyExtractDir = await findLegacyExtractDirForZip(zipFileName);
+  const legacyExtractDir = await findLegacyExtractDirForArchive(archiveFileName);
   if (legacyExtractDir) {
     return { extractedDir: legacyExtractDir, hasExtractedDir: true };
   }
@@ -182,68 +172,65 @@ export async function attachLocalRecipeFromModel(payload: {
     return {
       ok: false,
       filePath,
-      error: "Missing local firmware file path.",
+      error: 'Missing local firmware file path.',
     };
   }
   if (!(await Bun.file(filePath).exists())) {
     return {
       ok: false,
       filePath,
-      error: "Local firmware file was not found.",
+      error: 'Local firmware file was not found.',
     };
   }
   if (!modelName.trim()) {
     return {
       ok: false,
       filePath,
-      error: "Model name is required to fetch recipe metadata.",
+      error: 'Model name is required to fetch recipe metadata.',
     };
   }
 
   try {
-    const response = await requestApi(
-      "/rescueDevice/getRescueModelRecipe.jhtml",
-      {
-        modelName: modelName.trim(),
-        marketName: (marketName || "").trim(),
-        category: (category || "").trim(),
-      },
-    );
+    const response = await requestApi('/rescueDevice/getRescueModelRecipe.jhtml', {
+      modelName: modelName.trim(),
+      marketName: (marketName || '').trim(),
+      category: (category || '').trim(),
+    });
     const raw = (await response.json()) as {
       code?: string;
       desc?: string;
       content?: unknown;
     };
-    const code = typeof raw?.code === "string" ? raw.code : "";
-    const description = typeof raw?.desc === "string" ? raw.desc : "";
-    if (code !== "0000") {
+    const code = typeof raw?.code === 'string' ? raw.code : '';
+    const description = typeof raw?.desc === 'string' ? raw.desc : '';
+    if (code !== '0000') {
       return {
         ok: false,
         filePath,
         code,
         description,
-        error: description || `Recipe lookup failed (${code || "unknown"}).`,
+        error: description || `Recipe lookup failed (${code || 'unknown'}).`,
       };
     }
 
     const content = asRecord(raw?.content);
     const recipeUrl = extractRecipeUrlFromModelRecipeResponse(raw);
     if (!recipeUrl) {
-      const readFlowOnly = firstStringField(content, ["readFlow"]);
+      const readFlowOnly = firstStringField(content, ['readFlow']);
       return {
         ok: false,
         filePath,
         code,
         description,
         error: readFlowOnly
-          ? "Rescue Lite requires flashFlow. Model recipe returned readFlow-only data."
-          : "Recipe response did not include a usable flash recipe URL.",
+          ? 'Rescue Lite requires flashFlow. Model recipe returned readFlow-only data.'
+          : 'Recipe response did not include a usable flash recipe URL.',
       };
     }
     await assertRescueRecipeUrl(recipeUrl);
 
     await writeFirmwareMetadata(filePath, {
-      source: "manual-model",
+      source: 'manual-model',
       romName: fileName,
       recipeUrl,
       selectedParameters: {
@@ -295,34 +282,34 @@ export async function attachLocalRecipeMetadata(payload: {
     return {
       ok: false,
       filePath,
-      error: "Missing local firmware file path.",
+      error: 'Missing local firmware file path.',
     };
   }
   if (!(await Bun.file(filePath).exists())) {
     return {
       ok: false,
       filePath,
-      error: "Local firmware file was not found.",
+      error: 'Local firmware file was not found.',
     };
   }
 
-  const normalizedRecipeUrl = normalizeRemoteUrl(recipeUrl || "");
+  const normalizedRecipeUrl = normalizeRemoteUrl(recipeUrl || '');
   if (!normalizedRecipeUrl) {
     return {
       ok: false,
       filePath,
-      error: "Missing recipe URL.",
+      error: 'Missing recipe URL.',
     };
   }
 
   try {
     await assertRescueRecipeUrl(normalizedRecipeUrl);
     await writeFirmwareMetadata(filePath, {
-      source: source || "variant-link",
+      source: source || 'variant-link',
       romName: (romName || fileName).trim(),
-      romUrl: (romUrl || "").trim(),
-      publishDate: (publishDate || "").trim(),
-      romMatchIdentifier: (romMatchIdentifier || "").trim(),
+      romUrl: (romUrl || '').trim(),
+      publishDate: (publishDate || '').trim(),
+      romMatchIdentifier: (romMatchIdentifier || '').trim(),
       recipeUrl: normalizedRecipeUrl,
       selectedParameters,
     });

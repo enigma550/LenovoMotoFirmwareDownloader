@@ -1,4 +1,4 @@
-import { normalizeRemoteUrl } from "./resource-variant.ts";
+import { normalizeRemoteUrl } from './resource-variant.ts';
 
 export function extractRomUrl(content: unknown) {
   if (!Array.isArray(content)) return null;
@@ -6,21 +6,19 @@ export function extractRomUrl(content: unknown) {
   for (const item of content) {
     if (
       item &&
-      typeof item === "object" &&
-      "romResource" in item &&
+      typeof item === 'object' &&
+      'romResource' in item &&
       item.romResource &&
-      typeof item.romResource === "object" &&
-      "uri" in item.romResource &&
-      typeof item.romResource.uri === "string"
+      typeof item.romResource === 'object' &&
+      'uri' in item.romResource &&
+      typeof item.romResource.uri === 'string'
     ) {
       const uri = item.romResource.uri;
       return normalizeRemoteUrl(uri);
     }
 
     const itemString = JSON.stringify(item);
-    const match = itemString.match(
-      /(?:https?:\/\/)?download\.lenovo\.com\/[^"'\s<>]+?\.xml\.zip/i,
-    );
+    const match = itemString.match(/(?:https?:\/\/)?download\.lenovo\.com\/[^"'\s<>]+?\.xml\.zip/i);
 
     if (match?.[0]) {
       const uri = match[0];
@@ -32,38 +30,36 @@ export function extractRomUrl(content: unknown) {
 }
 
 export function extractRecipeUrl(content: unknown) {
-  if (!Array.isArray(content)) return "";
+  if (!Array.isArray(content)) return '';
 
   for (const item of content) {
-    if (item && typeof item === "object") {
+    if (item && typeof item === 'object') {
       const record = item as Record<string, unknown>;
-      const direct = ["flashFlow", "recipe", "recipeResource"]
+      const direct = ['flashFlow', 'recipe', 'recipeResource']
         .map((key) => record[key])
-        .find((value): value is string => typeof value === "string");
+        .find((value): value is string => typeof value === 'string');
       if (direct?.trim()) {
         return normalizeRemoteUrl(direct.trim());
       }
     }
 
     const itemString = JSON.stringify(item);
-    const match = itemString.match(
-      /"(?:flashFlow|recipe(?:Resource)?)"\s*:\s*"([^"]+)"/i,
-    );
+    const match = itemString.match(/"(?:flashFlow|recipe(?:Resource)?)"\s*:\s*"([^"]+)"/i);
     if (match?.[1]?.trim()) {
       return normalizeRemoteUrl(match[1].trim());
     }
   }
 
-  return "";
+  return '';
 }
 
 export function extractRomMatchIdentifier(content: unknown) {
-  if (!Array.isArray(content)) return "";
+  if (!Array.isArray(content)) return '';
 
   for (const item of content) {
-    if (item && typeof item === "object") {
+    if (item && typeof item === 'object') {
       const record = item as Record<string, unknown>;
-      if (typeof record.romMatchId === "string" && record.romMatchId.trim()) {
+      if (typeof record.romMatchId === 'string' && record.romMatchId.trim()) {
         return record.romMatchId.trim();
       }
     }
@@ -75,21 +71,21 @@ export function extractRomMatchIdentifier(content: unknown) {
     }
   }
 
-  return "";
+  return '';
 }
 
 export function extractPublishDate(content: unknown) {
-  if (!Array.isArray(content)) return "";
+  if (!Array.isArray(content)) return '';
 
   for (const item of content) {
     if (
       item &&
-      typeof item === "object" &&
-      "romResource" in item &&
+      typeof item === 'object' &&
+      'romResource' in item &&
       item.romResource &&
-      typeof item.romResource === "object" &&
-      "publishDate" in item.romResource &&
-      typeof item.romResource.publishDate === "string"
+      typeof item.romResource === 'object' &&
+      'publishDate' in item.romResource &&
+      typeof item.romResource.publishDate === 'string'
     ) {
       return item.romResource.publishDate.trim();
     }
@@ -101,5 +97,5 @@ export function extractPublishDate(content: unknown) {
     }
   }
 
-  return "";
+  return '';
 }

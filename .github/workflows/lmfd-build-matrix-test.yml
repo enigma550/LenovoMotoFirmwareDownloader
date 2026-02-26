@@ -22,6 +22,11 @@ on:
         required: false
         default: ""
         type: string
+  push:
+    branches:
+      - dev
+      - canary
+      - stable
 
 permissions:
   contents: write
@@ -31,8 +36,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  resolve-build-options:
+    name: Resolve Build Options
+    runs-on: ubuntu-latest
+    outputs:
+      buildEnv: ${{ steps.options.outputs.buildEnv }}
+      publishRelease: ${{ steps.options.outputs.publishRelease }}
+      releaseTag: ${{ steps.options.outputs.releaseTag }}
+    steps:
+      - name: Resolve options
+        id: options
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            buildEnv="${{ inputs.buildEnv }}"
+            publishRelease="${{ inputs.publishRelease }}"
+            releaseTag="${{ inputs.releaseTag }}"
+          else
+            case "${{ github.ref_name }}" in
+              stable) buildEnv="stable" ;;
+              canary) buildEnv="canary" ;;
+              *) buildEnv="dev" ;;
+            esac
+            publishRelease="false"
+            releaseTag=""
+          fi
+
+          echo "buildEnv=$buildEnv" >> "$GITHUB_OUTPUT"
+          echo "publishRelease=$publishRelease" >> "$GITHUB_OUTPUT"
+          echo "releaseTag=$releaseTag" >> "$GITHUB_OUTPUT"
+
   resolve-version:
-    name: Resolve Version (${{ inputs.buildEnv }})
+    name: Resolve Version (${{ needs.resolve-build-options.outputs.buildEnv }})
+    needs: resolve-build-options
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.resolve.outputs.version }}
@@ -54,13 +90,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          version=$(bun scripts/resolve-version.ts ${{ inputs.buildEnv }})
+          version=$(bun scripts/resolve-version.ts ${{ needs.resolve-build-options.outputs.buildEnv }})
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Resolved version: $version"
 
   build:
-    name: Build (${{ matrix.os }}, ${{ matrix.arch }}, ${{ inputs.buildEnv }})
-    needs: resolve-version
+    name: Build (${{ matrix.os }}, ${{ matrix.arch }}, ${{ needs.resolve-build-options.outputs.buildEnv }})
+    needs: [resolve-build-options, resolve-version]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -86,6 +122,26 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Setup MSYS2 toolchain (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          location: C:\msys64
+          msystem: MINGW64
+          update: true
+          install: >-
+            autoconf
+            automake
+            base-devel
+            git
+            help2man
+            libtool
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-libusb
+            mingw-w64-x86_64-libxml2
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-pkgconf
+
       - name: Install root dependencies
         shell: bash
         run: bun install
@@ -94,17 +150,62 @@ jobs:
         shell: bash
         run: |
           appVersion="${{ needs.resolve-version.outputs.version }}"
-          if [ "${{ inputs.buildEnv }}" != "stable" ]; then
+          if [ "${{ needs.resolve-build-options.outputs.buildEnv }}" != "stable" ]; then
             shortSha=$(git rev-parse --short HEAD)
-            appVersion="${appVersion}-${{ inputs.buildEnv }}.${shortSha}"
+            appVersion="${appVersion}-${{ needs.resolve-build-options.outputs.buildEnv }}.${shortSha}"
           fi
-          bun scripts/patch-config.ts "$appVersion" "${{ inputs.buildEnv }}"
+          bun scripts/patch-config.ts "$appVersion" "${{ needs.resolve-build-options.outputs.buildEnv }}"
 
       - name: Install web dependencies
         shell: bash
         run: |
           cd web
           bun install
+
+      - name: Prepare bundled QDL binary
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          attempts=4
+          for i in $(seq 1 "$attempts"); do
+            echo "QDL prepare attempt $i/$attempts"
+            if bun run qdl:prepare; then
+              exit 0
+            fi
+            if [ "$i" -lt "$attempts" ]; then
+              sleepSeconds=$((i * 20))
+              echo "QDL prepare failed. Retrying in ${sleepSeconds}s..."
+              sleep "$sleepSeconds"
+            fi
+          done
+          echo "QDL prepare failed after $attempts attempts."
+          exit 1
+
+      - name: Prepare bundled wdi-simple binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          ELECTROBUN_OS: win32
+          ELECTROBUN_ARCH: ${{ matrix.arch }}
+          MSYS2_INSTALL_DIR: C:\msys64
+        run: |
+          $attempts = 4
+          for ($i = 1; $i -le $attempts; $i++) {
+            Write-Host "WDI prepare attempt $i/$attempts"
+            bun run wdi:prepare
+            if ($LASTEXITCODE -eq 0) {
+              exit 0
+            }
+            if ($i -lt $attempts) {
+              $sleepSeconds = $i * 20
+              Write-Host "WDI prepare failed. Retrying in $sleepSeconds s..."
+              Start-Sleep -Seconds $sleepSeconds
+            }
+          }
+          Write-Host "WDI prepare failed after $attempts attempts."
+          exit 1
 
       - name: Prepare runtime views
         shell: bash
@@ -122,7 +223,7 @@ jobs:
           attempts=4
           for i in $(seq 1 "$attempts"); do
             echo "Electrobun build attempt $i/$attempts"
-            if bunx electrobun build --env=${{ inputs.buildEnv }}; then
+            if bunx electrobun build --env=${{ needs.resolve-build-options.outputs.buildEnv }}; then
               exit 0
             fi
             if [ "$i" -lt "$attempts" ]; then
@@ -143,7 +244,7 @@ jobs:
           $attempts = 4
           for ($i = 1; $i -le $attempts; $i++) {
             Write-Host "Electrobun build attempt $i/$attempts"
-            bunx electrobun build --env=${{ inputs.buildEnv }}
+            bunx electrobun build --env=${{ needs.resolve-build-options.outputs.buildEnv }}
             if ($LASTEXITCODE -eq 0) {
               exit 0
             }
@@ -156,29 +257,74 @@ jobs:
           Write-Host "Electrobun build failed after $attempts attempts."
           exit 1
 
+      - name: Collect artifacts (fallback)
+        shell: bash
+        run: |
+          mkdir -p artifacts
+
+          if find artifacts -mindepth 1 -print -quit | grep -q .; then
+            echo "Artifacts already present in ./artifacts"
+          else
+            echo "No files in ./artifacts, collecting fallback outputs from ./build..."
+            find build -type f \
+              \( \
+                -name "*.dmg" -o \
+                -name "*.zip" -o \
+                -name "*.AppImage" -o \
+                -name "*.zsync" -o \
+                -name "*.tar.zst" -o \
+                -name "*.patch" -o \
+                -name "*update.json" -o \
+                -name "*.metadata.json" -o \
+                -name "*-Setup.exe" \
+              \) \
+              -exec cp -f {} artifacts/ \;
+
+            if ! find artifacts -mindepth 1 -print -quit | grep -q .; then
+              bundle_dir=$(find build -mindepth 2 -maxdepth 2 -type d -name "LMFD*" | head -n 1)
+              if [ -n "$bundle_dir" ]; then
+                echo "No packaged files found; archiving app bundle directory: $bundle_dir"
+                bundle_parent=$(dirname "$bundle_dir")
+                bundle_name=$(basename "$bundle_dir")
+                tar -C "$bundle_parent" -czf "artifacts/${bundle_name}.tar.gz" "$bundle_name"
+              fi
+            fi
+          fi
+
+          echo "Final artifact listing:"
+          ls -la artifacts || true
+
+          if ! find artifacts -mindepth 1 -print -quit | grep -q .; then
+            echo "No artifact files were produced. Build output tree (top-level):"
+            find build -maxdepth 4 -mindepth 1 -print || true
+            exit 1
+          fi
+
       - name: Rename artifacts
         shell: bash
         run: |
+          shopt -s nullglob
+
           case "${{ runner.os }}" in
             macOS) os="macos" ;;
             Windows) os="win" ;;
             Linux) os="linux" ;;
           esac
           arch="${{ matrix.arch }}"
-          env="${{ inputs.buildEnv }}"
+          env="${{ needs.resolve-build-options.outputs.buildEnv }}"
           prefix="${env}-${os}-${arch}"
-          
+
           # Extract clean version without canary tags for installer names
           rawVersion="${{ needs.resolve-version.outputs.version }}"
           cleanVersion=$(echo "$rawVersion" | cut -d'-' -f1)
           shortSha=$(git rev-parse --short HEAD)
-          
+
           cd artifacts || exit 0
-          
+
           # We purposefully leave .tar.zst, .patch, and update.json ALONE.
-          # Electrobun already names them correctly according to the strict 
+          # Electrobun already names them correctly according to the strict
           # format required for the delta updater to work properly.
-          
+
           # Rename ONLY the user-facing installer files
           if [ "$os" == "macos" ]; then
             for f in *.dmg; do
@@ -193,14 +339,14 @@ jobs:
       - name: Upload build outputs
         uses: actions/upload-artifact@v4
         with:
-          name: LenovoMotoFirmwareDownloader-${{ runner.os }}-${{ matrix.arch }}-${{ inputs.buildEnv }}
+          name: LenovoMotoFirmwareDownloader-${{ runner.os }}-${{ matrix.arch }}-${{ needs.resolve-build-options.outputs.buildEnv }}
           path: artifacts/
           if-no-files-found: error
 
   release:
     name: Publish GitHub Release
-    if: ${{ inputs.publishRelease }}
-    needs: [build, resolve-version]
+    if: ${{ needs.resolve-build-options.outputs.publishRelease == 'true' }}
+    needs: [resolve-build-options, build, resolve-version]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -214,7 +360,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: LenovoMotoFirmwareDownloader-*-${{ inputs.buildEnv }}
+          pattern: LenovoMotoFirmwareDownloader-*-${{ needs.resolve-build-options.outputs.buildEnv }}
           path: release-assets
           merge-multiple: true
 
@@ -224,19 +370,19 @@ jobs:
         run: |
           appVersion="${{ needs.resolve-version.outputs.version }}"
           appName=$(bun -e "import config from './electrobun.config.ts'; console.log(config.app.name);")
-          releaseTag="${{ inputs.releaseTag }}"
+          releaseTag="${{ needs.resolve-build-options.outputs.releaseTag }}"
           shortSha=$(git rev-parse --short HEAD)
 
           if [ -z "$releaseTag" ]; then
-            if [ "${{ inputs.buildEnv }}" == "stable" ]; then
+            if [ "${{ needs.resolve-build-options.outputs.buildEnv }}" == "stable" ]; then
               releaseTag="v${appVersion}"
             else
-              releaseTag="v${appVersion}-${{ inputs.buildEnv }}.${shortSha}"
+              releaseTag="v${appVersion}-${{ needs.resolve-build-options.outputs.buildEnv }}.${shortSha}"
             fi
           fi
 
           echo "tag=$releaseTag" >> "$GITHUB_OUTPUT"
-          echo "title=${appName} v${appVersion} (${{ inputs.buildEnv }} build)" >> "$GITHUB_OUTPUT"
+          echo "title=${appName} v${appVersion} (${{ needs.resolve-build-options.outputs.buildEnv }} build)" >> "$GITHUB_OUTPUT"
 
       - name: Create or update release and upload assets
         env:
@@ -245,7 +391,7 @@ jobs:
         run: |
           tag="${{ steps.meta.outputs.tag }}"
           title="${{ steps.meta.outputs.title }}"
-          buildEnv="${{ inputs.buildEnv }}"
+          buildEnv="${{ needs.resolve-build-options.outputs.buildEnv }}"
 
           if ! gh release view "$tag" >/dev/null 2>&1; then
             prerelease=""
@@ -258,17 +404,17 @@ jobs:
           # Mirror to a floating canary release if this is a canary build
           if [ "$buildEnv" == "canary" ]; then
             echo "Updating rolling canary release..."
-            
+
             # Move the local tag to the new build and force push it to GitHub
             git tag -f canary
             git push origin canary --force
-            
+
             # Check if the canary release already exists
             if gh release view canary >/dev/null 2>&1; then
               # Update existing release to preserve the URL (sets it to active if it was stuck as a draft)
               gh release edit canary --title "LMFD Canary (Latest)" --prerelease --draft=false
-              
-              # Delete old versioned installers to prevent them from piling up, 
+
+              # Delete old versioned installers to prevent them from piling up,
               # but KEEP the .patch files and .tar.zst payloads for the updater!
               echo "Cleaning up old installers..."
               for asset in $(gh release view canary --json assets --jq '.assets[].name'); do
@@ -280,9 +426,9 @@ jobs:
               # Create the release if it is the very first time
               gh release create canary --title "LMFD Canary (Latest)" --notes "This rolling release always points to the latest canary build." --prerelease
             fi
-            
+
             # Overwrite all files in the release with the new ones
             gh release upload canary release-assets/* --clobber
-            
+
             echo "Canary mirror updated successfully!"
           fi

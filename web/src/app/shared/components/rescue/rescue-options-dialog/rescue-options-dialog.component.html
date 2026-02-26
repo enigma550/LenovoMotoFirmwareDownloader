@@ -1,0 +1,263 @@
+@if (isOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+    (click)="onBackdropClick()"
+  >
+    <div
+      class="w-full max-w-xl rounded-2xl border p-5 shadow-xl"
+      [class.border-slate-200]="!isDark()"
+      [class.bg-white]="!isDark()"
+      [class.border-slate-700]="isDark()"
+      [class.bg-slate-900]="isDark()"
+      (click)="onDialogClick($event)"
+    >
+      <h4
+        class="text-base font-bold"
+        [class.text-slate-900]="!isDark()"
+        [class.text-slate-100]="isDark()"
+      >
+        {{ title() }}
+      </h4>
+
+      <p class="mt-2 text-xs" [class.text-slate-600]="!isDark()" [class.text-slate-300]="isDark()">
+        {{ description() }}
+      </p>
+
+      @if (targetLabel()) {
+        <p
+          class="mt-2 break-all text-xs"
+          [class.text-slate-600]="!isDark()"
+          [class.text-slate-300]="isDark()"
+        >
+          {{ targetLabel() }}
+        </p>
+      }
+
+      <p class="mt-3 text-sm" [class.text-slate-700]="!isDark()" [class.text-slate-200]="isDark()">
+        Flash transport
+      </p>
+      <p class="mt-1 text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+        Choose command backend for Rescue Lite execution.
+      </p>
+
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-sky-500]="flashTransport() === 'fastboot'"
+          [class.bg-sky-700]="flashTransport() === 'fastboot'"
+          [class.text-white]="flashTransport() === 'fastboot'"
+          [class.border-slate-300]="flashTransport() !== 'fastboot' && !isDark()"
+          [class.text-slate-700]="flashTransport() !== 'fastboot' && !isDark()"
+          [class.hover:bg-slate-100]="flashTransport() !== 'fastboot' && !isDark()"
+          [class.border-slate-600]="flashTransport() !== 'fastboot' && isDark()"
+          [class.text-slate-200]="flashTransport() !== 'fastboot' && isDark()"
+          [class.hover:bg-slate-700]="flashTransport() !== 'fastboot' && isDark()"
+          type="button"
+          (click)="onSelectFlashTransport('fastboot')"
+        >
+          Fastboot
+        </button>
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-sky-500]="flashTransport() === 'qdl'"
+          [class.bg-sky-700]="flashTransport() === 'qdl'"
+          [class.text-white]="flashTransport() === 'qdl'"
+          [class.border-slate-300]="flashTransport() !== 'qdl' && !isDark()"
+          [class.text-slate-700]="flashTransport() !== 'qdl' && !isDark()"
+          [class.hover:bg-slate-100]="flashTransport() !== 'qdl' && !isDark()"
+          [class.border-slate-600]="flashTransport() !== 'qdl' && isDark()"
+          [class.text-slate-200]="flashTransport() !== 'qdl' && isDark()"
+          [class.hover:bg-slate-700]="flashTransport() !== 'qdl' && isDark()"
+          type="button"
+          (click)="onSelectFlashTransport('qdl')"
+        >
+          QDL
+        </button>
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-sky-500]="flashTransport() === 'unisoc'"
+          [class.bg-sky-700]="flashTransport() === 'unisoc'"
+          [class.text-white]="flashTransport() === 'unisoc'"
+          [class.border-slate-300]="flashTransport() !== 'unisoc' && !isDark()"
+          [class.text-slate-700]="flashTransport() !== 'unisoc' && !isDark()"
+          [class.hover:bg-slate-100]="flashTransport() !== 'unisoc' && !isDark()"
+          [class.border-slate-600]="flashTransport() !== 'unisoc' && isDark()"
+          [class.text-slate-200]="flashTransport() !== 'unisoc' && isDark()"
+          [class.hover:bg-slate-700]="flashTransport() !== 'unisoc' && isDark()"
+          type="button"
+          (click)="onSelectFlashTransport('unisoc')"
+        >
+          Unisoc PAC
+        </button>
+      </div>
+
+      <p class="mt-3 text-sm" [class.text-slate-700]="!isDark()" [class.text-slate-200]="isDark()">
+        Data reset
+      </p>
+      <p class="mt-1 text-xs" [class.text-slate-500]="!isDark()" [class.text-slate-400]="isDark()">
+        @if (dryRun()) {
+          Choose whether wipe commands should be included in the dry-run command plan.
+        } @else {
+          Choose whether user data should be wiped during rescue.
+        }
+      </p>
+
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-sky-500]="dataReset() === 'yes'"
+          [class.bg-sky-700]="dataReset() === 'yes'"
+          [class.text-white]="dataReset() === 'yes'"
+          [class.border-slate-300]="dataReset() !== 'yes' && !isDark()"
+          [class.text-slate-700]="dataReset() !== 'yes' && !isDark()"
+          [class.hover:bg-slate-100]="dataReset() !== 'yes' && !isDark()"
+          [class.border-slate-600]="dataReset() !== 'yes' && isDark()"
+          [class.text-slate-200]="dataReset() !== 'yes' && isDark()"
+          [class.hover:bg-slate-700]="dataReset() !== 'yes' && isDark()"
+          type="button"
+          (click)="onSelectDataReset('yes')"
+        >
+          Yes
+        </button>
+        <button
+          class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+          [class.border-sky-500]="dataReset() === 'no'"
+          [class.bg-sky-700]="dataReset() === 'no'"
+          [class.text-white]="dataReset() === 'no'"
+          [class.border-slate-300]="dataReset() !== 'no' && !isDark()"
+          [class.text-slate-700]="dataReset() !== 'no' && !isDark()"
+          [class.hover:bg-slate-100]="dataReset() !== 'no' && !isDark()"
+          [class.border-slate-600]="dataReset() !== 'no' && isDark()"
+          [class.text-slate-200]="dataReset() !== 'no' && isDark()"
+          [class.hover:bg-slate-700]="dataReset() !== 'no' && isDark()"
+          type="button"
+          (click)="onSelectDataReset('no')"
+        >
+          No
+        </button>
+      </div>
+
+      @if (flashTransport() === 'qdl') {
+        <div class="mt-4 space-y-3">
+          @if (showWindowsDriverInstall()) {
+            <div
+              class="rounded-lg border p-3"
+              [class.border-slate-200]="!isDark()"
+              [class.border-slate-700]="isDark()"
+            >
+              <p
+                class="text-sm font-semibold"
+                [class.text-slate-700]="!isDark()"
+                [class.text-slate-200]="isDark()"
+              >
+                Qualcomm driver
+              </p>
+              <p
+                class="mt-1 text-xs"
+                [class.text-slate-500]="!isDark()"
+                [class.text-slate-400]="isDark()"
+              >
+                Windows only: install QDLoader HS-USB 9008 driver before using QDL rescue.
+              </p>
+              <div class="mt-2">
+                <app-rescue-dialog-button
+                  [label]="driverInstallBusy() ? 'Installing driver...' : 'Install QDLoader Driver'"
+                  [isDark]="isDark()"
+                  [disabled]="driverInstallBusy()"
+                  variant="secondary"
+                  (clicked)="onInstallWindowsDriver()"
+                />
+              </div>
+            </div>
+          }
+
+          <p class="text-sm" [class.text-slate-700]="!isDark()" [class.text-slate-200]="isDark()">
+            QDL storage
+          </p>
+
+          <div class="flex flex-wrap gap-2">
+            <button
+              class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+              [class.border-sky-500]="qdlStorage() === 'auto'"
+              [class.bg-sky-700]="qdlStorage() === 'auto'"
+              [class.text-white]="qdlStorage() === 'auto'"
+              [class.border-slate-300]="qdlStorage() !== 'auto' && !isDark()"
+              [class.text-slate-700]="qdlStorage() !== 'auto' && !isDark()"
+              [class.hover:bg-slate-100]="qdlStorage() !== 'auto' && !isDark()"
+              [class.border-slate-600]="qdlStorage() !== 'auto' && isDark()"
+              [class.text-slate-200]="qdlStorage() !== 'auto' && isDark()"
+              [class.hover:bg-slate-700]="qdlStorage() !== 'auto' && isDark()"
+              type="button"
+              (click)="onSelectQdlStorage('auto')"
+            >
+              Auto
+            </button>
+            <button
+              class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+              [class.border-sky-500]="qdlStorage() === 'emmc'"
+              [class.bg-sky-700]="qdlStorage() === 'emmc'"
+              [class.text-white]="qdlStorage() === 'emmc'"
+              [class.border-slate-300]="qdlStorage() !== 'emmc' && !isDark()"
+              [class.text-slate-700]="qdlStorage() !== 'emmc' && !isDark()"
+              [class.hover:bg-slate-100]="qdlStorage() !== 'emmc' && !isDark()"
+              [class.border-slate-600]="qdlStorage() !== 'emmc' && isDark()"
+              [class.text-slate-200]="qdlStorage() !== 'emmc' && isDark()"
+              [class.hover:bg-slate-700]="qdlStorage() !== 'emmc' && isDark()"
+              type="button"
+              (click)="onSelectQdlStorage('emmc')"
+            >
+              eMMC
+            </button>
+            <button
+              class="rounded-lg border px-3 py-1 text-xs font-semibold transition"
+              [class.border-sky-500]="qdlStorage() === 'ufs'"
+              [class.bg-sky-700]="qdlStorage() === 'ufs'"
+              [class.text-white]="qdlStorage() === 'ufs'"
+              [class.border-slate-300]="qdlStorage() !== 'ufs' && !isDark()"
+              [class.text-slate-700]="qdlStorage() !== 'ufs' && !isDark()"
+              [class.hover:bg-slate-100]="qdlStorage() !== 'ufs' && !isDark()"
+              [class.border-slate-600]="qdlStorage() !== 'ufs' && isDark()"
+              [class.text-slate-200]="qdlStorage() !== 'ufs' && isDark()"
+              [class.hover:bg-slate-700]="qdlStorage() !== 'ufs' && isDark()"
+              type="button"
+              (click)="onSelectQdlStorage('ufs')"
+            >
+              UFS
+            </button>
+          </div>
+
+          <label
+            class="block text-xs"
+            [class.text-slate-600]="!isDark()"
+            [class.text-slate-300]="isDark()"
+          >
+            Board serial
+          </label>
+          <input
+            class="w-full rounded-lg border px-3 py-2 text-sm"
+            [class.border-slate-300]="!isDark()"
+            [class.bg-white]="!isDark()"
+            [class.text-slate-900]="!isDark()"
+            [class.border-slate-600]="isDark()"
+            [class.bg-slate-900]="isDark()"
+            [class.text-slate-100]="isDark()"
+            type="text"
+            placeholder="Optional"
+            [value]="qdlSerial()"
+            (input)="onQdlSerialInput($event)"
+          />
+        </div>
+      }
+
+      <div class="mt-5 flex items-center justify-end gap-2">
+        <app-rescue-dialog-button
+          label="Cancel"
+          [isDark]="isDark()"
+          variant="secondary"
+          (clicked)="onBackdropClick()"
+        />
+        <app-rescue-dialog-button label="Continue" variant="primary" (clicked)="onConfirm()" />
+      </div>
+    </div>
+  </div>
+}

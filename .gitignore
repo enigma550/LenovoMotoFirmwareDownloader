@@ -36,14 +36,31 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 
-# stuff
-fproj
-git-scripts
-
 # electrobun generated assets
 runtime/views/mainview
 artifacts
 
 # local runtime data
-data/config.json
-data/models-catalog.json
+assets/data/config.json
+assets/data/models-catalog.json
+# qdl tooling artifacts: ignore by default, whitelist bundled Windows QDLoader installer
+assets/tools/qdl/**
+!assets/tools/qdl/linux-x64/
+assets/tools/qdl/linux-x64/**
+!assets/tools/qdl/linux-x64/.gitkeep
+!assets/tools/qdl/linux-arm64/
+assets/tools/qdl/linux-arm64/**
+!assets/tools/qdl/linux-arm64/.gitkeep
+!assets/tools/qdl/darwin-x64/
+assets/tools/qdl/darwin-x64/**
+!assets/tools/qdl/darwin-x64/.gitkeep
+!assets/tools/qdl/darwin-arm64/
+assets/tools/qdl/darwin-arm64/**
+!assets/tools/qdl/darwin-arm64/.gitkeep
+!assets/tools/qdl/win32-x64/
+assets/tools/qdl/win32-x64/**
+!assets/tools/qdl/win32-x64/QDLoader HS-USB Driver_64bit_Setup.exe
+assets/tools/wdi/
+
+# stuff
+local-dev/

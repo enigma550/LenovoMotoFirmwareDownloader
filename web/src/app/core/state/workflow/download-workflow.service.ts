@@ -1,19 +1,14 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
 import { AuthApiService } from '../../api/auth-api.service';
+import { mapDownloadProgressMessage } from '../../api/desktop-response.mapper';
 import type {
-  DownloadProgressMessage,
   FirmwareVariant,
   LocalDownloadedFile,
+  RescueFlashTransport,
   RescueLiteFirmwareResponse,
+  RescueQdlStorage,
 } from '../../models/desktop-api.ts';
-import { WorkflowUiService } from './workflow-ui.service';
-import type {
-  DataResetChoice,
-  DownloadHistoryEntry,
-  DownloadMode,
-  FirmwareDownloadState,
-  RescueDryRunPlanDialog,
-} from './workflow.types';
+import { DownloadLocalFilesService } from './download-local-files.service';
 import {
   canceledStatusLabel,
   canceledToastLabel,
@@ -21,9 +16,18 @@ import {
   completedStatusLabel,
   dataResetLabel,
   findBestLocalFileMatchForVariant,
+  flashTransportLabel,
   getPreferredVariantFileName,
   isInProgressStatus,
 } from './download-utils';
+import type {
+  DataResetChoice,
+  DownloadHistoryEntry,
+  DownloadMode,
+  FirmwareDownloadState,
+  RescueDryRunPlanDialog,
+} from './workflow.types';
+import { WorkflowUiService } from './workflow-ui.service';
 
 const DOWNLOAD_PROGRESS_EVENT_NAME = 'desktop-download-progress';
 
@@ -36,6 +40,9 @@ function createIdleDownloadState(): FirmwareDownloadState {
     mode: 'download',
     dryRun: false,
     dataReset: 'no',
+    flashTransport: 'fastboot',
+    qdlStorage: 'auto',
+    qdlSerial: '',
     savePath: '',
     downloadedBytes: 0,
     totalBytes: null,
@@ -53,6 +60,9 @@ type DownloadStartOptions = {
   mode: DownloadMode;
   dryRun: boolean;
   dataReset: DataResetChoice;
+  flashTransport: RescueFlashTransport;
+  qdlStorage: RescueQdlStorage;
+  qdlSerial?: string;
   localFile?: LocalDownloadedFile;
 };
 
@@ -60,11 +70,13 @@ type DownloadStartOptions = {
 export class DownloadWorkflowService {
   private readonly backend = inject(AuthApiService);
   private readonly ui = inject(WorkflowUiService);
+  private readonly localFiles = inject(DownloadLocalFilesService);
   private readonly dismissedDownloadIds = new Set<string>();
+  private readonly recentFailureToasts = new Set<string>();
 
   readonly firmwareDownload = signal<FirmwareDownloadState>(createIdleDownloadState());
   readonly downloadHistory = signal<DownloadHistoryEntry[]>([]);
-  readonly localDownloadedFiles = signal<LocalDownloadedFile[]>([]);
+  readonly localDownloadedFiles = this.localFiles.localDownloadedFiles;
   readonly rescueDryRunPlanDialog = signal<RescueDryRunPlanDialog | null>(null);
 
   readonly isDownloadActive = computed(() =>
@@ -91,6 +103,9 @@ export class DownloadWorkflowService {
       mode: 'download',
       dryRun: false,
       dataReset: 'no',
+      flashTransport: 'fastboot',
+      qdlStorage: 'auto',
+      qdlSerial: '',
     });
   }
 
@@ -98,11 +113,28 @@ export class DownloadWorkflowService {
     variant: FirmwareVariant,
     dataReset: DataResetChoice,
     dryRun = false,
+    flashTransport: RescueFlashTransport = 'fastboot',
+    qdlStorage: RescueQdlStorage = 'auto',
+    qdlSerial = '',
   ) {
-    await this.startVariantDownload(variant, { mode: 'rescue-lite', dryRun, dataReset });
+    await this.startVariantDownload(variant, {
+      mode: 'rescue-lite',
+      dryRun,
+      dataReset,
+      flashTransport,
+      qdlStorage,
+      qdlSerial,
+    });
   }
 
-  async rescueLiteLocalFile(file: LocalDownloadedFile, dataReset: DataResetChoice, dryRun = false) {
+  async rescueLiteLocalFile(
+    file: LocalDownloadedFile,
+    dataReset: DataResetChoice,
+    dryRun = false,
+    flashTransport: RescueFlashTransport = 'fastboot',
+    qdlStorage: RescueQdlStorage = 'auto',
+    qdlSerial = '',
+  ) {
     const variant = {
       romName: file.fileName,
       romUrl: file.fullPath,
@@ -115,132 +147,30 @@ export class DownloadWorkflowService {
       mode: 'rescue-lite',
       dryRun,
       dataReset,
+      flashTransport,
+      qdlStorage,
+      qdlSerial,
       localFile: file,
     });
   }
 
   async extractLocalFirmware(file: LocalDownloadedFile) {
-    this.ui.errorMessage.set('');
-    this.ui.status.set(`Extracting ${file.fileName}...`);
-    try {
-      const response = await this.backend.extractLocalFirmware({
-        filePath: file.fullPath,
-        fileName: file.fileName,
-        extractedDir: file.extractedDir,
-      });
-
-      if (!response.ok) {
-        throw new Error(response.error || 'Failed to extract local firmware package.');
-      }
-
-      this.ui.status.set(
-        response.reusedExtraction
-          ? 'Extraction skipped (already extracted).'
-          : 'Extraction completed.',
-      );
-      this.ui.showToast(
-        response.reusedExtraction
-          ? `Already extracted: ${file.fileName}`
-          : `Extracted: ${file.fileName}`,
-        'success',
-        2600,
-      );
-      await this.refreshLocalDownloadedFiles();
-    } catch (error) {
-      const message = this.ui.getErrorMessage(error);
-      this.ui.errorMessage.set(message);
-      this.ui.status.set('Idle');
-      this.ui.showToast(message, 'error', 3600);
-    }
+    await this.localFiles.extractLocalFirmware(file);
   }
 
   async attachLocalRecipeFromModel(
     file: LocalDownloadedFile,
     model: { modelName: string; marketName?: string; category?: string },
   ) {
-    this.ui.errorMessage.set('');
-    this.ui.status.set(`Fetching recipe metadata for ${file.fileName}...`);
-    try {
-      const response = await this.backend.attachLocalRecipeFromModel({
-        filePath: file.fullPath,
-        fileName: file.fileName,
-        modelName: model.modelName,
-        marketName: model.marketName,
-        category: model.category,
-      });
-      if (!response.ok) {
-        throw new Error(response.error || 'Recipe metadata fetch failed.');
-      }
-      this.ui.status.set('Recipe metadata saved.');
-      this.ui.showToast('Recipe metadata linked to local firmware.', 'success', 2600);
-      await this.refreshLocalDownloadedFiles();
-    } catch (error) {
-      const message = this.ui.getErrorMessage(error);
-      this.ui.errorMessage.set(message);
-      this.ui.status.set('Idle');
-      this.ui.showToast(message, 'error', 3600);
-    }
+    await this.localFiles.attachLocalRecipeFromModel(file, model);
   }
 
   async attachLocalRecipeFromVariant(file: LocalDownloadedFile, variant: FirmwareVariant) {
-    if (!variant.recipeUrl) {
-      this.ui.errorMessage.set('This firmware variant does not include a recipe URL.');
-      this.ui.showToast('No recipe URL was found for this variant.', 'error', 3200);
-      return false;
-    }
-
-    this.ui.errorMessage.set('');
-    this.ui.status.set(`Linking recipe metadata to ${file.fileName}...`);
-    try {
-      const response = await this.backend.attachLocalRecipeMetadata({
-        filePath: file.fullPath,
-        fileName: file.fileName,
-        recipeUrl: variant.recipeUrl,
-        romName: variant.romName,
-        romUrl: variant.romUrl,
-        publishDate: variant.publishDate,
-        romMatchIdentifier: variant.romMatchIdentifier,
-        selectedParameters: variant.selectedParameters,
-        source: 'variant-link',
-      });
-      if (!response.ok) {
-        throw new Error(response.error || 'Recipe metadata link failed.');
-      }
-
-      this.ui.status.set('Recipe metadata saved.');
-      this.ui.showToast(`Recipe linked: ${file.fileName}`, 'success', 2600);
-      await this.refreshLocalDownloadedFiles();
-      return true;
-    } catch (error) {
-      const message = this.ui.getErrorMessage(error);
-      this.ui.errorMessage.set(message);
-      this.ui.status.set('Idle');
-      this.ui.showToast(message, 'error', 3600);
-      return false;
-    }
+    return this.localFiles.attachLocalRecipeFromVariant(file, variant);
   }
 
   async attachVariantRecipeToMatchingLocalZip(variant: FirmwareVariant) {
-    if (!variant.recipeUrl) {
-      this.ui.errorMessage.set('This firmware variant does not include a recipe URL.');
-      this.ui.showToast('No recipe URL was found for this variant.', 'error', 3200);
-      return false;
-    }
-
-    if (this.localDownloadedFiles().length === 0) {
-      await this.refreshLocalDownloadedFiles();
-    }
-
-    const matchedFile = findBestLocalFileMatchForVariant(variant, this.localDownloadedFiles());
-    if (!matchedFile) {
-      this.ui.errorMessage.set(
-        `No matching local ZIP found for ${getPreferredVariantFileName(variant)}.`,
-      );
-      this.ui.showToast('No matching local ZIP found to link recipe metadata.', 'error', 3600);
-      return false;
-    }
-
-    return this.attachLocalRecipeFromVariant(matchedFile, variant);
+    return this.localFiles.attachVariantRecipeToMatchingLocalZip(variant);
   }
 
   clearRescueDryRunPlanDialog() {
@@ -256,7 +186,7 @@ export class DownloadWorkflowService {
       );
       if (existingLocalFile) {
         const preferredFileName = getPreferredVariantFileName(variant);
-        const message = `Download skipped. ZIP already exists: ${existingLocalFile.fileName}`;
+        const message = `Download skipped. Archive already exists: ${existingLocalFile.fileName}`;
         this.ui.errorMessage.set(message);
         this.ui.status.set('Download skipped (already exists).');
         this.ui.showToast(
@@ -282,6 +212,9 @@ export class DownloadWorkflowService {
       mode: options.mode,
       dryRun: options.dryRun,
       dataReset: options.dataReset,
+      flashTransport: options.flashTransport,
+      qdlStorage: options.qdlStorage,
+      qdlSerial: options.qdlSerial?.trim() || '',
       savePath: '',
       publishDate: variant.publishDate,
       romMatchIdentifier: variant.romMatchIdentifier,
@@ -300,7 +233,7 @@ export class DownloadWorkflowService {
     if (options.mode === 'rescue-lite') {
       this.ui.status.set('Rescue Lite: Starting firmware package download...');
       this.ui.showToast(
-        `Rescue Lite${options.dryRun ? ' (Dry run)' : ''} started (${options.localFile?.fileName || variant.romName}) | Data reset: ${dataResetLabel(options.dataReset)}`,
+        `Rescue Lite${options.dryRun ? ' (Dry run)' : ''} started (${options.localFile?.fileName || variant.romName}) | Data reset: ${dataResetLabel(options.dataReset)} | Transport: ${flashTransportLabel(options.flashTransport)}`,
         'info',
         2600,
       );
@@ -314,18 +247,35 @@ export class DownloadWorkflowService {
         options.mode === 'rescue-lite'
           ? options.localFile
             ? await this.backend.rescueLiteFirmwareFromLocal({
-              downloadId,
-              filePath: options.localFile.fullPath,
-              fileName: options.localFile.fileName,
-              extractedDir: options.localFile.extractedDir,
-              publishDate: variant.publishDate,
-              romMatchIdentifier: variant.romMatchIdentifier,
-              selectedParameters: variant.selectedParameters,
-              recipeUrl: variant.recipeUrl,
-              dataReset: options.dataReset,
-              dryRun: options.dryRun,
-            })
+                downloadId,
+                filePath: options.localFile.fullPath,
+                fileName: options.localFile.fileName,
+                extractedDir: options.localFile.extractedDir,
+                publishDate: variant.publishDate,
+                romMatchIdentifier: variant.romMatchIdentifier,
+                selectedParameters: variant.selectedParameters,
+                recipeUrl: variant.recipeUrl,
+                dataReset: options.dataReset,
+                dryRun: options.dryRun,
+                flashTransport: options.flashTransport,
+                qdlStorage: options.qdlStorage,
+                qdlSerial: options.qdlSerial?.trim() || undefined,
+              })
             : await this.backend.rescueLiteFirmware({
+                downloadId,
+                romUrl: variant.romUrl,
+                romName: variant.romName,
+                publishDate: variant.publishDate,
+                romMatchIdentifier: variant.romMatchIdentifier,
+                selectedParameters: variant.selectedParameters,
+                recipeUrl: variant.recipeUrl,
+                dataReset: options.dataReset,
+                dryRun: options.dryRun,
+                flashTransport: options.flashTransport,
+                qdlStorage: options.qdlStorage,
+                qdlSerial: options.qdlSerial?.trim() || undefined,
+              })
+          : await this.backend.downloadFirmware({
               downloadId,
               romUrl: variant.romUrl,
               romName: variant.romName,
@@ -333,18 +283,7 @@ export class DownloadWorkflowService {
               romMatchIdentifier: variant.romMatchIdentifier,
               selectedParameters: variant.selectedParameters,
               recipeUrl: variant.recipeUrl,
-              dataReset: options.dataReset,
-              dryRun: options.dryRun,
-            })
-          : await this.backend.downloadFirmware({
-            downloadId,
-            romUrl: variant.romUrl,
-            romName: variant.romName,
-            publishDate: variant.publishDate,
-            romMatchIdentifier: variant.romMatchIdentifier,
-            selectedParameters: variant.selectedParameters,
-            recipeUrl: variant.recipeUrl,
-          });
+            });
 
       if (this.dismissedDownloadIds.has(downloadId)) {
         return;
@@ -366,6 +305,9 @@ export class DownloadWorkflowService {
           mode: existing?.mode || options.mode,
           dryRun: existing?.dryRun ?? options.dryRun,
           dataReset: existing?.dataReset || options.dataReset,
+          flashTransport: existing?.flashTransport || options.flashTransport,
+          qdlStorage: existing?.qdlStorage || options.qdlStorage,
+          qdlSerial: existing?.qdlSerial || options.qdlSerial?.trim() || '',
           savePath: existing?.savePath || '',
           downloadedBytes: existing?.downloadedBytes || 0,
           totalBytes: existing?.totalBytes ?? null,
@@ -387,7 +329,7 @@ export class DownloadWorkflowService {
 
         this.ui.errorMessage.set(message);
         this.ui.status.set('Idle');
-        this.ui.showToast(message, 'error', 4200);
+        this.showFailureToastOnce(downloadId, message, 4200);
         return;
       }
 
@@ -400,6 +342,9 @@ export class DownloadWorkflowService {
         mode: existing?.mode || options.mode,
         dryRun: existing?.dryRun ?? options.dryRun,
         dataReset: existing?.dataReset || options.dataReset,
+        flashTransport: existing?.flashTransport || options.flashTransport,
+        qdlStorage: existing?.qdlStorage || options.qdlStorage,
+        qdlSerial: existing?.qdlSerial || options.qdlSerial?.trim() || '',
         savePath: response.savePath || existing?.savePath || '',
         downloadedBytes: response.bytesDownloaded ?? existing?.downloadedBytes ?? 0,
         totalBytes: response.totalBytes ?? existing?.totalBytes ?? null,
@@ -432,6 +377,9 @@ export class DownloadWorkflowService {
           commandSource: rescueResponse.commandSource || 'unknown',
           commands: rescueResponse.commandPlan || [],
           dataReset: options.dataReset,
+          flashTransport: options.flashTransport,
+          qdlStorage: options.qdlStorage,
+          qdlSerial: options.qdlSerial?.trim() || '',
           localFilePath: options.localFile?.fullPath,
         });
       }
@@ -452,6 +400,9 @@ export class DownloadWorkflowService {
         mode: existing?.mode || options.mode,
         dryRun: existing?.dryRun ?? options.dryRun,
         dataReset: existing?.dataReset || options.dataReset,
+        flashTransport: existing?.flashTransport || options.flashTransport,
+        qdlStorage: existing?.qdlStorage || options.qdlStorage,
+        qdlSerial: existing?.qdlSerial || options.qdlSerial?.trim() || '',
         savePath: existing?.savePath || '',
         downloadedBytes: existing?.downloadedBytes || 0,
         totalBytes: existing?.totalBytes ?? null,
@@ -467,7 +418,7 @@ export class DownloadWorkflowService {
       this.upsertDownloadHistory(failedState);
       this.ui.errorMessage.set(message);
       this.ui.status.set('Idle');
-      this.ui.showToast(message, 'error', 4200);
+      this.showFailureToastOnce(downloadId, message, 4200);
     }
   }
 
@@ -560,24 +511,7 @@ export class DownloadWorkflowService {
   }
 
   async deleteLocalFile(file: LocalDownloadedFile) {
-    const confirmed = await this.ui.confirm(
-      'Remove download?',
-      `Are you sure you want to remove ${file.fileName} from your local storage? This will delete the file and all associated metadata.`,
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const response = await this.backend.deleteLocalFile({ filePath: file.fullPath });
-      if (!response.ok) {
-        throw new Error(response.error || 'Failed to delete file.');
-      }
-      await this.refreshLocalDownloadedFiles();
-      this.ui.showToast(`Removed ${file.fileName}`, 'info', 3000);
-    } catch (error) {
-      const message = this.ui.getErrorMessage(error);
-      this.ui.showToast(message, 'error', 4200);
-    }
+    await this.localFiles.deleteLocalFile(file);
   }
 
   clearDownloadById(downloadId: string) {
@@ -612,20 +546,12 @@ export class DownloadWorkflowService {
   }
 
   async refreshLocalDownloadedFiles() {
-    try {
-      const response = await this.backend.listLocalDownloadedFiles();
-      if (!response.ok) {
-        return;
-      }
-      this.localDownloadedFiles.set(response.files);
-    } catch {
-      // Ignore refresh failures to keep download workflow non-blocking.
-    }
+    await this.localFiles.refreshLocalDownloadedFiles();
   }
 
   private readonly handleDownloadProgressEvent = (event: Event) => {
-    const customEvent = event as CustomEvent<DownloadProgressMessage>;
-    const payload = customEvent.detail;
+    const customEvent = event as CustomEvent<unknown>;
+    const payload = mapDownloadProgressMessage(customEvent.detail);
     if (!payload) return;
 
     if (this.dismissedDownloadIds.has(payload.downloadId)) {
@@ -651,6 +577,13 @@ export class DownloadWorkflowService {
       mode: existing?.mode || fallback?.mode || 'download',
       dryRun: payload.dryRun ?? existing?.dryRun ?? fallback?.dryRun ?? false,
       dataReset: existing?.dataReset || fallback?.dataReset || 'no',
+      flashTransport:
+        payload.flashTransport ||
+        existing?.flashTransport ||
+        fallback?.flashTransport ||
+        'fastboot',
+      qdlStorage: payload.qdlStorage || existing?.qdlStorage || fallback?.qdlStorage || 'auto',
+      qdlSerial: payload.qdlSerial || existing?.qdlSerial || fallback?.qdlSerial || '',
       savePath: payload.savePath || existing?.savePath || fallback?.savePath || '',
       publishDate: existing?.publishDate || fallback?.publishDate,
       romMatchIdentifier: existing?.romMatchIdentifier || fallback?.romMatchIdentifier,
@@ -688,7 +621,7 @@ export class DownloadWorkflowService {
     } else if (payload.status === 'failed') {
       const message = payload.error || 'Download failed.';
       this.ui.errorMessage.set(message);
-      this.ui.showToast(message, 'error', 4200);
+      this.showFailureToastOnce(payload.downloadId, message, 4200);
       if (!this.isDownloadActive()) {
         this.ui.status.set('Idle');
       }
@@ -702,6 +635,18 @@ export class DownloadWorkflowService {
 
   private findDownloadHistoryEntry(downloadId: string) {
     return this.downloadHistory().find((entry) => entry.downloadId === downloadId);
+  }
+
+  private showFailureToastOnce(downloadId: string, message: string, timeoutMs = 4200) {
+    const key = `${downloadId}:${message}`;
+    if (this.recentFailureToasts.has(key)) {
+      return;
+    }
+    this.recentFailureToasts.add(key);
+    this.ui.showToast(message, 'error', timeoutMs);
+    setTimeout(() => {
+      this.recentFailureToasts.delete(key);
+    }, timeoutMs + 2000);
   }
 
   private upsertDownloadHistory(state: FirmwareDownloadState) {
@@ -718,9 +663,13 @@ export class DownloadWorkflowService {
       }
 
       const existing = current[index];
+      if (!existing) {
+        return current;
+      }
       const nextEntry: DownloadHistoryEntry = {
         ...existing,
         ...state,
+        startedAt: existing.startedAt ?? now,
         updatedAt: now,
       };
       const next = current.slice();

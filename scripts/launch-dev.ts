@@ -1,77 +1,98 @@
-import { rmSync, renameSync, existsSync } from "fs";
 import { execSync } from "child_process";
+
+function getExitCode(error: unknown, fallback = 1): number {
+  if (typeof error === "object" && error !== null && "status" in error) {
+    const status = (error as { status?: unknown }).status;
+    if (typeof status === "number" && Number.isFinite(status)) {
+      return status;
+    }
+  }
+  return fallback;
+}
+
+function sleepSync(ms: number) {
+  const shared = new SharedArrayBuffer(4);
+  const view = new Int32Array(shared);
+  Atomics.wait(view, 0, 0, ms);
+}
+
+function runWithRetries(command: string, attempts: number, sleepMs: number) {
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      execSync(command, { stdio: "inherit" });
+      return { ok: true as const, error: null };
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        const sleepSeconds = Math.max(1, Math.round(sleepMs / 1000));
+        console.warn(
+          `[DevLauncher] Command failed (attempt ${attempt}/${attempts}). Retrying in ${sleepSeconds}s...`,
+        );
+        sleepSync(sleepMs);
+      }
+    }
+  }
+
+  return { ok: false as const, error: lastError };
+}
 
 /**
  * launch-dev.ts
- * 
- * Replicates the original 'git origin' build flow but with added protection 
- * against Windows file locks (EPERM/EBUSY) when multiple instances are running.
+ *
+ * Starts development mode without running a packaging build.
  */
 
 console.log("\n[DevLauncher] Starting development flow...\n");
 
 // 0. Release ADB lock
 // If ADB is running from the build/ folder, it will lock the directory.
-console.log("[0/3] Stopping ADB server to release folder locks...");
+console.log("[0/4] Stopping ADB server to release folder locks...");
 try {
-    execSync("adb kill-server", { stdio: "ignore" });
+  execSync("adb kill-server", { stdio: "ignore" });
 } catch (e) {
-    // Ignore if adb is not in PATH or not running
+  // Ignore if adb is not in PATH or not running
+}
+
+console.log("[1/4] Running formatter and linter");
+try {
+  execSync("bun run biome:check", { stdio: "inherit" });
+} catch (e) {
+  process.exit(getExitCode(e));
+}
+
+console.log("[2/4] Preparing bundled QDL binary for local platform...");
+const qdlPrepareResult = runWithRetries("bun run qdl:prepare", 3, 3000);
+if (!qdlPrepareResult.ok) {
+  console.warn(
+    "[DevLauncher] QDL prepare failed after retries. Continuing with existing local QDL assets (if present).",
+  );
 }
 
 // 1. Build Angular frontend (Always prepare the views)
 // This catches syntax errors and updates the /runtime/views folder.
-console.log("[1/3] Preparing application views...");
+console.log("[3/4] Preparing application views...");
 try {
-    execSync("bun run prepare:all", { stdio: "inherit" });
+  execSync("bun run prepare:all", { stdio: "inherit" });
 } catch (e: unknown) {
-    console.error("\\n[Error] Angular build failed. Fix the errors and try again.\\n");
-    process.exit(e.status || 1);
-}
-
-const launcherPath = "build/dev-win-x64/LenovoMotoFWDownloader-dev/bin/launcher.exe";
-let canBuildNative = true;
-
-// 2. Check if we can build the native Electrobun wrapper (the build/ folder)
-if (existsSync("build")) {
-    try {
-        if (existsSync("build_trash")) {
-            rmSync("build_trash", { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
-        }
-        renameSync("build", "build_trash");
-        // Cleanup in background
-        rmSync("build_trash", { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
-    } catch (e: unknown) {
-        // If we can't rename it, it's locked. 
-        const isMissingBinary = !existsSync(launcherPath);
-
-        if (isMissingBinary) {
-            console.log("\n[Note] Launcher binary is missing but folder is locked. Attempting build anyway...");
-            canBuildNative = true;
-        } else {
-            console.log(`\n[Lock] Could not move build/ folder: ${e.code}`);
-            canBuildNative = false;
-        }
-    }
-}
-
-if (canBuildNative) {
-    console.log("\n[2/3] Building native Electrobun app...\n");
-    try {
-        execSync("bunx electrobun build --env=dev", { stdio: "inherit" });
-    } catch (e: unknown) {
-        console.error("\n[Error] Native build failed. Usually because of a file lock or syntax error.");
-        process.exit(1);
-    }
-} else {
-    console.log("\n[2/3] Build folder is locked and app is present. Skipping build.\n");
+  console.error(
+    "\\n[Error] Angular build failed. Fix the errors and try again.\\n",
+  );
+  process.exit(getExitCode(e));
 }
 
 // 3. Launch the application instance
-console.log("[3/3] Launching application...\n");
+console.log("[4/4] Launching application...\n");
 try {
-    execSync("bunx electrobun dev", { stdio: "inherit" });
+  execSync("bunx electrobun dev", {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      ELECTROBUN_SKIP_POSTPACKAGE: "1",
+    },
+  });
 } catch (e: unknown) {
-    console.error("\n[Fatal] Application failed to launch.");
-    process.exit(1);
+  console.error("\n[Fatal] Application failed to launch.");
+  process.exit(1);
 }

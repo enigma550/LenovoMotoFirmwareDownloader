@@ -1,46 +1,78 @@
-<main [class]="
+<main
+  [class]="
     store.isDark()
       ? 'min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 p-4 text-slate-100 md:p-8'
       : 'min-h-screen bg-linear-to-br from-slate-50 via-white to-sky-50 p-4 text-slate-900 md:p-8'
-  ">
+  "
+>
   <div class="mx-auto max-w-7xl">
-    <header class="relative rounded-3xl border p-6" [class.border-slate-200]="!store.isDark()"
-      [class.bg-white]="!store.isDark()" [class.shadow-sm]="!store.isDark()" [class.border-slate-700]="store.isDark()"
-      [class.bg-slate-900]="store.isDark()" [class.shadow-xl]="store.isDark()">
-      <p class="absolute right-6 top-6 text-sm font-bold"
+    <header
+      class="relative rounded-3xl border p-6"
+      [class.border-slate-200]="!store.isDark()"
+      [class.bg-white]="!store.isDark()"
+      [class.shadow-sm]="!store.isDark()"
+      [class.border-slate-700]="store.isDark()"
+      [class.bg-slate-900]="store.isDark()"
+      [class.shadow-xl]="store.isDark()"
+    >
+      <p
+        class="absolute right-6 top-6 text-sm font-bold"
         [class.text-emerald-700]="store.bridgeHealthy() && !store.isDark()"
         [class.text-emerald-300]="store.bridgeHealthy() && store.isDark()"
         [class.text-rose-700]="!store.bridgeHealthy() && !store.isDark()"
-        [class.text-rose-300]="!store.bridgeHealthy() && store.isDark()">
+        [class.text-rose-300]="!store.bridgeHealthy() && store.isDark()"
+      >
         {{ store.bridgeStatus() }}
       </p>
-      <p class="text-xs font-semibold uppercase tracking-[0.2em]" [class.text-slate-500]="!store.isDark()"
-        [class.text-slate-400]="store.isDark()">
+      <p
+        class="text-xs font-semibold uppercase tracking-[0.2em]"
+        [class.text-slate-500]="!store.isDark()"
+        [class.text-slate-400]="store.isDark()"
+      >
         Lenovo Motorola Firmware Downloader
       </p>
-      <h1 class="mt-3 text-3xl font-black tracking-tight md:text-4xl" [class.text-slate-900]="!store.isDark()"
-        [class.text-white]="store.isDark()">
+      <h1
+        class="mt-3 text-3xl font-black tracking-tight md:text-4xl"
+        [class.text-slate-900]="!store.isDark()"
+        [class.text-white]="store.isDark()"
+      >
         Firmware Control Deck
       </h1>
-      <p class="mt-2 text-sm" [class.text-slate-500]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+      <p
+        class="mt-2 text-sm"
+        [class.text-slate-500]="!store.isDark()"
+        [class.text-slate-300]="store.isDark()"
+      >
         Desktop workflow (Angular standalone + Electrobun bridge)
       </p>
       <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div class="flex flex-wrap items-center gap-3">
-          <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1"
-            [class.border-slate-200]="!store.isDark()" [class.bg-slate-100]="!store.isDark()"
-            [class.text-slate-700]="!store.isDark()" [class.border-slate-600]="store.isDark()"
-            [class.bg-slate-800]="store.isDark()" [class.text-slate-200]="store.isDark()">
+          <span
+            class="inline-flex items-center gap-2 rounded-full border px-3 py-1"
+            [class.border-slate-200]="!store.isDark()"
+            [class.bg-slate-100]="!store.isDark()"
+            [class.text-slate-700]="!store.isDark()"
+            [class.border-slate-600]="store.isDark()"
+            [class.bg-slate-800]="store.isDark()"
+            [class.text-slate-200]="store.isDark()"
+          >
             @if (store.isBusy()) {
-            <span class="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
-              aria-hidden="true"></span>
+            <span
+              class="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
+              aria-hidden="true"
+            ></span>
             }
             <span>Status: {{ store.status() }}</span>
           </span>
-          <span class="rounded-full border px-3 py-1" [class.border-slate-300]="!store.isDark()"
-            [class.bg-slate-100]="!store.isDark()" [class.text-slate-700]="!store.isDark()"
-            [class.border-slate-600]="store.isDark()" [class.bg-slate-800]="store.isDark()"
-            [class.text-slate-200]="store.isDark()">
+          <span
+            class="rounded-full border px-3 py-1"
+            [class.border-slate-300]="!store.isDark()"
+            [class.bg-slate-100]="!store.isDark()"
+            [class.text-slate-700]="!store.isDark()"
+            [class.border-slate-600]="store.isDark()"
+            [class.bg-slate-800]="store.isDark()"
+            [class.text-slate-200]="store.isDark()"
+          >
             @if (store.selectedModel(); as selectedModel) { Selected model: {{
             selectedModel.modelName }} @if (selectedModel.marketName) { ({{ selectedModel.marketName
             }}) } } @else { Selected model: none }
@@ -48,18 +80,30 @@
         </div>
 
         <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
-          <span class="rounded-full border px-3 py-1" [class.border-emerald-200]="store.authComplete()"
-            [class.bg-emerald-50]="store.authComplete()" [class.text-emerald-800]="store.authComplete()"
-            [class.border-amber-200]="!store.authComplete()" [class.bg-amber-50]="!store.authComplete()"
-            [class.text-amber-800]="!store.authComplete()">
+          <span
+            class="rounded-full border px-3 py-1"
+            [class.border-emerald-200]="store.authComplete()"
+            [class.bg-emerald-50]="store.authComplete()"
+            [class.text-emerald-800]="store.authComplete()"
+            [class.border-amber-200]="!store.authComplete()"
+            [class.bg-amber-50]="!store.authComplete()"
+            [class.text-amber-800]="!store.authComplete()"
+          >
             {{ store.authComplete() ? 'Authenticated' : 'Not authenticated' }}
           </span>
-          <button class="rounded-full border px-3 py-1 font-semibold transition"
-            [class.border-slate-300]="!store.isDark()" [class.bg-white]="!store.isDark()"
-            [class.text-slate-700]="!store.isDark()" [class.hover:bg-slate-100]="!store.isDark()"
-            [class.border-slate-600]="store.isDark()" [class.bg-slate-800]="store.isDark()"
-            [class.text-slate-100]="store.isDark()" [class.hover:bg-slate-700]="store.isDark()" type="button"
-            (click)="store.toggleTheme()">
+          <button
+            class="rounded-full border px-3 py-1 font-semibold transition"
+            [class.border-slate-300]="!store.isDark()"
+            [class.bg-white]="!store.isDark()"
+            [class.text-slate-700]="!store.isDark()"
+            [class.hover:bg-slate-100]="!store.isDark()"
+            [class.border-slate-600]="store.isDark()"
+            [class.bg-slate-800]="store.isDark()"
+            [class.text-slate-100]="store.isDark()"
+            [class.hover:bg-slate-700]="store.isDark()"
+            type="button"
+            (click)="store.toggleTheme()"
+          >
             {{ store.isDark() ? 'Light mode' : 'Dark mode' }}
           </button>
         </div>
@@ -67,10 +111,15 @@
     </header>
 
     @if (store.errorMessage()) {
-    <p class="mt-5 rounded-2xl border p-4 text-sm" [class.border-rose-200]="!store.isDark()"
-      [class.bg-rose-50]="!store.isDark()" [class.text-rose-800]="!store.isDark()"
-      [class.border-rose-700]="store.isDark()" [class.bg-rose-900]="store.isDark()"
-      [class.text-rose-200]="store.isDark()">
+    <p
+      class="mt-5 rounded-2xl border p-4 text-sm"
+      [class.border-rose-200]="!store.isDark()"
+      [class.bg-rose-50]="!store.isDark()"
+      [class.text-rose-800]="!store.isDark()"
+      [class.border-rose-700]="store.isDark()"
+      [class.bg-rose-900]="store.isDark()"
+      [class.text-rose-200]="store.isDark()"
+    >
       {{ store.errorMessage() }}
     </p>
     } @if (!store.authComplete()) {
@@ -95,14 +144,19 @@
         } @else if (store.sourceMode() === 'about') {
         <app-about-workspace />
         } @else if (store.sourceMode() === null) {
-        <div class="rounded-3xl border p-8 text-sm" [class.border-slate-200]="!store.isDark()"
-          [class.bg-white]="!store.isDark()" [class.text-slate-500]="!store.isDark()"
-          [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()"
-          [class.text-slate-300]="store.isDark()">
+        <div
+          class="rounded-3xl border p-8 text-sm"
+          [class.border-slate-200]="!store.isDark()"
+          [class.bg-white]="!store.isDark()"
+          [class.text-slate-500]="!store.isDark()"
+          [class.border-slate-700]="store.isDark()"
+          [class.bg-slate-900]="store.isDark()"
+          [class.text-slate-300]="store.isDark()"
+        >
           Select a source to begin.
         </div>
         } @if (store.sourceMode() !== 'downloads') {
-        <app-firmware-results />
+        <app-rescue-workspace />
         }
       </section>
     </div>
@@ -111,7 +165,8 @@
 
   <section class="pointer-events-none fixed right-4 top-4 z-50 grid max-w-sm gap-2">
     @for (toast of store.toasts(); track toast.id) {
-    <article class="pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur"
+    <article
+      class="pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur"
       [class.border-slate-200]="toast.variant === 'info' && !store.isDark()"
       [class.bg-white]="toast.variant === 'info' && !store.isDark()"
       [class.text-slate-700]="toast.variant === 'info' && !store.isDark()"
@@ -129,11 +184,15 @@
       [class.text-rose-800]="toast.variant === 'error' && !store.isDark()"
       [class.border-rose-700]="toast.variant === 'error' && store.isDark()"
       [class.bg-rose-900]="toast.variant === 'error' && store.isDark()"
-      [class.text-rose-200]="toast.variant === 'error' && store.isDark()">
+      [class.text-rose-200]="toast.variant === 'error' && store.isDark()"
+    >
       <div class="flex items-start justify-between gap-3">
         <p class="leading-5">{{ toast.message }}</p>
-        <button class="rounded px-1 text-xs opacity-70 transition hover:opacity-100" type="button"
-          (click)="store.dismissToast(toast.id)">
+        <button
+          class="rounded px-1 text-xs opacity-70 transition hover:opacity-100"
+          type="button"
+          (click)="store.dismissToast(toast.id)"
+        >
           ✕
         </button>
       </div>

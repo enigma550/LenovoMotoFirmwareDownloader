@@ -1,0 +1,405 @@
+@if (store.selectedModel()) {
+  <section
+    id="selected-model-panel"
+    class="mt-6 rounded-3xl border p-6"
+    [class.border-slate-200]="!store.isDark()"
+    [class.bg-white]="!store.isDark()"
+    [class.shadow-sm]="!store.isDark()"
+    [class.border-slate-700]="store.isDark()"
+    [class.bg-slate-900]="store.isDark()"
+  >
+    <h3
+      class="text-lg font-bold"
+      [class.text-slate-900]="!store.isDark()"
+      [class.text-white]="store.isDark()"
+    >
+      Selected model: {{ store.selectedModel()!.modelName }} ({{ store.selectedModel()!.marketName }})
+    </h3>
+
+    @if (!store.selectedModelIsReadSupport()) {
+      <p class="mt-2 text-sm" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+        readSupport=false -> manual model lookup (`getResource`).
+      </p>
+
+      @if (store.countryOptions()?.foundCountrySelector) {
+        <label
+          class="mt-3 block text-xs font-semibold uppercase tracking-wide"
+          [class.text-slate-500]="!store.isDark()"
+          [class.text-slate-400]="store.isDark()"
+        >
+          Country
+        </label>
+        <div class="relative mt-1 w-full max-w-sm">
+          <button
+            #countryTrigger
+            class="flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm"
+            [class.border-slate-300]="!store.isDark()"
+            [class.bg-white]="!store.isDark()"
+            [class.text-slate-900]="!store.isDark()"
+            [class.border-slate-600]="store.isDark()"
+            [class.bg-slate-800]="store.isDark()"
+            [class.text-slate-100]="store.isDark()"
+            type="button"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="isMenuOpen('country')"
+            (click)="toggleCountryMenu($event)"
+          >
+            <span class="truncate">{{ selectedCountryLabel() }}</span>
+            <span aria-hidden="true">▾</span>
+          </button>
+
+          @if (isMenuOpen('country')) {
+            <div
+              class="absolute z-30 max-h-64 w-full overflow-auto rounded-xl border py-1 shadow-lg"
+              [class.bottom-full]="isMenuUpward('country')"
+              [class.mb-1]="isMenuUpward('country')"
+              [class.top-full]="!isMenuUpward('country')"
+              [class.mt-1]="!isMenuUpward('country')"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              role="listbox"
+            >
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectCountry('', $event)"
+              >
+                First branch value (default)
+              </button>
+              <button
+                class="block w-full px-3 py-2 text-left text-sm"
+                [class.text-slate-900]="!store.isDark()"
+                [class.hover:bg-slate-100]="!store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                [class.hover:bg-slate-700]="store.isDark()"
+                type="button"
+                (click)="selectCountry('__ALL__', $event)"
+              >
+                All available
+              </button>
+              @for (countryValue of store.countryOptions()!.countryValues; track countryValue) {
+                <button
+                  class="block w-full px-3 py-2 text-left text-sm"
+                  [class.text-slate-900]="!store.isDark()"
+                  [class.hover:bg-slate-100]="!store.isDark()"
+                  [class.text-slate-100]="store.isDark()"
+                  [class.hover:bg-slate-700]="store.isDark()"
+                  type="button"
+                  (click)="selectCountry(countryValue, $event)"
+                >
+                  {{ countryValue }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <button
+        class="mt-4 rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+        type="button"
+        (click)="store.runManualCatalogLookup()"
+      >
+        Run manual catalog lookup
+      </button>
+
+      @if (store.manualCatalogResult()) {
+        <p
+          class="mt-3 rounded-xl border p-3 text-xs"
+          [class.border-slate-200]="!store.isDark()"
+          [class.bg-slate-50]="!store.isDark()"
+          [class.text-slate-700]="!store.isDark()"
+          [class.border-slate-700]="store.isDark()"
+          [class.bg-slate-800]="store.isDark()"
+          [class.text-slate-200]="store.isDark()"
+        >
+          statesExplored={{ store.manualCatalogResult()!.statesExplored }}, lastCode={{
+            store.manualCatalogResult()!.manualMatchResponseCode || 'N/A'
+          }}, autoParams={{
+            store.manualCatalogResult()!.autoMatchRequiredParameters.join(', ') || 'N/A'
+          }}
+        </p>
+      }
+    } @else {
+      <p class="mt-2 text-sm" [class.text-slate-600]="!store.isDark()" [class.text-slate-300]="store.isDark()">
+        readSupport=true -> choose lookup mode.
+      </p>
+
+      @if (store.readSupportHints()) {
+        <p
+          class="mt-2 rounded-xl border p-3 text-xs"
+          [class.border-slate-200]="!store.isDark()"
+          [class.bg-slate-50]="!store.isDark()"
+          [class.text-slate-700]="!store.isDark()"
+          [class.border-slate-700]="store.isDark()"
+          [class.bg-slate-800]="store.isDark()"
+          [class.text-slate-200]="store.isDark()"
+        >
+          platform={{ store.readSupportHints()!.platform || 'N/A' }}, required={{
+            store.readSupportHints()!.requiredParameters.join(', ') || 'none'
+          }}
+        </p>
+      }
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button
+          class="rounded-lg px-3 py-1 text-sm font-semibold transition"
+          [class.bg-sky-700]="store.readSupportMode() === 'imei'"
+          [class.text-white]="store.readSupportMode() === 'imei'"
+          [class.bg-slate-100]="store.readSupportMode() !== 'imei' && !store.isDark()"
+          [class.text-slate-700]="store.readSupportMode() !== 'imei' && !store.isDark()"
+          [class.bg-slate-800]="store.readSupportMode() !== 'imei' && store.isDark()"
+          [class.text-slate-200]="store.readSupportMode() !== 'imei' && store.isDark()"
+          type="button"
+          (click)="store.setReadSupportMode('imei')"
+        >
+          IMEI {{ store.recommendedReadSupportMode() === 'imei' ? '(recommended)' : '' }}
+        </button>
+        @if (store.selectedModelSupportsSnLookup()) {
+          <button
+            class="rounded-lg px-3 py-1 text-sm font-semibold transition"
+            [class.bg-sky-700]="store.readSupportMode() === 'sn'"
+            [class.text-white]="store.readSupportMode() === 'sn'"
+            [class.bg-slate-100]="store.readSupportMode() !== 'sn' && !store.isDark()"
+            [class.text-slate-700]="store.readSupportMode() !== 'sn' && !store.isDark()"
+            [class.bg-slate-800]="store.readSupportMode() !== 'sn' && store.isDark()"
+            [class.text-slate-200]="store.readSupportMode() !== 'sn' && store.isDark()"
+            type="button"
+            (click)="store.setReadSupportMode('sn')"
+          >
+            Serial {{ store.recommendedReadSupportMode() === 'sn' ? '(recommended)' : '' }}
+          </button>
+        }
+        <button
+          class="rounded-lg px-3 py-1 text-sm font-semibold transition"
+          [class.bg-sky-700]="store.readSupportMode() === 'params'"
+          [class.text-white]="store.readSupportMode() === 'params'"
+          [class.bg-slate-100]="store.readSupportMode() !== 'params' && !store.isDark()"
+          [class.text-slate-700]="store.readSupportMode() !== 'params' && !store.isDark()"
+          [class.bg-slate-800]="store.readSupportMode() !== 'params' && store.isDark()"
+          [class.text-slate-200]="store.readSupportMode() !== 'params' && store.isDark()"
+          type="button"
+          (click)="store.setReadSupportMode('params')"
+        >
+          Required Params
+        </button>
+      </div>
+
+      @if (store.readSupportMode() === 'imei') {
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wide"
+              [class.text-slate-500]="!store.isDark()"
+              [class.text-slate-400]="store.isDark()"
+              >IMEI</label
+            >
+            <input
+              class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.text-slate-900]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              [class.text-slate-100]="store.isDark()"
+              placeholder="Optional"
+              [ngModel]="store.imei()"
+              (ngModelChange)="store.imei.set($event)"
+            />
+          </div>
+        </div>
+      }
+
+      @if (store.readSupportMode() === 'sn') {
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wide"
+              [class.text-slate-500]="!store.isDark()"
+              [class.text-slate-400]="store.isDark()"
+              >SN</label
+            >
+            <input
+              class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.text-slate-900]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              [class.text-slate-100]="store.isDark()"
+              [ngModel]="store.sn()"
+              (ngModelChange)="store.sn.set($event)"
+            />
+          </div>
+        </div>
+      }
+
+      @if (store.readSupportMode() === 'params') {
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wide"
+              [class.text-slate-500]="!store.isDark()"
+              [class.text-slate-400]="store.isDark()"
+              >IMEI</label
+            >
+            <input
+              class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.text-slate-900]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              [class.text-slate-100]="store.isDark()"
+              placeholder="Optional"
+              [ngModel]="store.imei()"
+              (ngModelChange)="store.imei.set($event)"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wide"
+              [class.text-slate-500]="!store.isDark()"
+              [class.text-slate-400]="store.isDark()"
+              >IMEI2</label
+            >
+            <input
+              class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.text-slate-900]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              [class.text-slate-100]="store.isDark()"
+              placeholder="Optional"
+              [ngModel]="store.imei2()"
+              (ngModelChange)="store.imei2.set($event)"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wide"
+              [class.text-slate-500]="!store.isDark()"
+              [class.text-slate-400]="store.isDark()"
+              >SN</label
+            >
+            <input
+              class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.text-slate-900]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              [class.text-slate-100]="store.isDark()"
+              placeholder="Optional"
+              [ngModel]="store.sn()"
+              (ngModelChange)="store.sn.set($event)"
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-semibold uppercase tracking-wide"
+              [class.text-slate-500]="!store.isDark()"
+              [class.text-slate-400]="store.isDark()"
+              >channelId</label
+            >
+            <input
+              class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+              [class.border-slate-300]="!store.isDark()"
+              [class.bg-white]="!store.isDark()"
+              [class.text-slate-900]="!store.isDark()"
+              [class.border-slate-600]="store.isDark()"
+              [class.bg-slate-800]="store.isDark()"
+              [class.text-slate-100]="store.isDark()"
+              placeholder="Optional"
+              [ngModel]="store.channelId()"
+              (ngModelChange)="store.channelId.set($event)"
+            />
+          </div>
+        </div>
+      }
+
+      @if (store.readSupportMode() === 'params' && store.readSupportHints()) {
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          @for (
+            parameterName of store.readSupportHints()!.requiredParameters;
+            track parameterName
+          ) {
+            <div>
+              <label
+                class="block text-xs font-semibold uppercase tracking-wide"
+                [class.text-slate-500]="!store.isDark()"
+                [class.text-slate-400]="store.isDark()"
+                >{{ parameterName }}</label
+              >
+              <input
+                class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+                [class.border-slate-300]="!store.isDark()"
+                [class.bg-white]="!store.isDark()"
+                [class.text-slate-900]="!store.isDark()"
+                [class.border-slate-600]="store.isDark()"
+                [class.bg-slate-800]="store.isDark()"
+                [class.text-slate-100]="store.isDark()"
+                placeholder="Required"
+                [ngModel]="store.requiredParams()[parameterName] || ''"
+                (ngModelChange)="store.setRequiredParam(parameterName, $event)"
+              />
+            </div>
+          }
+        </div>
+      }
+
+      <div class="mt-4">
+        @if (store.readSupportMode() === 'imei') {
+          <button
+            class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+            type="button"
+            (click)="store.runReadSupportLookupByImei()"
+          >
+            Run IMEI lookup
+          </button>
+        }
+        @if (store.readSupportMode() === 'sn') {
+          <button
+            class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+            type="button"
+            (click)="store.runReadSupportLookupBySn()"
+          >
+            Run SN lookup
+          </button>
+        }
+        @if (store.readSupportMode() === 'params') {
+          <button
+            class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+            type="button"
+            (click)="store.runReadSupportLookupByParams()"
+          >
+            Run Params lookup
+          </button>
+        }
+      </div>
+
+      @if (store.readSupportResult()) {
+        <p
+          class="mt-3 rounded-xl border p-3 text-xs"
+          [class.border-slate-200]="!store.isDark()"
+          [class.bg-slate-50]="!store.isDark()"
+          [class.text-slate-700]="!store.isDark()"
+          [class.border-slate-700]="store.isDark()"
+          [class.bg-slate-800]="store.isDark()"
+          [class.text-slate-200]="store.isDark()"
+        >
+          code={{ store.readSupportResult()!.code || 'N/A' }}, desc={{
+            store.readSupportResult()!.description || 'N/A'
+          }}
+        </p>
+      }
+    }
+  </section>
+}

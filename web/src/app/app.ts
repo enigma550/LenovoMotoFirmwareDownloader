@@ -1,13 +1,14 @@
-import { Component, inject, OnInit } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { WorkflowStore } from './core/state/workflow/workflow.store';
+import { AboutWorkspaceComponent } from './features/about/about-workspace/about-workspace.component';
+import { DesktopPromptModalComponent } from './features/about/desktop-prompt-modal/desktop-prompt-modal.component';
 import { AuthPanelComponent } from './features/auth/auth-panel/auth-panel.component';
 import { CatalogWorkspaceComponent } from './features/catalog/catalog-workspace/catalog-workspace.component';
 import { ConnectedLookupComponent } from './features/connected/connected-lookup/connected-lookup.component';
 import { DownloadsPanelComponent } from './features/downloads/downloads-panel/downloads-panel.component';
-import { FirmwareResultsComponent } from './features/firmware/firmware-results/firmware-results.component';
+import { RescueWorkspaceComponent } from './features/rescue/rescue-workspace/rescue-workspace.component';
 import { SourceModeComponent } from './features/source/source-mode/source-mode.component';
-import { AboutWorkspaceComponent } from './features/about/about-workspace/about-workspace.component';
-import { DesktopPromptModalComponent } from './features/about/desktop-prompt-modal/desktop-prompt-modal.component';
-import { WorkflowStore } from './core/state/workflow/workflow.store';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +19,7 @@ import { WorkflowStore } from './core/state/workflow/workflow.store';
     ConnectedLookupComponent,
     CatalogWorkspaceComponent,
     DownloadsPanelComponent,
-    FirmwareResultsComponent,
+    RescueWorkspaceComponent,
     AboutWorkspaceComponent,
     DesktopPromptModalComponent,
   ],

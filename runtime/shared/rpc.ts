@@ -1,14 +1,12 @@
-import type { ElectrobunRPCSchema, RPCSchema } from "electrobun";
+import type { ElectrobunRPCSchema, RPCSchema } from 'electrobun';
 import type {
   AttachLocalRecipeFromModelRequest,
   AttachLocalRecipeMetadataRequest,
   AttachLocalRecipeResponse,
   AuthCompleteRequest,
-  AuthCompleteResponse,
-  AuthStartResponse,
   BridgePingResponse,
   CancelDownloadRequest,
-  CancelDownloadResponse,
+  DeleteLocalFileRequest,
   DesktopApi,
   DiscoverCountryOptionsRequest,
   DownloadFirmwareRequest,
@@ -21,16 +19,15 @@ import type {
   LookupReadSupportByImeiRequest,
   LookupReadSupportByParamsRequest,
   LookupReadSupportBySnRequest,
+  PauseDownloadRequest,
   ReadSupportHintsRequest,
   RescueLiteFirmwareFromLocalRequest,
   RescueLiteFirmwareRequest,
-  AppInfo,
-  DesktopIntegrationStatus,
-  SetDesktopPromptPreferenceRequest,
-  DeleteLocalFileRequest,
-  PauseDownloadRequest,
   ResumeDownloadRequest,
-} from "../../core/shared/types/desktop-api.ts";
+  SetDesktopPromptPreferenceRequest,
+  WindowsEdlDriverInstallResponse,
+} from '../../core/shared/types/desktop-api.ts';
+
 export type {
   AttachLocalRecipeFromModelRequest,
   AttachLocalRecipeMetadataRequest,
@@ -69,11 +66,14 @@ export type {
   ReadSupportHintsRequest,
   ReadSupportHintsResponse,
   ReadSupportLookupResponse,
+  RescueFlashTransport,
   RescueLiteFirmwareFromLocalRequest,
   RescueLiteFirmwareRequest,
   RescueLiteFirmwareResponse,
+  RescueQdlStorage,
   StoredAuthStateResponse,
-} from "../../core/shared/types/desktop-api.ts";
+  WindowsEdlDriverInstallResponse,
+} from '../../core/shared/types/desktop-api.ts';
 
 type RpcRequest<Params, Response> = {
   params: Params;
@@ -81,90 +81,62 @@ type RpcRequest<Params, Response> = {
 };
 
 type DesktopApiMethod = {
-  [Method in keyof DesktopApi]: DesktopApi[Method] extends (
-    ...args: unknown[]
-  ) => unknown
-  ? Method
-  : never;
+  [Method in keyof DesktopApi]: DesktopApi[Method] extends (...args: infer _Args) => unknown
+    ? Method
+    : never;
 }[keyof DesktopApi];
 
-type DesktopApiResponse<Method extends DesktopApiMethod> = Awaited<
-  ReturnType<DesktopApi[Method]>
->;
+type DesktopApiResponse<Method extends DesktopApiMethod> = Awaited<ReturnType<DesktopApi[Method]>>;
 
 export type DesktopRpcSchema = ElectrobunRPCSchema & {
   bun: RPCSchema<{
     requests: {
-      authStart: RpcRequest<undefined, DesktopApiResponse<"startAuth">>;
-      authComplete: RpcRequest<
-        AuthCompleteRequest,
-        DesktopApiResponse<"completeAuth">
-      >;
-      getStoredAuthState: RpcRequest<
-        undefined,
-        DesktopApiResponse<"getStoredAuthState">
-      >;
-      authWithStoredToken: RpcRequest<
-        undefined,
-        DesktopApiResponse<"authWithStoredToken">
-      >;
+      authStart: RpcRequest<undefined, DesktopApiResponse<'startAuth'>>;
+      authComplete: RpcRequest<AuthCompleteRequest, DesktopApiResponse<'completeAuth'>>;
+      getStoredAuthState: RpcRequest<undefined, DesktopApiResponse<'getStoredAuthState'>>;
+      authWithStoredToken: RpcRequest<undefined, DesktopApiResponse<'authWithStoredToken'>>;
       ping: RpcRequest<undefined, BridgePingResponse>;
-      getCatalogModels: RpcRequest<
-        GetCatalogModelsRequest,
-        DesktopApiResponse<"getCatalogModels">
-      >;
+      getCatalogModels: RpcRequest<GetCatalogModelsRequest, DesktopApiResponse<'getCatalogModels'>>;
       lookupConnectedDeviceFirmware: RpcRequest<
         undefined,
-        DesktopApiResponse<"lookupConnectedDeviceFirmware">
+        DesktopApiResponse<'lookupConnectedDeviceFirmware'>
       >;
       discoverCountryOptions: RpcRequest<
         DiscoverCountryOptionsRequest,
-        DesktopApiResponse<"discoverCountryOptions">
+        DesktopApiResponse<'discoverCountryOptions'>
       >;
       lookupCatalogManual: RpcRequest<
         LookupCatalogManualRequest,
-        DesktopApiResponse<"lookupCatalogManual">
+        DesktopApiResponse<'lookupCatalogManual'>
       >;
       getReadSupportHints: RpcRequest<
         ReadSupportHintsRequest,
-        DesktopApiResponse<"getReadSupportHints">
+        DesktopApiResponse<'getReadSupportHints'>
       >;
       lookupReadSupportByImei: RpcRequest<
         LookupReadSupportByImeiRequest,
-        DesktopApiResponse<"lookupReadSupportByImei">
+        DesktopApiResponse<'lookupReadSupportByImei'>
       >;
       lookupReadSupportBySn: RpcRequest<
         LookupReadSupportBySnRequest,
-        DesktopApiResponse<"lookupReadSupportBySn">
+        DesktopApiResponse<'lookupReadSupportBySn'>
       >;
       lookupReadSupportByParams: RpcRequest<
         LookupReadSupportByParamsRequest,
-        DesktopApiResponse<"lookupReadSupportByParams">
+        DesktopApiResponse<'lookupReadSupportByParams'>
       >;
-      downloadFirmware: RpcRequest<
-        DownloadFirmwareRequest,
-        DesktopApiResponse<"downloadFirmware">
-      >;
+      downloadFirmware: RpcRequest<DownloadFirmwareRequest, DesktopApiResponse<'downloadFirmware'>>;
       rescueLiteFirmware: RpcRequest<
         RescueLiteFirmwareRequest,
-        DesktopApiResponse<"rescueLiteFirmware">
+        DesktopApiResponse<'rescueLiteFirmware'>
       >;
       rescueLiteFirmwareFromLocal: RpcRequest<
         RescueLiteFirmwareFromLocalRequest,
-        DesktopApiResponse<"rescueLiteFirmwareFromLocal">
+        DesktopApiResponse<'rescueLiteFirmwareFromLocal'>
       >;
-      cancelDownload: RpcRequest<
-        CancelDownloadRequest,
-        DesktopApiResponse<"cancelDownload">
-      >;
-      listLocalDownloadedFiles: RpcRequest<
-        undefined,
-        LocalDownloadedFilesResponse
-      >;
-      extractLocalFirmware: RpcRequest<
-        ExtractLocalFirmwareRequest,
-        ExtractLocalFirmwareResponse
-      >;
+      cancelDownload: RpcRequest<CancelDownloadRequest, DesktopApiResponse<'cancelDownload'>>;
+      listLocalDownloadedFiles: RpcRequest<undefined, LocalDownloadedFilesResponse>;
+      extractLocalFirmware: RpcRequest<ExtractLocalFirmwareRequest, ExtractLocalFirmwareResponse>;
       attachLocalRecipeFromModel: RpcRequest<
         AttachLocalRecipeFromModelRequest,
         AttachLocalRecipeResponse
@@ -173,39 +145,31 @@ export type DesktopRpcSchema = ElectrobunRPCSchema & {
         AttachLocalRecipeMetadataRequest,
         AttachLocalRecipeResponse
       >;
-      checkDesktopIntegration: RpcRequest<
-        undefined,
-        DesktopApiResponse<"checkDesktopIntegration">
-      >;
+      checkDesktopIntegration: RpcRequest<undefined, DesktopApiResponse<'checkDesktopIntegration'>>;
       createDesktopIntegration: RpcRequest<
         undefined,
-        DesktopApiResponse<"createDesktopIntegration">
+        DesktopApiResponse<'createDesktopIntegration'>
       >;
       getDesktopPromptPreference: RpcRequest<
         undefined,
-        DesktopApiResponse<"getDesktopPromptPreference">
+        DesktopApiResponse<'getDesktopPromptPreference'>
       >;
       setDesktopPromptPreference: RpcRequest<
         SetDesktopPromptPreferenceRequest,
-        DesktopApiResponse<"setDesktopPromptPreference">
+        DesktopApiResponse<'setDesktopPromptPreference'>
       >;
-      getAppInfo: RpcRequest<
-        undefined,
-        DesktopApiResponse<"getAppInfo">
-      >;
-      openUrl: {
-        params: { url: "string" },
-        response: { ok: "boolean", error: "string?" },
-      },
-      downloadFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<"downloadFrameworkUpdate">>,
-      applyFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<"applyFrameworkUpdate">>,
-      deleteLocalFile: RpcRequest<DeleteLocalFileRequest, DesktopApiResponse<"deleteLocalFile">>,
-      pauseDownload: RpcRequest<PauseDownloadRequest, DesktopApiResponse<"pauseDownload">>,
-      resumeDownload: RpcRequest<ResumeDownloadRequest, DesktopApiResponse<"resumeDownload">>,
+      getAppInfo: RpcRequest<undefined, DesktopApiResponse<'getAppInfo'>>;
+      openUrl: RpcRequest<{ url: string }, DesktopApiResponse<'openUrl'>>;
+      downloadFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<'downloadFrameworkUpdate'>>;
+      applyFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<'applyFrameworkUpdate'>>;
+      installWindowsEdlDriver: RpcRequest<undefined, WindowsEdlDriverInstallResponse>;
+      deleteLocalFile: RpcRequest<DeleteLocalFileRequest, DesktopApiResponse<'deleteLocalFile'>>;
+      pauseDownload: RpcRequest<PauseDownloadRequest, DesktopApiResponse<'pauseDownload'>>;
+      resumeDownload: RpcRequest<ResumeDownloadRequest, DesktopApiResponse<'resumeDownload'>>;
     };
   }>;
   webview: RPCSchema<{
-    requests: {};
+    requests: Record<PropertyKey, never>;
     messages: {
       downloadProgress: DownloadProgressMessage;
     };

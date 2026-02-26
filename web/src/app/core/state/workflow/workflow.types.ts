@@ -1,4 +1,8 @@
-import type { FirmwareTaskStatus } from '../../models/desktop-api.ts';
+import type {
+  FirmwareTaskStatus,
+  RescueFlashTransport,
+  RescueQdlStorage,
+} from '../../models/desktop-api.ts';
 
 export type CategoryFilter = 'all' | 'phone' | 'tablet' | 'smart';
 export type ReadSupportFilter = 'all' | 'true' | 'false';
@@ -26,6 +30,9 @@ export interface FirmwareDownloadState {
   mode: DownloadMode;
   dryRun: boolean;
   dataReset: DataResetChoice;
+  flashTransport: RescueFlashTransport;
+  qdlStorage: RescueQdlStorage;
+  qdlSerial: string;
   savePath: string;
   downloadedBytes: number;
   totalBytes: number | null;
@@ -49,5 +56,8 @@ export interface RescueDryRunPlanDialog {
   commandSource: string;
   commands: string[];
   dataReset: DataResetChoice;
+  flashTransport: RescueFlashTransport;
+  qdlStorage: RescueQdlStorage;
+  qdlSerial: string;
   localFilePath?: string;
 }

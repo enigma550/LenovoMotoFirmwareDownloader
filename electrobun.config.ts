@@ -45,12 +45,14 @@ export default {
     },
     copy: {
       "runtime/views/mainview": "views/mainview",
+      "assets/tools": "tools",
     },
   },
   release: {
     // Linux is distributed as DwarFS AppImage + zsync metadata, so Electrobun's
     // delta patch generation is unnecessary there and just adds build overhead.
     generatePatch: process.platform !== "linux",
-    baseUrl: "https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/latest/download/", // Patched during build
+    baseUrl:
+      "https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/latest/download/", // Patched during build
   },
 } satisfies ElectrobunConfig;

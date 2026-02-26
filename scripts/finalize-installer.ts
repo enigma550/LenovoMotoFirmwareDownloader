@@ -21,14 +21,112 @@ const identifier: string =
 const desktopDisplayName: string = "Lenovo Moto Firmware Downloader";
 const wmClass: string = "LenovoMotoFirmwareDown";
 
+type RcEditOptions = {
+  icon: string;
+  "version-string": {
+    ProductName: string;
+    FileDescription: string;
+  };
+};
+
+type RcEditFn = (
+  executablePath: string,
+  options: RcEditOptions,
+) => Promise<void>;
+
+type ArchiverInstance = {
+  pointer: () => number;
+  on: (event: "error", listener: (error: Error) => void) => ArchiverInstance;
+  pipe: (stream: import("fs").WriteStream) => ArchiverInstance;
+  file: (filename: string, data: { name: string }) => ArchiverInstance;
+  finalize: () => Promise<void>;
+};
+
+type ArchiverFactory = (
+  format: "zip",
+  options: { zlib: { level: number } },
+) => ArchiverInstance;
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function resolveRcEdit(moduleValue: unknown): RcEditFn {
+  const record = asRecord(moduleValue);
+  const named = record?.["rcedit"];
+  const fallback = record?.["default"];
+  const candidate = named ?? fallback ?? moduleValue;
+  if (typeof candidate !== "function") {
+    throw new Error("rcedit module did not export a callable function.");
+  }
+  return candidate as RcEditFn;
+}
+
+function resolveArchiver(moduleValue: unknown): ArchiverFactory {
+  const record = asRecord(moduleValue);
+  const candidate = record?.["default"] ?? moduleValue;
+  if (typeof candidate !== "function") {
+    throw new Error("archiver module did not export a callable factory.");
+  }
+  return candidate as ArchiverFactory;
+}
+
+function wait(durationMs: number) {
+  return new Promise((resolve) => setTimeout(resolve, durationMs));
+}
+
+async function execWithRetry(options: {
+  command: string;
+  label: string;
+  attempts?: number;
+  baseDelayMs?: number;
+}) {
+  const attempts = options.attempts ?? 4;
+  const baseDelayMs = options.baseDelayMs ?? 2000;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      execSync(options.command, { stdio: "inherit" });
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt >= attempts) {
+        break;
+      }
+      const delay = baseDelayMs * attempt;
+      console.warn(
+        `FinalizeInstaller: ${options.label} failed (attempt ${attempt}/${attempts}). Retrying in ${Math.round(
+          delay / 1000,
+        )}s...`,
+      );
+      await wait(delay);
+    }
+  }
+
+  throw lastError;
+}
+
 if (!buildDir) {
+  process.exit(0);
+}
+
+if (process.env.ELECTROBUN_SKIP_POSTPACKAGE === "1") {
+  console.log(
+    "FinalizeInstaller: Skipping postPackage work (ELECTROBUN_SKIP_POSTPACKAGE=1).",
+  );
   process.exit(0);
 }
 
 // Extract channel from buildDir (e.g. build/stable-linux-x64/... -> stable)
 let channel: string = "stable";
 if (buildDir) {
-  const match: RegExpMatchArray | null = buildDir.match(/\/([^/]+)-(?:linux|mac|win)-/);
+  const match: RegExpMatchArray | null = buildDir.match(
+    /\/([^/]+)-(?:linux|mac|win)-/,
+  );
   if (match && match[1]) {
     channel = match[1];
   }
@@ -39,6 +137,7 @@ if (buildDir) {
 // ---------------------------------------------------------------------------
 async function buildLinuxAppImage(): Promise<void> {
   if (!artifactDir) return;
+  mkdirSync(artifactDir, { recursive: true });
 
   const appDirName: string | undefined = readdirSync(buildDir).find(
     (f: string) =>
@@ -60,15 +159,10 @@ async function buildLinuxAppImage(): Promise<void> {
   const resourcesDir: string = join(appDirParentPath, "Resources");
   let zstBundle: string = "";
   if (existsSync(resourcesDir)) {
-    const found: string | undefined = readdirSync(resourcesDir).find((f: string) => f.endsWith(".tar.zst"));
-    if (found) zstBundle = join(resourcesDir, found);
-  }
-
-  if (!zstBundle) {
-    console.warn(
-      "FinalizeInstaller: Skipped AppImage creation. No .tar.zst uncompressed payload found in Resources.",
+    const found: string | undefined = readdirSync(resourcesDir).find(
+      (f: string) => f.endsWith(".tar.zst"),
     );
-    return;
+    if (found) zstBundle = join(resourcesDir, found);
   }
 
   const stagingDir: string = join(buildDir, "_appimage-staging");
@@ -77,27 +171,49 @@ async function buildLinuxAppImage(): Promise<void> {
   }
   mkdirSync(stagingDir, { recursive: true });
 
-  console.log(
-    `FinalizeInstaller: Extracting app payload ${zstBundle} for AppImage...`,
-  );
-  try {
-    execSync(`tar -xf "${zstBundle}" -C "${stagingDir}"`, { stdio: "inherit" });
-  } catch (e: unknown) {
-    console.error(
-      "FinalizeInstaller: Failed to extract .tar.zst! You may be missing zstd.",
-      e,
+  let appDirPath: string = join(stagingDir, appDirName);
+  if (zstBundle) {
+    console.log(
+      `FinalizeInstaller: Extracting app payload ${zstBundle} for AppImage...`,
     );
-    return;
+    try {
+      execSync(`tar -xf "${zstBundle}" -C "${stagingDir}"`, {
+        stdio: "inherit",
+      });
+    } catch (e: unknown) {
+      console.error(
+        "FinalizeInstaller: Failed to extract .tar.zst! You may be missing zstd.",
+        e,
+      );
+      return;
+    }
+  } else {
+    console.log(
+      "FinalizeInstaller: No .tar.zst payload found; staging app bundle directly for AppImage.",
+    );
+    try {
+      execSync(`cp -a "${appDirParentPath}" "${stagingDir}/"`, {
+        stdio: "inherit",
+      });
+    } catch (e: unknown) {
+      console.error(
+        "FinalizeInstaller: Failed to stage app bundle for AppImage creation.",
+        e,
+      );
+      return;
+    }
   }
-
-  const appDirPath: string = join(stagingDir, appDirName);
 
   let appVersion: string = "0.0.0";
   const versionJsonPath: string = join(appDirPath, "Resources", "version.json");
   if (existsSync(versionJsonPath)) {
     try {
-      const vInfo: unknown = JSON.parse(readFileSync(versionJsonPath, "utf8"));
-      if (vInfo.version) appVersion = vInfo.version;
+      const parsed: { version?: unknown } = JSON.parse(
+        readFileSync(versionJsonPath, "utf8"),
+      );
+      if (typeof parsed.version === "string" && parsed.version.trim()) {
+        appVersion = parsed.version;
+      }
     } catch {
       /* use default */
     }
@@ -189,10 +305,10 @@ X-AppImage-Version=${cleanVersion}
   if (!existsSync(uruntimePath)) {
     console.log(`FinalizeInstaller: Downloading ${uruntimeName}...`);
     try {
-      execSync(
-        `curl -L -o "${uruntimePath}" "https://github.com/VHSgunzo/uruntime/releases/latest/download/${uruntimeName}"`,
-        { stdio: "inherit" },
-      );
+      await execWithRetry({
+        command: `curl -fL -o "${uruntimePath}" "https://github.com/VHSgunzo/uruntime/releases/latest/download/${uruntimeName}"`,
+        label: `uruntime download (${uruntimeName})`,
+      });
       execSync(`chmod +x "${uruntimePath}"`);
     } catch (error: unknown) {
       console.error("FinalizeInstaller: Failed to download uruntime.", error);
@@ -257,16 +373,23 @@ X-AppImage-Version=${cleanVersion}
 
       if (hasZsyncMake) {
         // We strictly define the output path so it ends up in the artifacts folder
-        execSync(`zsyncmake -o "${appImageOutPath}.zsync" "${appImageOutPath}"`, {
-          stdio: "inherit",
-        });
+        execSync(
+          `zsyncmake -o "${appImageOutPath}.zsync" "${appImageOutPath}"`,
+          {
+            stdio: "inherit",
+          },
+        );
         console.log(
           `FinalizeInstaller: Generated zsync metadata -> ${appImageOutPath}.zsync`,
         );
       }
 
       const oldArtifacts: string[] = readdirSync(artifactDir).filter(
-        (f: string) => f.endsWith(".tar.gz") || f.endsWith(".tar.zst") || f.endsWith(".json") || f.endsWith(".patch")
+        (f: string) =>
+          f.endsWith(".tar.gz") ||
+          f.endsWith(".tar.zst") ||
+          f.endsWith(".json") ||
+          f.endsWith(".patch"),
       );
       for (const f of oldArtifacts) {
         unlinkSync(join(artifactDir, f));
@@ -307,20 +430,20 @@ async function patchWindowsInstaller(): Promise<void> {
   const metadataPath: string = join(buildDir, `${setupStem}.metadata.json`);
   const archivePath: string = join(buildDir, `${setupStem}.tar.zst`);
 
-  // We MUST leave metadata.json alone! 
-  // Electrobun's self-extractor strictly uses metadata.name to find the 
+  // We MUST leave metadata.json alone!
+  // Electrobun's self-extractor strictly uses metadata.name to find the
   // extracted folder name (LMFD-canary). Changing it breaks installation.
 
-  const m: unknown = await import("rcedit");
-  const rcedit: unknown = (m as unknown).rcedit || (m as unknown).default || m;
+  const rceditModule: unknown = await import("rcedit");
+  const rcedit: RcEditFn = resolveRcEdit(rceditModule);
 
   // We still patch the EXE so hovering over it and Task Manager shows the full name
-  const rceditOptions: unknown = {
+  const rceditOptions: RcEditOptions = {
     icon: iconPath,
     "version-string": {
       ProductName: desktopDisplayName,
       FileDescription: `${desktopDisplayName} Setup`,
-    }
+    },
   };
 
   console.log(`FinalizeInstaller: Patching -> ${setupExePath}`);
@@ -348,9 +471,11 @@ async function patchWindowsInstaller(): Promise<void> {
   unlinkSync(artifactZipPath);
 
   const archiverModule: unknown = await import("archiver");
-  const archiver: unknown = archiverModule.default;
+  const createArchive: ArchiverFactory = resolveArchiver(archiverModule);
   const output: import("fs").WriteStream = createWriteStream(artifactZipPath);
-  const archive: unknown = archiver("zip", { zlib: { level: 9 } });
+  const archive: ArchiverInstance = createArchive("zip", {
+    zlib: { level: 9 },
+  });
 
   await new Promise<void>((resolve, reject) => {
     output.on("close", () => {

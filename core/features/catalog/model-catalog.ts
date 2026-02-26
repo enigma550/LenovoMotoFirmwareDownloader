@@ -1,18 +1,15 @@
-import { requestApi } from "../../infra/lmsa/api.ts";
-import {
-  MODEL_CATALOG_PATH,
-  ensureProjectStorageReady,
-} from "../../infra/storage.ts";
-import type { ModelCatalogEntry } from "../../shared/types/index.ts";
+import { requestApi } from '../../infra/lmsa/api.ts';
+import { ensureProjectStorageReady, MODEL_CATALOG_PATH } from '../../infra/storage.ts';
+import type { ModelCatalogEntry } from '../../shared/types/index.ts';
 
 function parseBoolean(value: unknown) {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "string") return value.toLowerCase() === "true";
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') return value.toLowerCase() === 'true';
   return false;
 }
 
 function mapModelCatalogEntry(value: unknown) {
-  if (!value || typeof value !== "object") return null;
+  if (!value || typeof value !== 'object') return null;
 
   const record = value as Record<string, unknown>;
   const modelName = record.modelName;
@@ -22,11 +19,11 @@ function mapModelCatalogEntry(value: unknown) {
   const brand = record.brand;
 
   if (
-    typeof modelName !== "string" ||
-    typeof marketName !== "string" ||
-    typeof platform !== "string" ||
-    typeof category !== "string" ||
-    typeof brand !== "string"
+    typeof modelName !== 'string' ||
+    typeof marketName !== 'string' ||
+    typeof platform !== 'string' ||
+    typeof category !== 'string' ||
+    typeof brand !== 'string'
   ) {
     return null;
   }
@@ -38,14 +35,14 @@ function mapModelCatalogEntry(value: unknown) {
     marketName,
     platform,
     readSupport: parseBoolean(record.readSupport),
-    readFlow: typeof record.readFlow === "string" ? record.readFlow : "",
+    readFlow: typeof record.readFlow === 'string' ? record.readFlow : '',
   } as ModelCatalogEntry;
 }
 
 function extractModelArray(content: unknown) {
   if (Array.isArray(content)) return content;
 
-  if (content && typeof content === "object") {
+  if (content && typeof content === 'object') {
     const record = content as Record<string, unknown>;
     if (Array.isArray(record.models)) {
       return record.models;
@@ -70,13 +67,13 @@ function normalizeModelCatalog(content: unknown) {
 }
 
 async function fetchModelCatalogFromApi() {
-  const response = await requestApi("/rescueDevice/getModelNames.jhtml", {});
+  const response = await requestApi('/rescueDevice/getModelNames.jhtml', {});
   const data = (await response.json()) as {
     code?: string;
     content?: unknown;
   };
-  if (data?.code !== "0000") {
-    throw new Error(`getModelNames failed: ${data?.code ?? "unknown"}`);
+  if (data?.code !== '0000') {
+    throw new Error(`getModelNames failed: ${data?.code ?? 'unknown'}`);
   }
 
   return normalizeModelCatalog(data.content);

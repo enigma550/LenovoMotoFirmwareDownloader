@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": [
-      "ESNext",
-      "DOM"
-    ],
+    "lib": ["ESNext", "DOM"],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
@@ -12,6 +9,12 @@
     "allowJs": true,
     // Bundler mode
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "electrobun": ["types/electrobun/index.d.ts"],
+      "electrobun/bun": ["types/electrobun/bun.d.ts"],
+      "electrobun/view": ["types/electrobun/view.d.ts"],
+    },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
@@ -26,12 +29,5 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
   },
-  "exclude": [
-    "web",
-    "dist",
-    "node_modules",
-    "fproj",
-    "runtime",
-    "electrobun.config.ts",
-  ],
+  "exclude": ["dist", "node_modules", "fproj", "electrobun.config.ts"],
 }

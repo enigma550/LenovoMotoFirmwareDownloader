@@ -1,11 +1,11 @@
-import { API_URL, BASE_URL, USER_AGENT } from "./constants.ts";
-import { cookieJar, session } from "./state.ts";
-import type { RequestOptions } from "../../shared/types/index.ts";
+import type { RequestOptions } from '../../shared/types/index.ts';
+import { API_URL, BASE_URL, USER_AGENT } from './constants.ts';
+import { cookieJar, session } from './state.ts';
 
 function serializeCookies() {
   return [...cookieJar.entries()]
     .map(([cookieName, cookieValue]) => `${cookieName}=${cookieValue}`)
-    .join("; ");
+    .join('; ');
 }
 
 function getSetCookieValues(headers: Headers) {
@@ -13,20 +13,20 @@ function getSetCookieValues(headers: Headers) {
     getSetCookie?: () => string[];
   };
 
-  if (typeof headersWithGetSetCookie.getSetCookie === "function") {
+  if (typeof headersWithGetSetCookie.getSetCookie === 'function') {
     return headersWithGetSetCookie.getSetCookie();
   }
 
-  const setCookieValue = headers.get("set-cookie");
+  const setCookieValue = headers.get('set-cookie');
   return setCookieValue ? [setCookieValue] : [];
 }
 
 function updateCookies(headers: Headers) {
   for (const cookieLine of getSetCookieValues(headers)) {
-    const [cookiePair] = cookieLine.split(";");
+    const [cookiePair] = cookieLine.split(';');
     if (!cookiePair) continue;
 
-    const splitAt = cookiePair.indexOf("=");
+    const splitAt = cookiePair.indexOf('=');
     if (splitAt <= 0) continue;
 
     const cookieName = cookiePair.slice(0, splitAt).trim();
@@ -38,12 +38,12 @@ function updateCookies(headers: Headers) {
 }
 
 function refreshAuth(headers: Headers) {
-  const authorizationHeader = headers.get("Authorization");
-  const responseGuid = headers.get("Guid");
+  const authorizationHeader = headers.get('Authorization');
+  const responseGuid = headers.get('Guid');
   if (!authorizationHeader) return;
   if (responseGuid && responseGuid !== session.guid) return;
 
-  session.jwt = authorizationHeader.startsWith("Bearer ")
+  session.jwt = authorizationHeader.startsWith('Bearer ')
     ? authorizationHeader
     : `Bearer ${authorizationHeader}`;
 }
@@ -53,36 +53,32 @@ export async function bootstrapSessionCookie() {
   updateCookies(response.headers);
 }
 
-export async function requestApi(
-  path: string,
-  body: unknown = {},
-  options: RequestOptions = {},
-) {
-  const url = path.startsWith("http") ? path : `${API_URL}${path}`;
+export async function requestApi(path: string, body: unknown = {}, options: RequestOptions = {}) {
+  const url = path.startsWith('http') ? path : `${API_URL}${path}`;
 
   const headers = new Headers({
-    "Content-Type": "application/json",
-    "Request-Tag": "lmsa",
-    "User-Agent": USER_AGENT,
-    Guid: session.guid,
-    Cookie: serializeCookies(),
+    'Content-Type': 'application/json',
+    'Request-Tag': 'lmsa',
+    'User-Agent': USER_AGENT,
+    ['Guid']: session.guid,
+    ['Cookie']: serializeCookies(),
   });
 
   if (session.jwt) {
-    headers.set("Authorization", session.jwt);
+    headers.set('Authorization', session.jwt);
   }
 
   const payload = options.raw
     ? body
     : {
-        client: { version: "7.4.3.4" },
+        client: { version: '7.4.3.4' },
         dparams: body,
-        language: "en-US",
-        windowsInfo: "Microsoft Windows 10 Pro, 64-bit",
+        language: 'en-US',
+        windowsInfo: 'Microsoft Windows 10 Pro, 64-bit',
       };
 
   const response = await fetch(url, {
-    method: "POST",
+    method: 'POST',
     headers,
     body: JSON.stringify(payload),
   });
