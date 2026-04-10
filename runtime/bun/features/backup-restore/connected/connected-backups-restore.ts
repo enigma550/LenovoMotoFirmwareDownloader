@@ -208,7 +208,9 @@ export async function restoreBackupSnapshot(
   }
 
   appendConnectedPreviewLog('Checking connected device...');
-  await resetConnectedDeviceConnection().catch(() => {});
+  if (process.platform !== 'win32') {
+    await resetConnectedDeviceConnection().catch(() => {});
+  }
   throwIfRestoreCancelled();
   const connection = await checkAdbConnected();
   if (!connection.connected) {

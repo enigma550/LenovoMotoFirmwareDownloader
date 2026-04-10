@@ -9,11 +9,10 @@
 
     // Bundler mode
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "paths": {
-      "electrobun": ["types/electrobun/index.d.ts"],
-      "electrobun/bun": ["types/electrobun/bun.d.ts"],
-      "electrobun/view": ["types/electrobun/view.d.ts"],
+      "electrobun": ["./types/electrobun/index.d.ts"],
+      "electrobun/bun": ["./types/electrobun/bun.d.ts"],
+      "electrobun/view": ["./types/electrobun/view.d.ts"],
     },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,

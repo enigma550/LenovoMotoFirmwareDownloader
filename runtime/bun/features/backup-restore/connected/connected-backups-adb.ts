@@ -37,7 +37,7 @@ export async function checkAdbConnected(appendLog?: (line: string) => void, sign
   try {
     await withConnectedDeviceConnection(async () => undefined, {
       label: 'backup:check-connected',
-      reuseShared: false,
+      reuseShared: true,
     });
     return {
       connected: true,
@@ -90,7 +90,7 @@ export async function checkAdbConnected(appendLog?: (line: string) => void, sign
         );
         await withConnectedDeviceConnection(async () => undefined, {
           label: 'backup:check-connected-after-wait',
-          reuseShared: false,
+          reuseShared: true,
         });
         return {
           connected: true,

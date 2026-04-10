@@ -4,6 +4,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
+    "rootDir": "..",
     "types": ["w3c-web-usb"]
   },
   "files": ["../node_modules/electrobun/dist/api/browser/global.d.ts"],

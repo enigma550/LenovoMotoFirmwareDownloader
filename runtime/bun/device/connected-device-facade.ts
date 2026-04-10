@@ -19,7 +19,7 @@ type ReadConnectedDeviceInfoOptions = ConnectedDeviceOperationOptions & {
 };
 
 let connectionOperationSequence = 0;
-const DEFAULT_CONNECTION_IDLE_CLOSE_MS = 5_000;
+const DEFAULT_CONNECTION_IDLE_CLOSE_MS = process.platform === 'win32' ? 60_000 : 5_000;
 
 type OpenedConnectedDeviceConnection = {
   connection: ConnectedDeviceConnection;

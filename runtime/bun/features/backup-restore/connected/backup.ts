@@ -267,6 +267,8 @@ export async function backupConnectedDevice(
       error: detail,
     };
   } finally {
-    await resetConnectedDeviceConnection().catch(() => {});
+    if (process.platform !== 'win32') {
+      await resetConnectedDeviceConnection().catch(() => {});
+    }
   }
 }

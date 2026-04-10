@@ -40,6 +40,11 @@ export class App implements OnInit {
     }
 
     if (info.platform === 'win32') {
+      const res = await this.store.checkDesktopIntegration();
+      if (res.status === 'ok') {
+        return;
+      }
+
       const ask = await this.store.getDesktopPromptPreference();
       if (ask) {
         this.store.desktopPromptReason.set('windows_protocol_handler');

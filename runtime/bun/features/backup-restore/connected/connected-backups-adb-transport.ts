@@ -19,7 +19,7 @@ export async function withSharedAdbCommandSession<T>(action: () => Promise<T>): 
     return await action();
   } finally {
     sharedAdbCommandSessionDepth = Math.max(0, sharedAdbCommandSessionDepth - 1);
-    if (sharedAdbCommandSessionDepth === 0) {
+    if (sharedAdbCommandSessionDepth === 0 && process.platform !== 'win32') {
       await resetConnectedDeviceConnection().catch(() => {});
     }
   }

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { loadConfig, saveConfig } from '../../core/infra/config.ts';
 
 export interface DesktopIntegrationStatus {
@@ -34,6 +34,77 @@ const INSTANCE_PID_PATH = join(tmpdir(), 'lenovo-moto-firmware-downloader.pid');
 // Known .desktop file names to look for
 const GEAR_LEVER_DESKTOP = 'lenovo_moto_firmware_downloader.desktop';
 const OUR_DESKTOP = `${APP_IDENTIFIER}.desktop`;
+
+function uniquePaths(paths: string[]) {
+  return [...new Set(paths.map((candidate) => resolve(candidate)))];
+}
+
+function normalizeWindowsCommand(command: string) {
+  return command.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function sameWindowsCommand(left: string, right: string) {
+  return normalizeWindowsCommand(left) === normalizeWindowsCommand(right);
+}
+
+function isLmfdWindowsSoftwareFixCommand(command: string) {
+  const normalized = normalizeWindowsCommand(command);
+  return (
+    normalized.includes(APP_IDENTIFIER.toLowerCase()) ||
+    normalized.includes('lenovomotofirmwaredownloader')
+  );
+}
+
+function getPackagedAppRoots() {
+  const execPath = process.execPath;
+  const argv0 = process.argv[0] || execPath;
+
+  return uniquePaths([
+    join(execPath, '..', '..', 'Resources', 'app'),
+    join(dirname(execPath), '..', 'Resources', 'app'),
+    join(argv0, '..', '..', 'Resources', 'app'),
+    join(dirname(argv0), '..', 'Resources', 'app'),
+  ]);
+}
+
+function resolveWindowsProtocolLauncherPath() {
+  const execDir = dirname(process.execPath);
+  const candidates = uniquePaths([
+    join(execDir, 'launcher.exe'),
+    join(process.cwd(), 'launcher.exe'),
+    join(process.cwd(), 'bin', 'launcher.exe'),
+    process.execPath,
+  ]);
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return process.execPath;
+}
+
+function resolveWindowsProtocolHandlerScriptPath() {
+  const packagedCandidates = getPackagedAppRoots().map((root) =>
+    join(root, 'tools', 'windows', 'softwarefix-handler.ps1'),
+  );
+  const developmentCandidate = join(
+    process.cwd(),
+    'assets',
+    'tools',
+    'windows',
+    'softwarefix-handler.ps1',
+  );
+
+  for (const candidate of uniquePaths([...packagedCandidates, developmentCandidate])) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return '';
+}
 
 function getExpectedExecPath() {
   if (process.env.APPIMAGE) {
@@ -153,8 +224,17 @@ async function deleteRegistryKey(keyPath: string) {
 }
 
 function getLmfdWindowsSoftwareFixCommand() {
-  const execPath = getExpectedExecPath();
-  return `"${execPath}" "%1" "%2"`;
+  const launcherPath = resolveWindowsProtocolLauncherPath();
+  const handlerScriptPath = resolveWindowsProtocolHandlerScriptPath();
+
+  if (!handlerScriptPath) {
+    return `"${launcherPath}" "%1"`;
+  }
+
+  return (
+    `powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass ` +
+    `-File "${handlerScriptPath}" "${launcherPath}" "${CALLBACK_DROP_PATH}" "${INSTANCE_PID_PATH}" "%1"`
+  );
 }
 
 async function detectCurrentSoftwareFixRegistration(): Promise<WindowsSoftwareFixBackup | null> {
@@ -192,7 +272,11 @@ export async function switchSoftwareFixProtocolToLmfd() {
 
   try {
     const config = await loadConfig();
-    if (currentRegistration && currentRegistration.command !== lmfdCommand) {
+    if (
+      currentRegistration &&
+      !sameWindowsCommand(currentRegistration.command, lmfdCommand) &&
+      !isLmfdWindowsSoftwareFixCommand(currentRegistration.command)
+    ) {
       config.windowsSoftwareFixHandlerBackup = currentRegistration;
     }
 
@@ -399,6 +483,41 @@ async function installDesktopIcon() {
 }
 
 export async function checkDesktopIntegration(): Promise<DesktopIntegrationStatus> {
+  if (process.platform === 'win32') {
+    try {
+      const currentRegistration = await detectCurrentSoftwareFixRegistration();
+      if (!currentRegistration?.command) {
+        return { ok: true, status: 'missing' };
+      }
+
+      const lmfdCommand = getLmfdWindowsSoftwareFixCommand();
+      if (sameWindowsCommand(currentRegistration.command, lmfdCommand)) {
+        return { ok: true, status: 'ok' };
+      }
+
+      if (isLmfdWindowsSoftwareFixCommand(currentRegistration.command)) {
+        const switchResult = await switchSoftwareFixProtocolToLmfd();
+        if (switchResult.ok) {
+          return { ok: true, status: 'ok' };
+        }
+
+        return {
+          ok: false,
+          status: 'missing',
+          error: switchResult.error || 'Could not update LMFD softwarefix:// handler.',
+        };
+      }
+
+      return { ok: true, status: 'missing' };
+    } catch (error) {
+      return {
+        ok: false,
+        status: 'missing',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
   if (process.platform !== 'linux') {
     return { ok: true, status: 'not_linux' };
   }

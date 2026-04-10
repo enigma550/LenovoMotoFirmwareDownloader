@@ -306,7 +306,9 @@ export async function scanConnectedBackupPreview(): Promise<ConnectedBackupPrevi
       if (activePreviewCancellationController === cancellationController) {
         activePreviewCancellationController = null;
       }
-      await resetConnectedDeviceConnection().catch(() => {});
+      if (process.platform !== 'win32') {
+        await resetConnectedDeviceConnection().catch(() => {});
+      }
     }
   })();
 
