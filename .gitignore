@@ -32,8 +32,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 runtime/bun/features/backup-restore/on-device/**/.build/
 runtime/bun/features/backup-restore/on-device/**/.debug.keystore
 runtime/bun/features/backup-restore/on-device/**/*.idsig
-runtime/bun/features/backup-restore/on-device/restore-helper/lmfd_restore_helper.apk
-runtime/bun/features/backup-restore/on-device/system-prompt/system_prompt_helper.dex
 runtime/bun/features/rescue/fastboot-native/linux-helper/lmfd_fastboot_helper
 
 # IntelliJ based IDEs

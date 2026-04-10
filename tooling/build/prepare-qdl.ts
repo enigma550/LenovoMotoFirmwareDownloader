@@ -357,6 +357,8 @@ async function main() {
     ),
   );
 
+  await writeFile(join(outputDir, '.gitkeep'), '');
+
   await rm(tempBaseDir, { recursive: true, force: true });
 
   console.log(`[QDL] Bundled qdl ready at ${bundledExecutablePath}`);

@@ -31,8 +31,7 @@ function toSpawnCommand(command: string, args: string[]) {
     return [command, ...args];
   }
 
-  const quoted = [command, ...args].map((part) => `"${part.replace(/"/g, '""')}"`).join(' ');
-  return ['cmd.exe', '/d', '/s', '/c', quoted];
+  return ['cmd.exe', '/d', '/s', '/c', command, ...args];
 }
 
 export function candidateSdkRoots() {

@@ -173,6 +173,10 @@ jobs:
           echo "QDL prepare failed after $attempts attempts."
           exit 1
 
+      - name: Prepare bundled FFmpeg fallback
+        shell: bash
+        run: bun run ffmpeg:prepare
+
       - name: Prepare runtime views
         shell: bash
         run: bun run prepare:all

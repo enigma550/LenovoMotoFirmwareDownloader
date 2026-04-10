@@ -74,13 +74,14 @@ async function main() {
 
   console.log(`[FFMPEG] Preparing fallback binary for ${platformArchKey} (${binaryName})...`);
 
-  if (hasSystemFfmpegInPath()) {
-    console.log('[FFMPEG] System ffmpeg is available in PATH. Skipping bundled fallback prepare.');
-    return;
-  }
-
   const staticFfmpegPath = await resolveStaticFfmpegPath();
   if (!staticFfmpegPath) {
+    if (hasSystemFfmpegInPath()) {
+      console.warn(
+        `[FFMPEG] Could not resolve ffmpeg-static binary for ${platformArchKey}. Falling back to system ffmpeg in PATH only.`,
+      );
+      return;
+    }
     console.warn(`[FFMPEG] Could not resolve ffmpeg-static binary for ${platformArchKey}.`);
     return;
   }
