@@ -38,6 +38,10 @@ export class AboutFacade {
     return this.system.openUrl(url);
   }
 
+  async openDefaultAppsSettings() {
+    return this.system.openDefaultAppsSettings();
+  }
+
   async checkFrameworkUpdate() {
     return this.system.checkFrameworkUpdate();
   }

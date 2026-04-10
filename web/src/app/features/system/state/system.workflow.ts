@@ -18,7 +18,9 @@ export class SystemWorkflowService {
   private readonly auth = inject(AuthWorkflowService);
 
   readonly showDesktopPrompt = signal(false);
-  readonly desktopPromptReason = signal<'missing' | 'wrong_wmclass'>('missing');
+  readonly desktopPromptReason = signal<'missing' | 'wrong_wmclass' | 'windows_default_apps'>(
+    'missing',
+  );
   readonly appInfo = signal<AppInfo | null>(null);
   readonly bridgeHealthy = signal(true);
   readonly bridgeLatencyMs = signal<number | null>(null);
@@ -83,6 +85,10 @@ export class SystemWorkflowService {
     } catch {
       return { ok: false, error: 'Desktop API not available' };
     }
+  }
+
+  async openDefaultAppsSettings() {
+    return this.openUrl('ms-settings:defaultapps');
   }
 
   async checkFrameworkUpdate(): Promise<FrameworkUpdateInfo | null> {

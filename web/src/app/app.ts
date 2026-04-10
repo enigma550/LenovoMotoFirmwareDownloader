@@ -35,7 +35,20 @@ export class App implements OnInit {
     await ensureDesktopBridgeReady();
 
     const info = await this.store.loadAppInfo();
-    if (info?.platform !== 'linux') {
+    if (!info) {
+      return;
+    }
+
+    if (info.platform === 'win32') {
+      const ask = await this.store.getDesktopPromptPreference();
+      if (ask) {
+        this.store.desktopPromptReason.set('windows_default_apps');
+        this.store.showDesktopPrompt.set(true);
+      }
+      return;
+    }
+
+    if (info.platform !== 'linux') {
       return;
     }
 
@@ -51,6 +64,7 @@ export class App implements OnInit {
 
     const ask = await this.store.getDesktopPromptPreference();
     if (ask) {
+      this.store.desktopPromptReason.set('missing');
       this.store.showDesktopPrompt.set(true);
     }
   }

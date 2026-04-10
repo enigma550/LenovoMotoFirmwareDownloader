@@ -11,9 +11,17 @@ export class DesktopPromptModalComponent {
   protected isProcessing = signal(false);
   protected dontAskAgain = signal(false);
 
-  async createShortcut() {
+  protected isWindowsPrompt() {
+    return this.store.desktopPromptReason() === 'windows_default_apps';
+  }
+
+  async runPrimaryAction() {
     this.isProcessing.set(true);
-    await this.store.createDesktopIntegration();
+    if (this.isWindowsPrompt()) {
+      await this.store.openDefaultAppsSettings();
+    } else {
+      await this.store.createDesktopIntegration();
+    }
     if (this.dontAskAgain()) {
       await this.store.setDesktopPromptPreference(false);
     }

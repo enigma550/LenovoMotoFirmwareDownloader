@@ -24,6 +24,7 @@ export class AppFacade {
   readonly bridgeHealthy = this.about.bridgeHealthy;
   readonly bridgeStatus = this.about.bridgeStatus;
   readonly showDesktopPrompt = this.about.showDesktopPrompt;
+  readonly desktopPromptReason = this.about.desktopPromptReason;
 
   toggleTheme() {
     this.ui.toggleTheme();

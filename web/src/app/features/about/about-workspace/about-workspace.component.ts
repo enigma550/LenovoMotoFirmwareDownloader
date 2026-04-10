@@ -74,6 +74,14 @@ export class AboutWorkspaceComponent implements OnInit {
     this.checkIntegration();
   }
 
+  protected isWindowsPlatform() {
+    return this.store.appInfo()?.platform === 'win32';
+  }
+
+  protected isLinuxPlatform() {
+    return this.store.appInfo()?.platform === 'linux';
+  }
+
   async checkIntegration() {
     this.desktopStatus.set('checking');
     const res = await this.store.checkDesktopIntegration();
@@ -98,6 +106,13 @@ export class AboutWorkspaceComponent implements OnInit {
 
   async openReleasePage() {
     await this.store.openUrl(this.releasePageUrl());
+  }
+
+  async openDefaultAppsSettings() {
+    const result = await this.store.openDefaultAppsSettings();
+    if (!result.ok) {
+      this.ui.showToast(result.error || 'Unable to open Windows Default Apps settings.', 'error');
+    }
   }
 
   async checkUpdates() {
