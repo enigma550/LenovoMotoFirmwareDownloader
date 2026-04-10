@@ -1,8 +1,11 @@
-import type { RescueQdlStorage } from '../../../../shared/rpc.ts';
-import type { PreparedFastbootCommand } from '../fastboot-parser.ts';
+import type { RescueQdlStorage } from '../../../../shared/desktop-rpc';
 
-export type PreparedFastbootRescueCommand = PreparedFastbootCommand & {
+export type PreparedFastbootCommand = {
   tool: 'fastboot';
+  label: string;
+  softFail: boolean;
+  timeoutMs: number;
+  args: string[];
 };
 
 export type PreparedEdlFirehoseCommand = {
@@ -15,6 +18,8 @@ export type PreparedEdlFirehoseCommand = {
   programmerPath: string;
   rawprogramPath: string;
   patchPath?: string;
+  includePaths?: string[];
+  validateWithDryRun?: boolean;
 };
 
 export type PreparedUnisocPacCommand = {
@@ -27,6 +32,6 @@ export type PreparedUnisocPacCommand = {
 };
 
 export type PreparedRescueCommand =
-  | PreparedFastbootRescueCommand
+  | PreparedFastbootCommand
   | PreparedEdlFirehoseCommand
   | PreparedUnisocPacCommand;

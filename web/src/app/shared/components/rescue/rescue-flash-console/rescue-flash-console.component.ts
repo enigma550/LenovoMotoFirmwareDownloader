@@ -12,10 +12,15 @@ import {
 } from '@angular/core';
 import type { ITerminalOptions } from '@xterm/xterm';
 import { type NgTerminalComponent, NgTerminalModule } from 'ng-terminal';
-import type { FirmwareDownloadState } from '../../../../core/state/workflow/workflow.types';
+import type { FirmwareDownloadState } from '../../../../shared/state/workflow.types';
 import { UiActionButtonComponent } from '../../ui/ui-action-button/ui-action-button.component';
+import {
+  type RescueFlashConsoleScope,
+  RescueFlashConsoleStateService,
+} from './rescue-flash-console-state.service';
 
-const TERMINAL_MAX_LINES = 500;
+const ANSI_ESCAPE_PREFIX = String.fromCharCode(0x1b);
+const ANSI_ESCAPE_SEQUENCE_PATTERN = new RegExp(`${ANSI_ESCAPE_PREFIX}\\[[0-9;]*m`, 'g');
 type LogTone = 'info' | 'verbose' | 'success' | 'warning' | 'error';
 type BuiltLogLine = { message: string; tone: LogTone } | null;
 
@@ -27,22 +32,33 @@ type BuiltLogLine = { message: string; tone: LogTone } | null;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RescueFlashConsoleComponent {
+  readonly title = input('Flash Console');
+  readonly context = input<RescueFlashConsoleScope>('firmware');
   readonly download = input.required<FirmwareDownloadState>();
   readonly isDark = input(false);
   readonly statusText = input('');
+  readonly backupCancelable = input(false);
   readonly cancelRequested = output<string>();
+  readonly backupCancelRequested = output<void>();
 
   private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef<HTMLElement>);
+  private readonly persistedState = inject(RescueFlashConsoleStateService);
 
   protected readonly hasConsoleContent = signal(false);
   protected readonly shouldShow = computed(() => {
     const active = this.download();
-    const rescueActive = active.mode === 'rescue-lite' && Boolean(active.downloadId);
+    const rescueActive =
+      active.mode === 'rescue-lite' &&
+      Boolean(active.downloadId) &&
+      this.isRelevantRescueState(active);
     return rescueActive || this.hasConsoleContent();
   });
   protected readonly canCancelCurrentAction = computed(() => {
+    if (this.backupCancelable()) {
+      return true;
+    }
     const current = this.download();
-    if (!current.downloadId) {
+    if (!current.downloadId || !this.isRelevantRescueState(current)) {
       return false;
     }
 
@@ -57,10 +73,9 @@ export class RescueFlashConsoleComponent {
 
   private terminal: NgTerminalComponent | null = null;
   private consoleSectionElement: HTMLElement | null = null;
-  private lines: string[] = [];
   private activeDownloadId = '';
   private lastLogSignature = '';
-  private lastExtractStatus = '';
+  private lastWorkflowStatus = '';
 
   private readonly darkTerminalOptions: ITerminalOptions & { theme?: { border?: string } } = {
     convertEol: true,
@@ -89,6 +104,13 @@ export class RescueFlashConsoleComponent {
   };
 
   constructor() {
+    this.restoreStateForCurrentContext();
+
+    effect(() => {
+      this.context();
+      this.restoreStateForCurrentContext();
+    });
+
     effect(() => {
       const state = this.download();
       this.syncWithDownloadState(state);
@@ -96,7 +118,7 @@ export class RescueFlashConsoleComponent {
 
     effect(() => {
       const status = this.statusText();
-      this.syncWithExtractStatus(status);
+      this.syncWithWorkflowStatus(status);
     });
   }
 
@@ -107,8 +129,9 @@ export class RescueFlashConsoleComponent {
       return;
     }
 
+    const persisted = this.persistedState.stateFor(this.context());
     this.terminal.underlying?.clear();
-    for (const line of this.lines) {
+    for (const line of persisted.lines) {
       this.terminal.write(`${line}\r\n`);
     }
   }
@@ -123,31 +146,76 @@ export class RescueFlashConsoleComponent {
   }
 
   protected clearConsole() {
-    this.lines = [];
+    this.persistedState.clear(this.context());
     this.hasConsoleContent.set(false);
+    this.activeDownloadId = '';
     this.lastLogSignature = '';
+    this.lastWorkflowStatus = '';
     this.terminal?.underlying?.clear();
   }
 
   protected requestCancelCurrentAction() {
-    const current = this.download();
     if (!this.canCancelCurrentAction()) {
       return;
     }
 
     this.appendLine('Cancel requested by user...', 'warning');
-    this.cancelRequested.emit(current.downloadId);
-  }
 
-  private syncWithDownloadState(state: FirmwareDownloadState) {
-    if (state.mode !== 'rescue-lite' || !state.downloadId) {
+    if (this.backupCancelable()) {
+      this.backupCancelRequested.emit();
       return;
     }
 
+    const current = this.download();
+    this.cancelRequested.emit(current.downloadId);
+  }
+
+  protected async copyConsoleToClipboard() {
+    const persisted = this.persistedState.stateFor(this.context());
+    const rawText = persisted.lines
+      .map((line) => line.replace(ANSI_ESCAPE_SEQUENCE_PATTERN, ''))
+      .join('\n')
+      .trim();
+
+    if (!rawText) {
+      this.appendLine('Console is empty. Nothing to copy.', 'warning');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(rawText);
+      this.appendLine(`Copied ${persisted.lines.length} console lines to clipboard.`, 'success');
+    } catch {
+      this.appendLine('Failed to copy console output to clipboard.', 'error');
+    }
+  }
+
+  protected onConsoleWheel(event: WheelEvent) {
+    const viewport = this.hostRef.nativeElement.querySelector(
+      '.xterm-viewport',
+    ) as HTMLElement | null;
+    if (!viewport) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    viewport.scrollTop += event.deltaY;
+  }
+
+  private syncWithDownloadState(state: FirmwareDownloadState) {
+    if (state.mode !== 'rescue-lite' || !state.downloadId || !this.isRelevantRescueState(state)) {
+      return;
+    }
+
+    const persisted = this.persistedState.stateFor(this.context());
     if (state.downloadId !== this.activeDownloadId) {
       this.activeDownloadId = state.downloadId;
+      persisted.activeDownloadId = state.downloadId;
       this.lastLogSignature = '';
-      this.lines = [];
+      persisted.lastLogSignature = '';
+      persisted.lines = [];
+      persisted.hasContent = false;
       this.terminal?.underlying?.clear();
       const startLabel =
         state.commandSource === 'local-extract'
@@ -161,6 +229,7 @@ export class RescueFlashConsoleComponent {
       return;
     }
     this.lastLogSignature = signature;
+    persisted.lastLogSignature = signature;
 
     const line = this.buildLogLine(state);
     if (line) {
@@ -176,6 +245,8 @@ export class RescueFlashConsoleComponent {
       typeof state.stepIndex === 'number' ? String(state.stepIndex) : '',
       typeof state.stepTotal === 'number' ? String(state.stepTotal) : '',
       state.stepLabel || '',
+      state.consoleLine || '',
+      state.consoleTone || '',
       state.error || '',
       state.commandSource || '',
     ].join('|');
@@ -188,6 +259,29 @@ export class RescueFlashConsoleComponent {
         : '';
     const stepLabel = (state.stepLabel || '').trim();
     const isLocalExtract = state.commandSource === 'local-extract';
+    const consoleLine = (state.consoleLine || '').trim();
+
+    if (state.status === 'completed') {
+      if (isLocalExtract) {
+        return { message: 'Extraction completed.', tone: 'success' };
+      }
+      return { message: state.dryRun ? 'Dry run completed.' : 'Flash completed.', tone: 'success' };
+    }
+
+    if (state.status === 'failed') {
+      return { message: state.error ? `Failed: ${state.error}` : 'Failed.', tone: 'error' };
+    }
+
+    if (state.status === 'canceled') {
+      return { message: isLocalExtract ? 'Extraction canceled.' : 'Canceled.', tone: 'warning' };
+    }
+
+    if (consoleLine) {
+      return {
+        message: consoleLine,
+        tone: state.consoleTone || 'info',
+      };
+    }
 
     if (stepLabel.startsWith('[extract]')) {
       return {
@@ -229,21 +323,6 @@ export class RescueFlashConsoleComponent {
       return { message: 'Paused', tone: 'warning' };
     }
 
-    if (state.status === 'completed') {
-      if (isLocalExtract) {
-        return { message: 'Extraction completed.', tone: 'success' };
-      }
-      return { message: state.dryRun ? 'Dry run completed.' : 'Flash completed.', tone: 'success' };
-    }
-
-    if (state.status === 'failed') {
-      return { message: state.error ? `Failed: ${state.error}` : 'Failed.', tone: 'error' };
-    }
-
-    if (state.status === 'canceled') {
-      return { message: isLocalExtract ? 'Extraction canceled.' : 'Canceled.', tone: 'warning' };
-    }
-
     return null;
   }
 
@@ -255,45 +334,86 @@ export class RescueFlashConsoleComponent {
       second: '2-digit',
     });
     const formatted = this.formatTerminalLine(timestamp, content, tone);
-    this.lines.push(formatted);
-    if (this.lines.length > TERMINAL_MAX_LINES) {
-      this.lines = this.lines.slice(this.lines.length - TERMINAL_MAX_LINES);
-    }
-    this.hasConsoleContent.set(this.lines.length > 0);
+    this.persistedState.pushLine(this.context(), formatted);
+    this.hasConsoleContent.set(this.persistedState.stateFor(this.context()).hasContent);
     this.terminal?.write(`${formatted}\r\n`);
-    this.scrollPageToConsoleIfOutOfView();
+
+    if (!this.isBackupConsoleLine(content)) {
+      this.scrollPageToConsoleIfOutOfView();
+    }
   }
 
-  private syncWithExtractStatus(statusText: string) {
+  private syncWithWorkflowStatus(statusText: string) {
+    if (this.context() !== 'backup') {
+      return;
+    }
+
     const normalized = statusText.trim();
     if (!normalized) {
       return;
     }
 
-    const active = this.download();
-    if (active.commandSource === 'local-extract') {
+    if (!this.isConsoleStatus(normalized)) {
       return;
     }
 
-    if (!this.isExtractStatus(normalized)) {
+    if (normalized === this.lastWorkflowStatus) {
       return;
     }
+    this.lastWorkflowStatus = normalized;
+    this.persistedState.stateFor(this.context()).lastWorkflowStatus = normalized;
 
-    if (normalized === this.lastExtractStatus) {
-      return;
-    }
-    this.lastExtractStatus = normalized;
-
-    this.appendLine(normalized, 'info');
+    this.appendLine(normalized, this.getStatusTone(normalized));
   }
 
-  private isExtractStatus(statusText: string) {
+  private isConsoleStatus(statusText: string) {
+    return this.isBackupConsoleLine(statusText);
+  }
+
+  private isBackupConsoleLine(statusText: string) {
     const normalized = statusText.toLowerCase();
     return (
-      normalized.startsWith('extracting ') ||
-      normalized.startsWith('extraction ') ||
-      normalized.includes('failed to extract')
+      normalized.startsWith('backup preview:') ||
+      normalized.startsWith('connected preview') ||
+      normalized.startsWith('backup process:') ||
+      normalized.startsWith('restore process:')
     );
+  }
+
+  private restoreStateForCurrentContext() {
+    const persisted = this.persistedState.stateFor(this.context());
+    this.activeDownloadId = persisted.activeDownloadId;
+    this.lastLogSignature = persisted.lastLogSignature;
+    this.lastWorkflowStatus = persisted.lastWorkflowStatus;
+    this.hasConsoleContent.set(persisted.hasContent);
+    if (this.terminal) {
+      this.terminal.underlying?.clear();
+      for (const line of persisted.lines) {
+        this.terminal.write(`${line}\r\n`);
+      }
+    }
+  }
+
+  private isRelevantRescueState(state: FirmwareDownloadState) {
+    const context = this.context();
+    if (context === 'backup') {
+      return false;
+    }
+    return state.mode === 'rescue-lite';
+  }
+
+  private getStatusTone(statusText: string): LogTone {
+    const normalized = statusText.toLowerCase();
+    if (normalized.includes('failed') || normalized.includes('error')) {
+      return 'error';
+    }
+    if (normalized.includes('completed') || normalized.includes('ready')) {
+      return 'success';
+    }
+    if (normalized.includes('scanning') || normalized.includes('elapsed')) {
+      return 'verbose';
+    }
+    return 'info';
   }
 
   private scrollPageToConsoleIfOutOfView() {

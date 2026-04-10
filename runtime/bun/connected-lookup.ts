@@ -1,13 +1,15 @@
+import type { DeviceInfo } from '../../core/domain/device/info.ts';
+import type { FirmwareVariant } from '../../core/domain/firmware/variant.ts';
 import {
   extractPublishDate,
   extractRecipeUrl,
   extractRomMatchIdentifier,
   extractRomUrl,
-} from '../../core/features/rescue/index.ts';
-import { getDeviceInfo, getDeviceToolAvailability } from '../../core/infra/device/info.ts';
+} from '../../core/features/firmware/extract-rom.ts';
+import { getDeviceInfo } from '../../core/infra/device/info.ts';
 import { requestApi } from '../../core/infra/lmsa/api.ts';
-import type { FirmwareVariant } from '../../core/shared/types/index.ts';
-import type { ConnectedLookupResponse } from '../shared/rpc.ts';
+import type { ConnectedLookupResponse } from '../shared/desktop-rpc';
+import { readConnectedDeviceInfo } from './device/connected-device-facade.ts';
 
 type LmsaPayloadValue = object | string | number | boolean | null;
 
@@ -19,20 +21,24 @@ export function isValidLmsaSerialNumber(serialNumber: string) {
   return /^([a-zA-Z]{1}[a-hj-np-zA-HJ-NP-Z0-9]{7})$/.test(serialNumber);
 }
 
-export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupResponse> {
-  const { adbAvailable, fastbootAvailable } = await getDeviceToolAvailability();
-  if (!adbAvailable && !fastbootAvailable) {
-    return {
-      ok: false,
-      adbAvailable,
-      fastbootAvailable,
-      attempts: [],
-      variants: [],
-      error: 'Neither adb nor fastboot was found in PATH.',
-    };
-  }
+function normalizeDeviceInfo(device: DeviceInfo): DeviceInfo {
+  return {
+    imei: device.imei || '',
+    modelName: device.modelName || 'Motorola Device',
+    modelCode: device.modelCode || '',
+    sn: device.sn || '',
+    roCarrier: device.roCarrier || 'reteu',
+  };
+}
 
-  const device = await getDeviceInfo();
+export async function lookupConnectedDeviceFirmwareFromDeviceInfo(
+  rawDevice: DeviceInfo,
+  options: {
+    adbAvailable?: boolean;
+  } = {},
+): Promise<ConnectedLookupResponse> {
+  const adbAvailable = options.adbAvailable ?? true;
+  const device = normalizeDeviceInfo(rawDevice);
   const attempts: ConnectedLookupResponse['attempts'] = [];
   const variants: FirmwareVariant[] = [];
 
@@ -67,7 +73,6 @@ export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupRe
     return {
       ok: false,
       adbAvailable,
-      fastbootAvailable,
       device,
       attempts,
       variants,
@@ -116,9 +121,24 @@ export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupRe
   return {
     ok: true,
     adbAvailable,
-    fastbootAvailable,
     device,
     attempts,
     variants,
   };
+}
+
+export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupResponse> {
+  try {
+    const connectedDevice = await readConnectedDeviceInfo({
+      label: 'catalog-connected-lookup:read-device-info',
+    });
+    return lookupConnectedDeviceFirmwareFromDeviceInfo(connectedDevice.device, {
+      adbAvailable: connectedDevice.adbAvailable,
+    });
+  } catch {
+    const device = await getDeviceInfo();
+    return lookupConnectedDeviceFirmwareFromDeviceInfo(device, {
+      adbAvailable: true,
+    });
+  }
 }

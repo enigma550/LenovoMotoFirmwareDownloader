@@ -3,7 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import type {
   WindowsQdloaderDriverInstallResponse,
   WindowsQdloaderDriverStatusResponse,
-} from '../../../../shared/rpc.ts';
+} from '../../../../shared/desktop-rpc';
 import { runCommandWithAbort } from '../device-flasher.ts';
 import { formatError } from './windows-driver-installer-shared.ts';
 

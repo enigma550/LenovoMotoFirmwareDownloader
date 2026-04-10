@@ -9,13 +9,13 @@ import {
   rescueDialogDescription as getRescueDialogDescription,
   rescueDialogTitle as getRescueDialogTitle,
   isInProgressStatus,
-} from '../../../core/state/workflow/download-utils';
-import { RescueDialogDefaultsService } from '../../../core/state/workflow/rescue-dialog-defaults.service';
-import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
-import type { DataResetChoice } from '../../../core/state/workflow/workflow.types';
+} from '../../../features/downloads/state/download-utils';
+import { RescueDialogDefaultsService } from '../../../features/downloads/state/rescue-dialog-defaults.service';
 import { RescueDryRunPlanDialogComponent } from '../../../shared/components/rescue/rescue-dry-run-plan-dialog/rescue-dry-run-plan-dialog.component';
 import { RescueFlashConsoleComponent } from '../../../shared/components/rescue/rescue-flash-console/rescue-flash-console.component';
 import { RescueOptionsDialogComponent } from '../../../shared/components/rescue/rescue-options-dialog/rescue-options-dialog.component';
+import type { DataResetChoice } from '../../../shared/state/workflow.types';
+import { DownloadsFacade } from '../../downloads/state';
 import { FirmwareActiveDownloadCardComponent } from './components/firmware-active-download-card/firmware-active-download-card.component';
 import { FirmwareVariantCardComponent } from './components/firmware-variant-card/firmware-variant-card.component';
 
@@ -32,7 +32,7 @@ import { FirmwareVariantCardComponent } from './components/firmware-variant-card
   templateUrl: './firmware-results.component.html',
 })
 export class FirmwareResultsComponent implements OnInit {
-  protected readonly store = inject(WorkflowStore);
+  protected readonly store = inject(DownloadsFacade);
   private readonly rescueDialogDefaults = inject(RescueDialogDefaultsService);
   protected rescueDialogOpen = false;
   protected rescueDialogVariant: FirmwareVariant | null = null;
@@ -162,7 +162,7 @@ export class FirmwareResultsComponent implements OnInit {
   }
 
   private openRescueDialog(variant: FirmwareVariant, dryRun: boolean) {
-    const defaults = this.rescueDialogDefaults.createDefaults();
+    const defaults = this.rescueDialogDefaults.createDefaults(variant);
     this.rescueDialogVariant = variant;
     this.rescueDialogDryRun = dryRun;
     this.rescueDialogDataReset = defaults.dataReset;

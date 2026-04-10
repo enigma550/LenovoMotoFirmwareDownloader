@@ -1,0 +1,217 @@
+@if (threads().length === 0) {
+  <p class="mt-2 text-xs" [class.text-light-text-dim]="!isDark()" [class.text-dark-text-dim]="isDark()">
+    No messages found.
+  </p>
+} @else {
+  <div class="mt-1.5 flex items-center gap-2">
+    <button
+      type="button"
+      class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+      [class.text-light-text]="!isDark()"
+      [class.hover:bg-light-surface]="!isDark()"
+      [class.text-dark-text]="isDark()"
+      [class.hover:bg-dark-elevated]="isDark()"
+      [disabled]="allExpanded()"
+      (click)="expandAll()"
+    >
+      Expand all
+    </button>
+    <button
+      type="button"
+      class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+      [class.text-light-text]="!isDark()"
+      [class.hover:bg-light-surface]="!isDark()"
+      [class.text-dark-text]="isDark()"
+      [class.hover:bg-dark-elevated]="isDark()"
+      [disabled]="expandedSenders().size === 0"
+      (click)="collapseAll()"
+    >
+      Collapse all
+    </button>
+  </div>
+  <div class="mt-2 space-y-2">
+    @for (thread of threads(); track thread.sender) {
+      <!-- Thread header -->
+      <article
+        class="rounded-xl border transition"
+        [class.border-light-border]="!isDark()"
+        [class.bg-light-elevated]="!isDark()"
+        [class.border-dark-border-bright]="isDark()"
+        [class.bg-dark-surface]="isDark()"
+      >
+        <button
+          type="button"
+          class="flex w-full items-center gap-3 p-2 text-left"
+          (click)="toggleExpand(thread.sender)"
+        >
+          <div
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-[10px] font-bold"
+            [class.bg-accent-light]="!isDark()"
+            [class.text-accent]="!isDark()"
+            [class.border-accent/30]="!isDark()"
+            [class.bg-accent/20]="isDark()"
+            [class.text-accent]="isDark()"
+            [class.border-accent/30]="isDark()"
+          >
+            {{ senderInitials(thread.sender) }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p
+              class="truncate text-xs font-semibold"
+              [class.text-light-text-bright]="!isDark()"
+              [class.text-dark-text-bright]="isDark()"
+            >
+              {{ thread.sender }}
+            </p>
+            <p
+              class="text-[11px]"
+              [class.text-light-text-dim]="!isDark()"
+              [class.text-dark-text-dim]="isDark()"
+            >
+              {{ thread.messages.length }} message{{ thread.messages.length === 1 ? '' : 's' }}
+            </p>
+          </div>
+
+          @if (selectable) {
+            <div
+              class="mr-1 shrink-0 cursor-pointer"
+              (click)="$event.stopPropagation(); toggleThread.emit(thread.sender)"
+            >
+              <div
+                class="flex h-5 w-5 items-center justify-center rounded border text-[10px] font-bold"
+                [class.border-success]="isThreadAllSelected(thread)"
+                [class.bg-success]="isThreadAllSelected(thread)"
+                [class.text-white]="isThreadAllSelected(thread)"
+                [class.border-warning]="
+                  isThreadPartiallySelected(thread) && !isThreadAllSelected(thread)
+                "
+                [class.bg-warning]="
+                  isThreadPartiallySelected(thread) && !isThreadAllSelected(thread)
+                "
+                [class.text-white]="isThreadPartiallySelected(thread)"
+                [class.border-dark-border-bright]="
+                  !isThreadAllSelected(thread) && !isThreadPartiallySelected(thread) && isDark()
+                "
+                [class.border-light-border-bright]="
+                  !isThreadAllSelected(thread) && !isThreadPartiallySelected(thread) && !isDark()
+                "
+                [class.text-light-text-dim]="
+                  !isThreadAllSelected(thread) && !isThreadPartiallySelected(thread)
+                "
+              >
+                @if (isThreadAllSelected(thread)) {
+                  ✓
+                } @else if (isThreadPartiallySelected(thread)) {
+                  –
+                }
+              </div>
+            </div>
+          }
+
+          <div class="shrink-0">
+            <span
+              class="text-[11px]"
+              [class.text-dark-text-dim]="!isDark()"
+              [class.text-light-text-dim]="isDark()"
+            >
+              {{ isExpanded(thread.sender) ? '▾' : '▸' }}
+            </span>
+          </div>
+        </button>
+
+        <!-- Expanded messages -->
+        @if (isExpanded(thread.sender)) {
+          <div
+            class="border-t px-2 pb-2"
+            [class.border-light-border]="!isDark()"
+            [class.border-dark-border-bright]="isDark()"
+          >
+            @for (message of thread.messages; track message.id) {
+              <div
+                class="mt-2 flex items-start gap-2 rounded-lg p-1.5 transition border-l-[3px]"
+                [class.cursor-pointer]="selectable"
+                [class.border-l-success]="selectable && isMessageSelected(message.id)"
+                [class.border-l-transparent]="!selectable || !isMessageSelected(message.id)"
+                [class.bg-accent-subtle]="message.messageType === 'received' && !isDark()"
+                [class.bg-accent/10]="message.messageType === 'received' && isDark()"
+                [class.bg-warning-light]="message.messageType === 'sent' && !isDark()"
+                [class.bg-warning/10]="message.messageType === 'sent' && isDark()"
+                (click)="selectable ? toggleMessage.emit(message.id) : null"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5">
+                    <span
+                      class="inline-block rounded px-1 py-0.5 text-[9px] font-bold uppercase leading-none"
+                      [class.bg-accent-light]="message.messageType === 'received' && !isDark()"
+                      [class.text-accent]="message.messageType === 'received' && !isDark()"
+                      [class.bg-accent/20]="message.messageType === 'received' && isDark()"
+                      [class.text-accent]="message.messageType === 'received' && isDark()"
+                      [class.bg-warning-light]="message.messageType === 'sent' && !isDark()"
+                      [class.text-warning]="message.messageType === 'sent' && !isDark()"
+                      [class.bg-warning/20]="message.messageType === 'sent' && isDark()"
+                      [class.text-warning]="message.messageType === 'sent' && isDark()"
+                      [class.bg-light-surface]="
+                        message.messageType !== 'sent' &&
+                        message.messageType !== 'received' &&
+                        !isDark()
+                      "
+                      [class.text-light-text-dim]="
+                        message.messageType !== 'sent' &&
+                        message.messageType !== 'received' &&
+                        !isDark()
+                      "
+                      [class.bg-dark-elevated]="
+                        message.messageType !== 'sent' &&
+                        message.messageType !== 'received' &&
+                        isDark()
+                      "
+                      [class.text-dark-text-dim]="
+                        message.messageType !== 'sent' &&
+                        message.messageType !== 'received' &&
+                        isDark()
+                      "
+                    >
+                      {{ directionLabel(message) }}
+                    </span>
+                    <span
+                      class="text-[11px]"
+                      [class.text-light-text-dim]="!isDark()"
+                      [class.text-dark-text-dim]="isDark()"
+                    >
+                      {{ formatMessageTime(message.timestamp) }}
+                    </span>
+                  </div>
+                  <p
+                    class="mt-0.5 whitespace-pre-wrap text-xs"
+                    [class.text-light-text]="!isDark()"
+                    [class.text-dark-text]="isDark()"
+                  >
+                    {{ message.preview }}
+                  </p>
+                </div>
+
+                @if (selectable) {
+                  <div class="shrink-0 pt-0.5">
+                    <div
+                      class="flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold"
+                      [class.border-success]="isMessageSelected(message.id)"
+                      [class.bg-success]="isMessageSelected(message.id)"
+                      [class.text-white]="isMessageSelected(message.id)"
+                      [class.border-dark-border-bright]="!isMessageSelected(message.id) && isDark()"
+                      [class.border-light-border-bright]="!isMessageSelected(message.id) && !isDark()"
+                      [class.text-light-text-dim]="!isMessageSelected(message.id)"
+                    >
+                      @if (isMessageSelected(message.id)) {
+                        ✓
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </article>
+    }
+  </div>
+}

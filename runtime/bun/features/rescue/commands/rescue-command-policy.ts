@@ -1,75 +1,10 @@
 import { parseCommandTokens } from '../../../firmware-package-utils.ts';
 
-const fastbootOperationTimeoutMsByName: Record<string, number> = {
-  continue: 10000,
-  erase: 60000,
-  flash: 300000,
-  flashall: 600000,
-  format: 60000,
-  getvar: 20000,
-  oem: 60000,
-  reboot: 20000,
-  'reboot-bootloader': 10000,
-};
-
-const defaultFastbootIgnoreResultCommandRules = ['getvar max-sparse-size'] as const;
 const defaultUnisocPacToolCandidates = ['spd-tool', 'spd-tool.exe'] as const;
-
-export const defaultFastbootCommandTimeoutMs = 120000;
+export const defaultFastbootCommandTimeoutMs = 30 * 60 * 1000;
+export const defaultFastbootReconnectTimeoutMs = 2 * 60 * 1000;
 export const defaultQdlCommandTimeoutMs = 30 * 60 * 1000;
 export const defaultUnisocCommandTimeoutMs = 45 * 60 * 1000;
-
-function normalizeFastbootCommandPart(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function normalizeFastbootCommandFromText(text: string) {
-  return text
-    .split(/\s+/)
-    .map((part) => normalizeFastbootCommandPart(part))
-    .filter(Boolean);
-}
-
-function normalizeFastbootCommandFromArgs(args: string[]) {
-  return args.map((part) => normalizeFastbootCommandPart(part)).filter(Boolean);
-}
-
-function startsWithCommandRule(commandParts: string[], ruleParts: string[]) {
-  if (ruleParts.length === 0 || commandParts.length < ruleParts.length) {
-    return false;
-  }
-  for (let index = 0; index < ruleParts.length; index += 1) {
-    if (commandParts[index] !== ruleParts[index]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-export function resolveFastbootCommandTimeoutMs(args: string[]) {
-  const commandParts = normalizeFastbootCommandFromArgs(args);
-  const operation = commandParts[0] || '';
-  return fastbootOperationTimeoutMsByName[operation] || defaultFastbootCommandTimeoutMs;
-}
-
-export function shouldIgnoreFastbootCommandResult(
-  args: string[],
-  ignoreRules: readonly string[] = defaultFastbootIgnoreResultCommandRules,
-) {
-  const commandParts = normalizeFastbootCommandFromArgs(args);
-  if (commandParts.length === 0) {
-    return false;
-  }
-
-  for (const ruleText of ignoreRules) {
-    const ruleParts = normalizeFastbootCommandFromText(ruleText);
-    if (startsWithCommandRule(commandParts, ruleParts)) {
-      return true;
-    }
-  }
-
-  return false;
-}
 
 function splitCommandList(value: string) {
   return value
@@ -125,4 +60,18 @@ export function resolveUnisocPacCommandArgs(pacPath: string) {
     replacedArgs.push(pacPath);
   }
   return replacedArgs;
+}
+
+export function resolveFastbootSerial() {
+  const configured = Bun.env.RESCUE_FASTBOOT_SERIAL || process.env.RESCUE_FASTBOOT_SERIAL || '';
+  return configured.trim() || undefined;
+}
+
+export function resolveFastbootReconnectTimeoutMs() {
+  const configured =
+    Bun.env.RESCUE_FASTBOOT_RECONNECT_TIMEOUT_MS ||
+    process.env.RESCUE_FASTBOOT_RECONNECT_TIMEOUT_MS ||
+    '';
+  const parsed = Number.parseInt(configured, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultFastbootReconnectTimeoutMs;
 }

@@ -1,12 +1,9 @@
 import { Component, type ElementRef, HostListener, inject, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { ModelCatalogEntry } from '../../../../../core/models/desktop-api';
-import { WorkflowStore } from '../../../../../core/state/workflow/workflow.store';
-import type {
-  CategoryFilter,
-  ReadSupportFilter,
-} from '../../../../../core/state/workflow/workflow.types';
 import { DropdownState } from '../../../../../core/ui/dropdown-state';
+import type { CategoryFilter, ReadSupportFilter } from '../../../../../shared/state/workflow.types';
+import { CatalogFacade } from '../../../state';
 
 type DropdownMenu = 'category' | 'readSupport' | null;
 
@@ -17,7 +14,7 @@ type DropdownMenu = 'category' | 'readSupport' | null;
   templateUrl: './catalog-model-browser.component.html',
 })
 export class CatalogModelBrowserComponent {
-  protected readonly store = inject(WorkflowStore);
+  protected readonly store = inject(CatalogFacade);
 
   @ViewChild('categoryTrigger') private categoryTrigger?: ElementRef<HTMLElement>;
   @ViewChild('readSupportTrigger') private readSupportTrigger?: ElementRef<HTMLElement>;

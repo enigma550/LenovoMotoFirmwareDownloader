@@ -1,8 +1,8 @@
-import type { RescueQdlStorage } from '../../../../shared/rpc.ts';
+import type { RescueQdlStorage } from '../../../../shared/desktop-rpc';
 import type { PreparedRescueCommand } from '../commands/rescue-command-types.ts';
 import type { RescueRecipeHints } from '../recipe-resolver.ts';
 
-export type RescuePlannerId = 'edl-firehose' | 'xml-fastboot' | 'script-fastboot' | 'unisoc-pac';
+export type RescuePlannerId = 'fastboot-xml' | 'edl-firehose' | 'unisoc-pac';
 
 export type RescueCommandPlanContext = {
   workDir: string;

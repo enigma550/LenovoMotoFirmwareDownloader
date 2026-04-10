@@ -16,8 +16,8 @@ export default {
     exitOnLastWindowClosed: true,
   },
   scripts: {
-    postBuild: "scripts/finalize-app.ts",
-    postPackage: "scripts/finalize-installer.ts",
+    postBuild: "tooling/build/finalize-app.ts",
+    postPackage: "tooling/build/finalize-installer.ts",
   },
   build: {
     mac: {
@@ -37,6 +37,7 @@ export default {
     },
     bun: {
       entrypoint: "runtime/bun/index.ts",
+      external: ["usb"],
     },
     views: {
       bridge: {
@@ -46,6 +47,10 @@ export default {
     copy: {
       "runtime/views/mainview": "views/mainview",
       "assets/tools": "tools",
+      "runtime/bun/features/backup-restore/on-device/restore-helper/lmfd_restore_helper.apk":
+        "bun/lmfd_restore_helper.apk",
+      "runtime/bun/features/backup-restore/on-device/system-prompt/system_prompt_helper.dex":
+        "bun/system_prompt_helper.dex",
     },
   },
   release: {

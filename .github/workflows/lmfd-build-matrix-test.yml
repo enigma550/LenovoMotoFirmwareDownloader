@@ -100,7 +100,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          version=$(bun scripts/resolve-version.ts ${{ needs.resolve-build-options.outputs.buildEnv }})
+          version=$(bun tooling/release/resolve-version.ts ${{ needs.resolve-build-options.outputs.buildEnv }})
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Resolved version: $version"
 
@@ -144,7 +144,7 @@ jobs:
             shortSha=$(git rev-parse --short HEAD)
             appVersion="${appVersion}-${{ needs.resolve-build-options.outputs.buildEnv }}.${shortSha}"
           fi
-          bun scripts/patch-config.ts "$appVersion" "${{ needs.resolve-build-options.outputs.buildEnv }}"
+          bun tooling/build/patch-config.ts "$appVersion" "${{ needs.resolve-build-options.outputs.buildEnv }}"
 
       - name: Install web dependencies
         shell: bash

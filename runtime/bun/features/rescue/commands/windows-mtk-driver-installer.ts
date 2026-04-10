@@ -1,4 +1,4 @@
-import type { WindowsMtkDriverInstallResponse } from '../../../../shared/rpc.ts';
+import type { WindowsMtkDriverInstallResponse } from '../../../../shared/desktop-rpc';
 import {
   resolveBundledDriverExePath,
   runBundledDriverExeWithUac,

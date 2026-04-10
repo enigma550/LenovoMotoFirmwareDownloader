@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
+import { AboutFacade } from '../state';
 
 @Component({
   selector: 'app-desktop-prompt-modal',
@@ -7,7 +7,7 @@ import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
   templateUrl: './desktop-prompt-modal.component.html',
 })
 export class DesktopPromptModalComponent {
-  protected readonly store = inject(WorkflowStore);
+  protected readonly store = inject(AboutFacade);
   protected isProcessing = signal(false);
   protected dontAskAgain = signal(false);
 

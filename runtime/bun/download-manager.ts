@@ -4,7 +4,8 @@ import type {
   CancelDownloadResponse,
   DownloadFirmwareResponse,
   DownloadProgressMessage,
-} from '../shared/rpc.ts';
+} from '../shared/desktop-rpc';
+import { notifyTaskCompleted } from './desktop-notifications.ts';
 import { writeFirmwareMetadata } from './firmware-metadata.ts';
 import { getDownloadDirectory, sanitizeFileName } from './firmware-package-utils.ts';
 
@@ -19,6 +20,7 @@ type DownloadTaskPayload = {
   selectedParameters?: Record<string, string>;
   downloadedBytes?: number;
   totalBytes?: number;
+  notifyOnCompletion?: boolean;
 };
 
 type ActiveDownload = {
@@ -241,6 +243,14 @@ export async function downloadFirmwareWithProgress(
       totalBytes: totalBytes ?? downloadedBytes,
       speedBytesPerSecond: averageSpeed,
     });
+
+    if (payload.notifyOnCompletion) {
+      notifyTaskCompleted({
+        title: 'Download completed',
+        body: romName || basename(savePath),
+        subtitle: basename(savePath),
+      });
+    }
 
     return {
       ok: true,

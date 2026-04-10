@@ -1,0 +1,32 @@
+<div class="mb-4 flex flex-wrap items-center gap-2">
+  @for (tab of tabs; track tab) {
+    <button
+      class="max-w-full rounded-full border px-3.5 py-1.5 text-xs font-semibold leading-none transition"
+      type="button"
+      [class.border-accent]="store.backupSnapshotTab() === tab"
+      [class.bg-accent-subtle]="store.backupSnapshotTab() === tab && !store.isDark()"
+      [class.text-accent]="store.backupSnapshotTab() === tab"
+      [class.bg-accent/10]="store.backupSnapshotTab() === tab && store.isDark()"
+      [class.border-light-border-bright]="store.backupSnapshotTab() !== tab && !store.isDark()"
+      [class.bg-light-elevated]="!store.isDark()"
+      [class.text-light-text]="store.backupSnapshotTab() !== tab && !store.isDark()"
+      [class.border-dark-border-bright]="store.backupSnapshotTab() !== tab && store.isDark()"
+      [class.bg-dark-surface]="store.isDark()"
+      [class.text-dark-text]="store.backupSnapshotTab() !== tab && store.isDark()"
+      [class.whitespace-nowrap]="true"
+      (click)="store.setBackupSnapshotTab(tab)"
+    >
+      @if (tab === 'apps') {
+        Apps ({{ snapshot().apps.length }})
+      } @else if (tab === 'media') {
+        Photos/Videos ({{ snapshot().media.length }})
+      } @else if (tab === 'contacts') {
+        Contacts ({{ snapshot().contacts.length }})
+      } @else if (tab === 'messages') {
+        Messages ({{ snapshot().messages.length }})
+      } @else {
+        Files ({{ snapshot().files.length }})
+      }
+    </button>
+  }
+</div>

@@ -1,5 +1,6 @@
 export const session = {
   guid: crypto.randomUUID(),
+  clientUuid: crypto.randomUUID(),
   jwt: '',
 };
 

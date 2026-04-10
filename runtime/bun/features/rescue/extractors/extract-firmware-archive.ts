@@ -91,6 +91,10 @@ async function runExtractionStrategy(
       cwd: options.context.workingDirectory,
       stdout: 'pipe',
       stderr: 'pipe',
+      env: {
+        ...process.env,
+        ['LD_PRELOAD']: '',
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

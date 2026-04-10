@@ -1,18 +1,18 @@
 import { Component, type ElementRef, HostListener, inject, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { WorkflowStore } from '../../../../../core/state/workflow/workflow.store';
 import { DropdownState } from '../../../../../core/ui/dropdown-state';
+import { CatalogFacade } from '../../../state';
+import { CatalogSelectedModelReadSupportComponent } from './components/catalog-selected-model-read-support/catalog-selected-model-read-support.component';
 
 type DropdownMenu = 'country' | null;
 
 @Component({
   selector: 'app-catalog-selected-model-panel',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CatalogSelectedModelReadSupportComponent],
   templateUrl: './catalog-selected-model-panel.component.html',
 })
 export class CatalogSelectedModelPanelComponent {
-  protected readonly store = inject(WorkflowStore);
+  protected readonly store = inject(CatalogFacade);
 
   @ViewChild('countryTrigger') private countryTrigger?: ElementRef<HTMLElement>;
 

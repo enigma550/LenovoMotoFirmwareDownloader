@@ -1,6 +1,6 @@
 import { type Dirent, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { copyFile, mkdir, readdir, stat } from 'node:fs/promises';
-import { basename, extname, isAbsolute, join, normalize, relative, resolve } from 'node:path';
+import { basename, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   getFirmwareArchiveExtension,
   isSupportedFirmwareArchive,
@@ -8,11 +8,29 @@ import {
   stripFirmwareArchiveExtension,
 } from './features/rescue/extractors/archive-format.ts';
 import { extractFirmwareArchive } from './features/rescue/extractors/extract-firmware-archive.ts';
+import {
+  getDownloadDirectory,
+  getExtractDirForPackagePath,
+  getRescueDirectory,
+  getRescueExtractDirectoryRoot,
+  normalizePathForLookup,
+  normalizeRemoteUrl,
+  sanitizeDirectoryName,
+  sanitizeFileName,
+} from './firmware-package-paths.ts';
 
 export {
-  SUPPORTED_FIRMWARE_ARCHIVE_EXTENSIONS,
+  getDownloadDirectory,
+  getExtractDirForPackagePath,
   getFirmwareArchiveExtension,
+  getRescueDirectory,
+  getRescueExtractDirectoryRoot,
   isSupportedFirmwareArchive,
+  normalizePathForLookup,
+  normalizeRemoteUrl,
+  SUPPORTED_FIRMWARE_ARCHIVE_EXTENSIONS,
+  sanitizeDirectoryName,
+  sanitizeFileName,
   stripFirmwareArchiveExtension,
 };
 
@@ -32,66 +50,6 @@ export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
 export type JsonObject = {
   [key: string]: JsonValue | undefined;
 };
-
-export function getDownloadDirectory() {
-  const homeDirectory =
-    Bun.env.HOME || Bun.env.USERPROFILE || process.env.HOME || process.env.USERPROFILE || '.';
-  return join(homeDirectory, 'Downloads', 'LenovoMotoFirmwareDownloader');
-}
-
-export function getRescueDirectory() {
-  return join(getDownloadDirectory(), '.rescue-lite');
-}
-
-export function getRescueExtractDirectoryRoot() {
-  return join(getRescueDirectory(), 'extracted');
-}
-
-export function getExtractDirForPackagePath(packagePath: string) {
-  const base = basename(packagePath);
-  const withoutArchiveExtension = stripFirmwareArchiveExtension(base) || base;
-  return join(getRescueExtractDirectoryRoot(), sanitizeDirectoryName(withoutArchiveExtension));
-}
-
-export function sanitizeFileName(fileName: string, fallback = 'firmware.zip') {
-  const sanitized = Array.from(fileName, (character) => {
-    const code = character.charCodeAt(0);
-    if (
-      code <= 0x1f ||
-      character === '<' ||
-      character === '>' ||
-      character === ':' ||
-      character === '"' ||
-      character === '/' ||
-      character === '\\' ||
-      character === '|' ||
-      character === '?' ||
-      character === '*'
-    ) {
-      return '_';
-    }
-    return character;
-  })
-    .join('')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return sanitized || fallback;
-}
-
-export function sanitizeDirectoryName(name: string) {
-  return sanitizeFileName(name, 'firmware').replace(/\.+$/g, '').slice(0, 160) || 'firmware';
-}
-
-export function normalizePathForLookup(value: string) {
-  return normalize(value).replace(/\\/g, '/');
-}
-
-export function normalizeRemoteUrl(value: string | undefined | null) {
-  if (!value) return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-  return trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
-}
 
 export function asRecord(value: JsonValue | undefined) {
   if (!value || typeof value !== 'object') return null;

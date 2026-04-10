@@ -1,6 +1,117 @@
 @import "tailwindcss";
 
+@theme {
+  /* Warm Utility Typography */
+  --font-sans: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Dark mode - warm charcoal palette */
+  --color-dark-bg: #1a1916;
+  --color-dark-surface: #242220;
+  --color-dark-elevated: #2e2b28;
+  --color-dark-border: #3d3935;
+  --color-dark-border-bright: #524d47;
+  --color-dark-text: #d4cfc8;
+  --color-dark-text-dim: #8a847c;
+  --color-dark-text-bright: #f5f2ee;
+
+  /* Light mode - warm cream palette */
+  --color-light-bg: #faf8f5;
+  --color-light-surface: #ffffff;
+  --color-light-elevated: #ffffff;
+  --color-light-border: #e8e4dd;
+  --color-light-border-bright: #d4cfc6;
+  --color-light-text: #2d2a26;
+  --color-light-text-dim: #6b665e;
+  --color-light-text-bright: #1a1816;
+
+  /* Accent - warm teal (not neon, not purple) */
+  --color-accent: #0d9488;
+  --color-accent-hover: #0f766e;
+  --color-accent-light: #ccfbf1;
+  --color-accent-subtle: #f0fdfa;
+
+  /* Semantic colors - warm variants */
+  --color-success: #059669;
+  --color-success-light: #d1fae5;
+  --color-warning: #d97706;
+  --color-warning-light: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-light: #fee2e2;
+
+  /* Animations */
+  --animate-slide-up: slide-up 0.25s ease-out;
+  --animate-fade-in: fade-in 0.2s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 html,
 body {
   overscroll-behavior: none;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Warm scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #b8b2a8;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8a847c;
+  background-clip: padding-box;
+}
+
+/* Input focus - warm glow */
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Subtle card hover effect */
+.card-hover {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
 }

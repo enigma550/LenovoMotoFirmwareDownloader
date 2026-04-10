@@ -6,10 +6,11 @@ import { Component, Input } from '@angular/core';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="h-2 w-full overflow-hidden rounded-full transition-colors"
-         [class.bg-slate-200]="!isDark"
-         [class.bg-slate-700]="isDark">
-      <div class="h-full rounded-full bg-sky-600 transition-all"
+    <div class="h-1.5 w-full overflow-hidden rounded-full transition-colors"
+         [class.bg-dark-elevated]="isDark"
+         [class.bg-light-border]="!isDark">
+      <div class="h-full rounded-full transition-all"
+           [class.bg-accent]="true"
            [style.width.%]="percent || 0">
       </div>
     </div>

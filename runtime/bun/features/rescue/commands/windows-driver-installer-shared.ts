@@ -3,7 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import type {
   WindowsMtkDriverInstallResponse,
   WindowsSpdDriverInstallResponse,
-} from '../../../../shared/rpc.ts';
+} from '../../../../shared/desktop-rpc';
 import { runCommandWithAbort } from '../device-flasher.ts';
 
 function uniquePaths(paths: string[]) {

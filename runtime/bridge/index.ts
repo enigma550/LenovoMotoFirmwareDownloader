@@ -2,10 +2,10 @@ import {
   createDesktopApiFromInvoker,
   createDesktopRpcClient,
   type DesktopBridgeWindowGlobals,
-  type DesktopRpcInvoker,
-} from '../../core/shared/bridge/index.ts';
-import type { DownloadProgressMessage } from '../../core/shared/types/desktop-api.ts';
-import type { DesktopRpcSchema } from '../shared/rpc.ts';
+} from '../../core/contracts/desktop/bridge.ts';
+import type { DesktopRpcInvoker } from '../../core/contracts/desktop/client.ts';
+import type { DownloadProgressMessage } from '../../core/contracts/desktop/entries.ts';
+import type { DesktopRpcSchema } from '../shared/desktop-rpc';
 
 const DOWNLOAD_PROGRESS_EVENT_NAME = 'desktop-download-progress';
 const MAX_INIT_ATTEMPTS = 600;

@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "scripts/resolve-version.ts"
-      - "scripts/resolve-version-test.ts"
+      - "tooling/release/resolve-version.ts"
+      - "tooling/release/resolve-version-test.ts"
       - "electrobun.config.ts"
       - ".github/workflows/resolve-version-test.yml"
 
@@ -41,4 +41,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: bun scripts/resolve-version-test.ts ${{ matrix.channel }}
+        run: bun tooling/release/resolve-version-test.ts ${{ matrix.channel }}

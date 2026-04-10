@@ -1,0 +1,180 @@
+@if (tree().length === 0 && depth() === 0) {
+  <p class="mt-2 text-xs" [class.text-light-text-dim]="!isDark()" [class.text-dark-text-dim]="isDark()">
+    No files found.
+  </p>
+} @else {
+  @if (depth() === 0) {
+    <div class="mt-1.5 flex items-center gap-2">
+      <button
+        type="button"
+        class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        [class.text-light-text]="!isDark()"
+        [class.hover:bg-light-surface]="!isDark()"
+        [class.text-dark-text]="isDark()"
+        [class.hover:bg-dark-elevated]="isDark()"
+        [disabled]="allExpanded()"
+        (click)="expandAll()"
+      >
+        Expand all
+      </button>
+      <button
+        type="button"
+        class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+        [class.text-light-text]="!isDark()"
+        [class.hover:bg-light-surface]="!isDark()"
+        [class.text-dark-text]="isDark()"
+        [class.hover:bg-dark-elevated]="isDark()"
+        [disabled]="!anyExpanded()"
+        (click)="collapseAll()"
+      >
+        Collapse all
+      </button>
+    </div>
+  }
+  <div [class.space-y-1]="depth() === 0" [class.ml-4]="depth() > 0" [class.mt-1]="depth() > 0">
+    @for (node of tree(); track node.fullPath) {
+      @if (!node.file) {
+        <!-- Folder node -->
+        <div
+          class="rounded-lg transition"
+          [class.border]="depth() === 0"
+          [class.border-light-border]="depth() === 0 && !isDark()"
+          [class.border-dark-border-bright]="depth() === 0 && isDark()"
+        >
+          <button
+            type="button"
+            class="flex w-full items-center gap-2 px-2 py-1.5 text-left"
+            (click)="toggleExpand(node.fullPath)"
+          >
+            <span
+              class="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold"
+              [class.bg-amber-100]="!isDark()"
+              [class.text-amber-700]="!isDark()"
+              [class.bg-amber-900/30]="isDark()"
+              [class.text-amber-400]="isDark()"
+            >
+              {{ isExpanded(node.fullPath) ? '▼' : '▶' }}
+            </span>
+            <span
+              class="min-w-0 flex-1 truncate text-xs font-semibold"
+              [class.text-light-text-bright]="!isDark()"
+              [class.text-dark-text-bright]="isDark()"
+            >
+              {{ node.name }}
+            </span>
+            <span
+              class="text-[11px]"
+              [class.text-light-text-dim]="!isDark()"
+              [class.text-dark-text-dim]="isDark()"
+            >
+              {{ childFileCount(node) }} file{{ childFileCount(node) === 1 ? '' : 's' }}
+            </span>
+
+            @if (selectable) {
+              <div
+                class="shrink-0 cursor-pointer"
+                (click)="$event.stopPropagation(); onToggleFolder(node)"
+              >
+                <div
+                  class="flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold"
+                  [class.border-success]="isFolderAllSelected(node)"
+                  [class.bg-success]="isFolderAllSelected(node)"
+                  [class.text-white]="isFolderAllSelected(node)"
+                  [class.border-warning]="
+                    isFolderPartiallySelected(node) && !isFolderAllSelected(node)
+                  "
+                  [class.bg-warning]="
+                    isFolderPartiallySelected(node) && !isFolderAllSelected(node)
+                  "
+                  [class.text-white]="isFolderPartiallySelected(node)"
+                  [class.border-dark-border-bright]="
+                    !isFolderAllSelected(node) && !isFolderPartiallySelected(node) && isDark()
+                  "
+                  [class.border-light-border-bright]="
+                    !isFolderAllSelected(node) && !isFolderPartiallySelected(node) && !isDark()
+                  "
+                  [class.text-light-text-dim]="
+                    !isFolderAllSelected(node) && !isFolderPartiallySelected(node)
+                  "
+                >
+                  @if (isFolderAllSelected(node)) {
+                    ✓
+                  } @else if (isFolderPartiallySelected(node)) {
+                    –
+                  }
+                </div>
+              </div>
+            }
+          </button>
+
+          @if (isExpanded(node.fullPath)) {
+            <app-backup-file-tree
+              [tree]="node.children"
+              [isDark]="isDark()"
+              [selectedIds]="selectedIds()"
+              [depth]="depth() + 1"
+              [sharedExpandedPaths]="_effectiveSignal"
+              (toggleFile)="onChildToggleFile($event)"
+              (toggleFolder)="onChildToggleFolder($event)"
+            />
+          }
+        </div>
+      } @else {
+        <!-- File leaf -->
+        <div
+          class="flex items-center gap-2 rounded-lg border-l-[3px] px-2 py-1 transition"
+          [class.cursor-pointer]="selectable"
+          [class.border-l-success]="selectable && isFileSelected(node.file.id)"
+          [class.border-l-transparent]="!selectable || !isFileSelected(node.file.id)"
+          [class.bg-light-surface]="!isDark()"
+          [class.bg-dark-elevated/40]="isDark()"
+          (click)="selectable ? toggleFile.emit(node.file.id) : null"
+        >
+          <span
+            class="flex h-6 w-6 shrink-0 items-center justify-center rounded text-[8px] font-bold"
+            [class.bg-accent-light]="!isDark()"
+            [class.text-accent]="!isDark()"
+            [class.bg-accent/20]="isDark()"
+            [class.text-accent]="isDark()"
+          >
+            {{ fileExtIcon(node.file) }}
+          </span>
+          <span
+            class="min-w-0 flex-1 truncate font-mono text-xs"
+            [class.text-light-text]="!isDark()"
+            [class.text-dark-text]="isDark()"
+          >
+            {{ node.name }}
+          </span>
+          @if (node.file.sizeBytes) {
+            <span
+              class="font-mono text-[11px]"
+              [class.text-light-text-dim]="!isDark()"
+              [class.text-dark-text-dim]="isDark()"
+            >
+              {{ formatNodeSize(node.file.sizeBytes) }}
+            </span>
+          }
+
+          @if (selectable) {
+            <div class="shrink-0">
+              <div
+                class="flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold"
+                [class.border-success]="isFileSelected(node.file.id)"
+                [class.bg-success]="isFileSelected(node.file.id)"
+                [class.text-white]="isFileSelected(node.file.id)"
+                [class.border-dark-border-bright]="!isFileSelected(node.file.id) && isDark()"
+                [class.border-light-border-bright]="!isFileSelected(node.file.id) && !isDark()"
+                [class.text-light-text-dim]="!isFileSelected(node.file.id)"
+              >
+                @if (isFileSelected(node.file.id)) {
+                  ✓
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+}

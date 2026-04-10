@@ -1,4 +1,4 @@
-import type { AppConfig } from '../shared/types/index.ts';
+import type { AppConfig } from '../common/app-config.ts';
 import { CONFIG_PATH, ensureProjectStorageReady } from './storage.ts';
 
 export async function loadConfig() {

@@ -31,5 +31,20 @@
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": false,
   },
-  "exclude": ["dist", "node_modules", "fproj", "electrobun.config.ts"],
+  "include": [
+    "core/**/*.ts",
+    "runtime/**/*.ts",
+    "tooling/**/*.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "build",
+    "dist",
+    "runtime/views",
+    "web",
+    "web/dist",
+    "node_modules",
+    "fproj",
+    "local-dev"
+  ],
 }

@@ -1,8 +1,3 @@
-import { bootstrapApplication } from '@angular/platform-browser';
-import { App } from './app/app';
-import { appConfig } from './app/app.config';
-import { ensureDesktopBridgeReady } from './app/core/bridge/electrobun-bridge';
-
 const renderFatal = <ErrorValue>(title: string, error: ErrorValue) => {
   const container = document.createElement('pre');
   container.style.margin = '16px';
@@ -26,13 +21,11 @@ window.addEventListener('unhandledrejection', (event) => {
   renderFatal('Unhandled promise rejection', event.reason);
 });
 
-bootstrapApplication(App, appConfig)
-  .then(() => {
-    void ensureDesktopBridgeReady().catch((err) => {
-      console.error('[DesktopBridge] Unexpected init error', err);
-    });
+void import('./bootstrap-app')
+  .then(async ({ bootstrapLmfdApp }) => {
+    await bootstrapLmfdApp();
   })
   .catch((err) => {
     console.error(err);
-    renderFatal('Angular bootstrap failed', err);
+    renderFatal('Application bootstrap failed', err);
   });

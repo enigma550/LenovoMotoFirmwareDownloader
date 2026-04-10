@@ -1,48 +1,215 @@
-<section class="rounded-3xl border p-5" [class.border-slate-200]="!store.isDark()" [class.bg-white]="!store.isDark()"
-  [class.shadow-sm]="!store.isDark()" [class.border-slate-700]="store.isDark()" [class.bg-slate-900]="store.isDark()">
-  <p class="text-xs font-semibold uppercase tracking-[0.2em]" [class.text-slate-500]="!store.isDark()"
-    [class.text-slate-400]="store.isDark()">
-    Step 2
-  </p>
-  <h2 class="mt-2 text-lg font-bold" [class.text-slate-900]="!store.isDark()" [class.text-white]="store.isDark()">
-    Select Source
-  </h2>
-  <div class="mt-4 grid gap-2">
-    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition"
-      [class.bg-sky-700]="store.sourceMode() === 'connected'" [class.text-white]="store.sourceMode() === 'connected'"
-      [class.bg-slate-100]="store.sourceMode() !== 'connected' && !store.isDark()"
-      [class.text-slate-700]="store.sourceMode() !== 'connected' && !store.isDark()"
-      [class.bg-slate-800]="store.sourceMode() !== 'connected' && store.isDark()"
-      [class.text-slate-200]="store.sourceMode() !== 'connected' && store.isDark()" type="button"
-      (click)="store.setSourceMode('connected')">
-      Connected Device (ADB/Fastboot)
-    </button>
-    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition"
-      [class.bg-sky-700]="store.sourceMode() === 'catalog'" [class.text-white]="store.sourceMode() === 'catalog'"
-      [class.bg-slate-100]="store.sourceMode() !== 'catalog' && !store.isDark()"
-      [class.text-slate-700]="store.sourceMode() !== 'catalog' && !store.isDark()"
-      [class.bg-slate-800]="store.sourceMode() !== 'catalog' && store.isDark()"
-      [class.text-slate-200]="store.sourceMode() !== 'catalog' && store.isDark()" type="button"
-      (click)="store.setSourceMode('catalog')">
-      Model Catalog
-    </button>
-    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition"
-      [class.bg-sky-700]="store.sourceMode() === 'downloads'" [class.text-white]="store.sourceMode() === 'downloads'"
-      [class.bg-slate-100]="store.sourceMode() !== 'downloads' && !store.isDark()"
-      [class.text-slate-700]="store.sourceMode() !== 'downloads' && !store.isDark()"
-      [class.bg-slate-800]="store.sourceMode() !== 'downloads' && store.isDark()"
-      [class.text-slate-200]="store.sourceMode() !== 'downloads' && store.isDark()" type="button"
-      (click)="store.setSourceMode('downloads')">
-      Downloads
-    </button>
-    <button class="rounded-xl px-4 py-2 text-sm font-semibold transition mt-2"
-      [class.bg-sky-700]="store.sourceMode() === 'about'" [class.text-white]="store.sourceMode() === 'about'"
-      [class.bg-slate-100]="store.sourceMode() !== 'about' && !store.isDark()"
-      [class.text-slate-700]="store.sourceMode() !== 'about' && !store.isDark()"
-      [class.bg-slate-800]="store.sourceMode() !== 'about' && store.isDark()"
-      [class.text-slate-200]="store.sourceMode() !== 'about' && store.isDark()" type="button"
-      (click)="store.setSourceMode('about')">
-      About
-    </button>
-  </div>
-</section>
+<div class="space-y-4">
+  <!-- Source Selection Panel -->
+  <section
+    class="rounded-xl border p-5 transition-all duration-200"
+    [class.border-dark-border]="store.isDark()"
+    [class.bg-dark-surface]="store.isDark()"
+    [class.border-light-border]="!store.isDark()"
+    [class.bg-light-surface]="!store.isDark()"
+    [class.shadow-sm]="!store.isDark()"
+  >
+    <div class="flex items-center gap-2 text-accent">
+      <span class="text-lg">📱</span>
+      <span class="text-xs font-semibold uppercase tracking-wide">Step 2</span>
+    </div>
+
+    <h2
+      class="mt-2 text-lg font-semibold"
+      [class.text-dark-text-bright]="store.isDark()"
+      [class.text-light-text-bright]="!store.isDark()"
+    >
+      Select Source
+    </h2>
+
+    <div class="mt-4 grid gap-2">
+      <!-- Connected Device -->
+      <button
+        class="flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all"
+        [class.border-accent]="store.sourceMode() === 'connected'"
+        [class.bg-accent-subtle]="store.sourceMode() === 'connected' && !store.isDark()"
+        [class.bg-accent/10]="store.sourceMode() === 'connected' && store.isDark()"
+        [class.text-accent]="store.sourceMode() === 'connected'"
+        [class.border-dark-border]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.bg-dark-elevated]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.text-dark-text]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.border-light-border]="store.sourceMode() !== 'connected' && !store.isDark()"
+        [class.bg-light-surface]="store.sourceMode() !== 'connected' && !store.isDark()"
+        [class.text-light-text]="store.sourceMode() !== 'connected' && !store.isDark()"
+        [class.hover:border-light-border-bright]="store.sourceMode() !== 'connected' && !store.isDark()"
+        type="button"
+        (click)="store.setSourceMode('connected')"
+      >
+        <span
+          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+          [class.border-accent]="store.sourceMode() === 'connected'"
+          [class.border-dark-border-bright]="store.sourceMode() !== 'connected' && store.isDark()"
+          [class.border-light-border-bright]="store.sourceMode() !== 'connected' && !store.isDark()"
+        >
+          @if (store.sourceMode() === 'connected') {
+            <span class="h-2 w-2 rounded-full bg-accent"></span>
+          }
+        </span>
+        <span>
+          <span class="block">Connected Device</span>
+          <span
+            class="block text-xs"
+            [class.text-dark-text-dim]="store.isDark()"
+            [class.text-light-text-dim]="!store.isDark()"
+          >via ADB</span>
+        </span>
+      </button>
+
+      <!-- Model Catalog -->
+      <button
+        class="flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all"
+        [class.border-accent]="store.sourceMode() === 'catalog'"
+        [class.bg-accent-subtle]="store.sourceMode() === 'catalog' && !store.isDark()"
+        [class.bg-accent/10]="store.sourceMode() === 'catalog' && store.isDark()"
+        [class.text-accent]="store.sourceMode() === 'catalog'"
+        [class.border-dark-border]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.bg-dark-elevated]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.text-dark-text]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.border-light-border]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        [class.bg-light-surface]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        [class.text-light-text]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        [class.hover:border-light-border-bright]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        type="button"
+        (click)="store.setSourceMode('catalog')"
+      >
+        <span
+          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+          [class.border-accent]="store.sourceMode() === 'catalog'"
+          [class.border-dark-border-bright]="store.sourceMode() !== 'catalog' && store.isDark()"
+          [class.border-light-border-bright]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        >
+          @if (store.sourceMode() === 'catalog') {
+            <span class="h-2 w-2 rounded-full bg-accent"></span>
+          }
+        </span>
+        <span>Model Catalog</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Workspace Panel -->
+  <section
+    class="rounded-xl border p-5 transition-all duration-200"
+    [class.border-dark-border]="store.isDark()"
+    [class.bg-dark-surface]="store.isDark()"
+    [class.border-light-border]="!store.isDark()"
+    [class.bg-light-surface]="!store.isDark()"
+    [class.shadow-sm]="!store.isDark()"
+  >
+    <div class="flex items-center gap-2">
+      <span class="text-lg">📂</span>
+      <span
+        class="text-xs font-semibold uppercase tracking-wide"
+        [class.text-dark-text-dim]="store.isDark()"
+        [class.text-light-text-dim]="!store.isDark()"
+      >Workspace</span>
+    </div>
+
+    <div class="mt-4 grid gap-2">
+      <!-- Downloads -->
+      <button
+        class="flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all"
+        [class.border-accent]="store.sourceMode() === 'downloads'"
+        [class.bg-accent-subtle]="store.sourceMode() === 'downloads' && !store.isDark()"
+        [class.bg-accent/10]="store.sourceMode() === 'downloads' && store.isDark()"
+        [class.text-accent]="store.sourceMode() === 'downloads'"
+        [class.border-dark-border]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.bg-dark-elevated]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.text-dark-text]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.border-light-border]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        [class.bg-light-surface]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        [class.text-light-text]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        [class.hover:border-light-border-bright]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        type="button"
+        (click)="store.setSourceMode('downloads')"
+      >
+        <span
+          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+          [class.border-accent]="store.sourceMode() === 'downloads'"
+          [class.border-dark-border-bright]="store.sourceMode() !== 'downloads' && store.isDark()"
+          [class.border-light-border-bright]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        >
+          @if (store.sourceMode() === 'downloads') {
+            <span class="h-2 w-2 rounded-full bg-accent"></span>
+          }
+        </span>
+        <span>Downloads</span>
+      </button>
+
+      <!-- Backup/Restore -->
+      <button
+        class="flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all"
+        [class.border-accent]="store.sourceMode() === 'backup-restore'"
+        [class.bg-accent-subtle]="store.sourceMode() === 'backup-restore' && !store.isDark()"
+        [class.bg-accent/10]="store.sourceMode() === 'backup-restore' && store.isDark()"
+        [class.text-accent]="store.sourceMode() === 'backup-restore'"
+        [class.border-dark-border]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.bg-dark-elevated]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.text-dark-text]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.border-light-border]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        [class.bg-light-surface]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        [class.text-light-text]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        [class.hover:border-light-border-bright]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        type="button"
+        (click)="store.setSourceMode('backup-restore')"
+      >
+        <span
+          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+          [class.border-accent]="store.sourceMode() === 'backup-restore'"
+          [class.border-dark-border-bright]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+          [class.border-light-border-bright]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        >
+          @if (store.sourceMode() === 'backup-restore') {
+            <span class="h-2 w-2 rounded-full bg-accent"></span>
+          }
+        </span>
+        <span>Backup/Restore</span>
+      </button>
+
+      <!-- About -->
+      <div
+        class="mt-2 border-t pt-3"
+        [class.border-dark-border]="store.isDark()"
+        [class.border-light-border]="!store.isDark()"
+      >
+        <button
+          class="flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all"
+          [class.border-accent]="store.sourceMode() === 'about'"
+          [class.bg-accent-subtle]="store.sourceMode() === 'about' && !store.isDark()"
+          [class.bg-accent/10]="store.sourceMode() === 'about' && store.isDark()"
+          [class.text-accent]="store.sourceMode() === 'about'"
+          [class.border-dark-border]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.bg-dark-elevated]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.text-dark-text]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.hover:border-dark-border-bright]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.border-light-border]="store.sourceMode() !== 'about' && !store.isDark()"
+          [class.bg-light-surface]="store.sourceMode() !== 'about' && !store.isDark()"
+          [class.text-light-text]="store.sourceMode() !== 'about' && !store.isDark()"
+          [class.hover:border-light-border-bright]="store.sourceMode() !== 'about' && !store.isDark()"
+          type="button"
+          (click)="store.setSourceMode('about')"
+        >
+          <span
+            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+            [class.border-accent]="store.sourceMode() === 'about'"
+            [class.border-dark-border-bright]="store.sourceMode() !== 'about' && store.isDark()"
+            [class.border-light-border-bright]="store.sourceMode() !== 'about' && !store.isDark()"
+          >
+            @if (store.sourceMode() === 'about') {
+              <span class="h-2 w-2 rounded-full bg-accent"></span>
+            }
+          </span>
+          <span>About</span>
+        </button>
+      </div>
+    </div>
+  </section>
+</div>

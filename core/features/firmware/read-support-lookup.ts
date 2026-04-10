@@ -1,11 +1,8 @@
+import type { JsonObject, JsonValue } from '../../common/json.ts';
+import type { ModelCatalogEntry } from '../../domain/catalog/model.ts';
+import type { ReadSupportFirmwareLookupResult } from '../../domain/firmware/read-support-lookup-result.ts';
+import type { FirmwareVariant } from '../../domain/firmware/variant.ts';
 import { requestApi } from '../../infra/lmsa/api.ts';
-import type {
-  FirmwareVariant,
-  JsonObject,
-  JsonValue,
-  ModelCatalogEntry,
-  ReadSupportFirmwareLookupResult,
-} from '../../shared/types/index.ts';
 import { createFirmwareVariantFromResourceItem } from './resource-variant.ts';
 
 interface RomMatchParamsApiResponse {

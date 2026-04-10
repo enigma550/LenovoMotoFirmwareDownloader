@@ -3,7 +3,11 @@ import { readdir, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, join, relative } from 'node:path';
 import { requestApi } from '../../core/infra/lmsa/api.ts';
-import type { AttachLocalRecipeResponse, LocalDownloadedFilesResponse } from '../shared/rpc.ts';
+import type {
+  AttachLocalRecipeResponse,
+  LocalDownloadedFilesResponse,
+  ReadLocalFileContentResponse,
+} from '../shared/desktop-rpc';
 import { readFirmwareMetadata, writeFirmwareMetadata } from './firmware-metadata.ts';
 import {
   asRecord,
@@ -249,6 +253,57 @@ export async function attachLocalRecipeFromModel(payload: {
     return {
       ok: false,
       filePath,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export async function readLocalFileContent(payload: {
+  filePath: string;
+  encoding: 'text' | 'base64';
+}): Promise<ReadLocalFileContentResponse> {
+  const { filePath, encoding } = payload;
+  if (!filePath) {
+    return {
+      ok: false,
+      filePath,
+      encoding,
+      error: 'Missing local file path.',
+    };
+  }
+
+  const file = Bun.file(filePath);
+  if (!(await file.exists())) {
+    return {
+      ok: false,
+      filePath,
+      encoding,
+      error: 'Local file was not found.',
+    };
+  }
+
+  try {
+    if (encoding === 'text') {
+      return {
+        ok: true,
+        filePath,
+        encoding,
+        content: await file.text(),
+      };
+    }
+
+    const bytes = await file.arrayBuffer();
+    return {
+      ok: true,
+      filePath,
+      encoding,
+      content: Buffer.from(bytes).toString('base64'),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      filePath,
+      encoding,
       error: error instanceof Error ? error.message : String(error),
     };
   }

@@ -3,8 +3,8 @@ import type { FirmwareVariant, LocalDownloadedFile } from '../../../../../core/m
 import {
   findLookupVariantForLocalFile,
   formatBytes as formatByteSize,
-} from '../../../../../core/state/workflow/download-utils';
-import { WorkflowStore } from '../../../../../core/state/workflow/workflow.store';
+} from '../../../../../features/downloads/state/download-utils';
+import { DownloadsFacade } from '../../../state';
 
 @Component({
   selector: 'app-local-downloaded-file-card',
@@ -18,7 +18,7 @@ export class LocalDownloadedFileCardComponent {
   readonly rescueRequested = output<LocalDownloadedFile>();
   readonly rescueDryRunRequested = output<LocalDownloadedFile>();
 
-  private readonly store = inject(WorkflowStore);
+  private readonly store = inject(DownloadsFacade);
   protected readonly extracting = signal(false);
   protected readonly fetchingRecipe = signal(false);
   protected readonly formatBytes = formatByteSize;

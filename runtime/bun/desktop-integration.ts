@@ -1,4 +1,6 @@
-import { mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { copyFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig, saveConfig } from '../../core/infra/config.ts';
 
@@ -17,10 +19,78 @@ export interface AppInfo {
 const APP_IDENTIFIER = 'com.github.enigma550.lenovomotofirmwaredownloader';
 const DESKTOP_DISPLAY_NAME = 'Lenovo Moto Firmware Downloader';
 const WMCLASS = 'LenovoMotoFirmwareDown';
+const SOFTWARE_FIX_SCHEME = 'x-scheme-handler/softwarefix';
+const CALLBACK_DROP_PATH = join(tmpdir(), 'lenovo-moto-firmware-downloader-auth-callback.txt');
+const INSTANCE_PID_PATH = join(tmpdir(), 'lenovo-moto-firmware-downloader.pid');
 
 // Known .desktop file names to look for
 const GEAR_LEVER_DESKTOP = 'lenovo_moto_firmware_downloader.desktop';
 const OUR_DESKTOP = `${APP_IDENTIFIER}.desktop`;
+
+function getExpectedExecPath() {
+  if (process.env.APPIMAGE) {
+    return process.env.APPIMAGE;
+  }
+
+  const launcherPath = join(process.cwd(), 'launcher');
+  if (existsSync(launcherPath)) {
+    return launcherPath;
+  }
+
+  return process.execPath;
+}
+
+function normalizeExecCommand(execValue: string) {
+  return execValue.replaceAll('"', '').replaceAll('%U', '').trim();
+}
+
+function buildExecLine(execPath: string) {
+  const escapedExecPath = execPath.replaceAll('"', '\\"');
+  const escapedDropPath = CALLBACK_DROP_PATH.replaceAll('"', '\\"');
+  const escapedPidPath = INSTANCE_PID_PATH.replaceAll('"', '\\"');
+  return `Exec=sh -c 'echo "$1" > "${escapedDropPath}"; pidfile="${escapedPidPath}"; if [ -f "$pidfile" ]; then pid=$(tr -d "[:space:]" < "$pidfile" 2>/dev/null); if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then exit 0; fi; fi; exec "${escapedExecPath}"' lmfd %U`;
+}
+
+function ensureExecLine(content: string) {
+  const expectedExecLine = buildExecLine(getExpectedExecPath());
+  if (content.match(/^Exec=.*$/m)) {
+    return content.replace(/^Exec=.*$/m, expectedExecLine);
+  }
+  return `${content.trimEnd()}\n${expectedExecLine}\n`;
+}
+
+async function runDesktopCommand(command: string, args: string[]) {
+  try {
+    const proc = Bun.spawn([command, ...args], {
+      stdout: 'ignore',
+      stderr: 'ignore',
+      stdin: 'ignore',
+    });
+    const exitCode = await proc.exited;
+    return exitCode === 0;
+  } catch {
+    return false;
+  }
+}
+
+async function refreshSoftwareFixSchemeAssociation(desktopDir: string, desktopFileName: string) {
+  if (!desktopFileName) return;
+
+  const setDefaultOk = await runDesktopCommand('xdg-mime', [
+    'default',
+    desktopFileName,
+    SOFTWARE_FIX_SCHEME,
+  ]);
+  if (!setDefaultOk) {
+    console.warn(
+      `[DesktopIntegration] Could not set ${desktopFileName} as default scheme handler.`,
+    );
+  }
+
+  await runDesktopCommand('gio', ['mime', SOFTWARE_FIX_SCHEME, desktopFileName]);
+
+  await runDesktopCommand('update-desktop-database', [desktopDir]);
+}
 
 async function getDesktopDir(): Promise<string | null> {
   if (process.platform !== 'linux') return null;
@@ -74,6 +144,79 @@ async function isDesktopIntegrationSuppressed(): Promise<boolean> {
   return false;
 }
 
+function ensureSoftwareFixScheme(content: string) {
+  const mimeTypeMatch = content.match(/^MimeType=(.*)$/m);
+  if (!mimeTypeMatch) {
+    return `${content.trimEnd()}\nMimeType=${SOFTWARE_FIX_SCHEME};\n`;
+  }
+
+  const mimeTypeValue = mimeTypeMatch[1] || '';
+  const currentValues = mimeTypeValue
+    .split(';')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (currentValues.some((value) => value.toLowerCase() === SOFTWARE_FIX_SCHEME)) {
+    return content;
+  }
+
+  const updatedValues = [...currentValues, SOFTWARE_FIX_SCHEME];
+  const updatedMimeTypeLine = `MimeType=${updatedValues.join(';')};`;
+  return content.replace(/^MimeType=.*$/m, updatedMimeTypeLine);
+}
+
+function ensureIconLine(content: string, iconValue: string) {
+  const iconLine = `Icon=${iconValue}`;
+  if (content.match(/^Icon=.*$/m)) {
+    return content.replace(/^Icon=.*$/m, iconLine);
+  }
+  return `${content.trimEnd()}\n${iconLine}\n`;
+}
+
+async function getDesktopIconSourcePath() {
+  const candidates = [
+    join(process.cwd(), 'assets', 'icons', 'icon.iconset', 'icon_512x512.png'),
+    join(process.cwd(), '..', 'Resources', 'app', 'icon.png'),
+    join(process.cwd(), 'Resources', 'app', 'icon.png'),
+  ];
+
+  if (process.env.APPDIR) {
+    candidates.push(join(process.env.APPDIR, 'Resources', 'app', 'icon.png'));
+    candidates.push(join(process.env.APPDIR, `${APP_IDENTIFIER}.png`));
+  }
+
+  for (const candidate of candidates) {
+    if (await Bun.file(candidate).exists()) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+async function installDesktopIcon() {
+  const sourcePath = await getDesktopIconSourcePath();
+  if (!sourcePath) {
+    return APP_IDENTIFIER;
+  }
+
+  const home = process.env.HOME;
+  if (!home) {
+    return sourcePath;
+  }
+
+  const iconDir = join(home, '.local', 'share', 'icons', 'hicolor', '512x512', 'apps');
+  const targetPath = join(iconDir, `${APP_IDENTIFIER}.png`);
+
+  await mkdir(iconDir, { recursive: true });
+  await copyFile(sourcePath, targetPath);
+
+  const hicolorRoot = join(home, '.local', 'share', 'icons', 'hicolor');
+  await runDesktopCommand('gtk-update-icon-cache', ['-f', '-t', hicolorRoot]);
+  await runDesktopCommand('xdg-icon-resource', ['forceupdate']);
+
+  return APP_IDENTIFIER;
+}
+
 export async function checkDesktopIntegration(): Promise<DesktopIntegrationStatus> {
   if (process.platform !== 'linux') {
     return { ok: true, status: 'not_linux' };
@@ -103,7 +246,18 @@ export async function checkDesktopIntegration(): Promise<DesktopIntegrationStatu
 
   try {
     const content = await Bun.file(existing.path).text();
-    if (!content.includes(`StartupWMClass=${WMCLASS}`)) {
+    const hasWmClass = content.includes(`StartupWMClass=${WMCLASS}`);
+    const hasSoftwareFixScheme = /^MimeType=.*x-scheme-handler\/softwarefix/im.test(content);
+    const execMatch = content.match(/^Exec=(.*)$/m);
+    const currentExec = normalizeExecCommand(execMatch?.[1] || '');
+    const expectedExec = normalizeExecCommand(getExpectedExecPath());
+    const hasSingleInstanceGuard =
+      currentExec.includes(INSTANCE_PID_PATH) && currentExec.includes('kill -0');
+    const hasExpectedExec =
+      currentExec.includes(expectedExec) &&
+      currentExec.includes(CALLBACK_DROP_PATH) &&
+      hasSingleInstanceGuard;
+    if (!hasWmClass || !hasSoftwareFixScheme || !hasExpectedExec) {
       return { ok: true, status: 'wrong_wmclass' };
     }
     return { ok: true, status: 'ok' };
@@ -130,12 +284,17 @@ export async function createDesktopIntegration(): Promise<DesktopIntegrationStat
     // Gear Lever file exists - patch its StartupWMClass in-place
     try {
       let content = await Bun.file(existing.path).text();
+      const iconValue = await installDesktopIcon();
+      content = ensureExecLine(content);
+      content = ensureIconLine(content, iconValue);
       if (content.match(/^StartupWMClass=.*/m)) {
         content = content.replace(/^StartupWMClass=.*/m, `StartupWMClass=${WMCLASS}`);
       } else {
         content = `${content.trimEnd()}\nStartupWMClass=${WMCLASS}\n`;
       }
+      content = ensureSoftwareFixScheme(content);
       await Bun.write(existing.path, content);
+      await refreshSoftwareFixSchemeAssociation(dir, existing.path.split('/').at(-1) || '');
       return { ok: true, status: 'ok' };
     } catch (error) {
       return { ok: false, status: 'missing', error: String(error) };
@@ -145,32 +304,25 @@ export async function createDesktopIntegration(): Promise<DesktopIntegrationStat
   // No existing file or it's ours - write our identifier-based .desktop file
   const filePath = join(dir, OUR_DESKTOP);
 
-  // APPIMAGE is set by the AppImageKit runtime when launched from an AppImage.
-  const execPath = process.env.APPIMAGE || process.execPath;
-
-  // Resolve the icon. In AppImage, APPDIR is set to the mount point.
-  let iconPath = APP_IDENTIFIER;
-  if (process.env.APPDIR) {
-    const maybeIcon = join(process.env.APPDIR, `${APP_IDENTIFIER}.png`);
-    if (await Bun.file(maybeIcon).exists()) {
-      iconPath = maybeIcon;
-    }
-  }
+  const execPath = getExpectedExecPath();
+  const iconPath = await installDesktopIcon();
 
   const desktopFileContent = `[Desktop Entry]
 Version=1.0
 Type=Application
 Name=${DESKTOP_DISPLAY_NAME}
 Comment=${DESKTOP_DISPLAY_NAME}
-Exec="${execPath}" %U
+${buildExecLine(execPath)}
 Icon=${iconPath}
 Terminal=false
 StartupWMClass=${WMCLASS}
+MimeType=${SOFTWARE_FIX_SCHEME};
 Categories=Utility;Application;
 `;
 
   try {
     await Bun.write(filePath, desktopFileContent);
+    await refreshSoftwareFixSchemeAssociation(dir, OUR_DESKTOP);
     return { ok: true, status: 'ok' };
   } catch (error) {
     return { ok: false, status: 'missing', error: String(error) };

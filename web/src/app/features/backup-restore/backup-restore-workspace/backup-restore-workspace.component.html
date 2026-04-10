@@ -1,0 +1,1694 @@
+<section
+  class="relative rounded-xl border p-5 transition-all duration-200"
+  [class.border-light-border]="!store.isDark()"
+  [class.bg-light-elevated]="!store.isDark()"
+  [class.shadow-sm]="!store.isDark()"
+  [class.border-dark-border-bright]="store.isDark()"
+  [class.bg-dark-surface]="store.isDark()"
+>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h3
+        class="text-lg font-bold uppercase tracking-wide"
+        [class.text-light-text-bright]="!store.isDark()"
+        [class.text-dark-text-bright]="store.isDark()"
+      >
+        Backup / Restore
+      </h3>
+      <p
+        class="mt-1 text-xs"
+        [class.text-light-text-dim]="!store.isDark()"
+        [class.text-dark-text-dim]="store.isDark()"
+      >
+        Browse snapshots with apps, photos/videos, contacts, messages and files.
+      </p>
+    </div>
+
+    <app-ui-action-button
+      label="Refresh snapshots"
+      [isDark]="store.isDark()"
+      size="sm"
+      [disabled]="store.backupSnapshotsLoading()"
+      (clicked)="store.refreshBackupSnapshots()"
+    />
+  </div>
+
+  <p
+    class="mt-3 break-all text-xs"
+    [class.text-light-text-dim]="!store.isDark()"
+    [class.text-dark-text-dim]="store.isDark()"
+  >
+    Snapshot root:
+    {{
+      store.backupRootRelativePath() ||
+        store.backupRootPath() ||
+        '~/Downloads/LenovoMotoFirmwareDownloader/backup-restore'
+    }}
+  </p>
+
+  <div
+    class="mt-4 rounded-xl border p-4 transition-all duration-200"
+    [class.border-light-border]="!store.isDark()"
+    [class.bg-light-surface]="!store.isDark()"
+    [class.border-dark-border-bright]="store.isDark()"
+    [class.bg-dark-elevated]="store.isDark()"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h4
+          class="text-sm font-bold uppercase tracking-wide"
+          [class.text-light-text-bright]="!store.isDark()"
+          [class.text-dark-text-bright]="store.isDark()"
+        >
+          Connected Device Preview
+        </h4>
+        <p
+          class="text-xs"
+          [class.text-light-text-dim]="!store.isDark()"
+          [class.text-dark-text-dim]="store.isDark()"
+        >
+          Scan apps, media and contacts from connected phone before backup.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <app-ui-action-button
+          label="Scan connected device"
+          [isDark]="store.isDark()"
+          variant="primary"
+          size="sm"
+          [disabled]="store.connectedBackupPreviewLoading()"
+          (clicked)="store.scanConnectedBackupPreview()"
+        />
+        <app-ui-action-button
+          label="Backup connected phone"
+          [isDark]="store.isDark()"
+          variant="success"
+          size="sm"
+          [disabled]="!store.canBackupConnectedPreview()"
+          (clicked)="store.backupConnectedDevice()"
+        />
+        <app-ui-action-button
+          label="Restore selected snapshot"
+          [isDark]="store.isDark()"
+          variant="warning"
+          size="sm"
+          [disabled]="!store.canRestoreActiveSnapshot() || store.restoreInProgress()"
+          (clicked)="store.restoreActiveBackupSnapshot()"
+        />
+      </div>
+    </div>
+
+    <p
+      class="mt-2 text-xs"
+      [class.text-success]="store.connectedBackupDeviceConnected()"
+      [class.text-light-text-dim]="!store.connectedBackupDeviceConnected() && !store.isDark()"
+      [class.text-dark-text-dim]="!store.connectedBackupDeviceConnected() && store.isDark()"
+    >
+      {{
+        store.connectedBackupDeviceDetail() ||
+          (store.connectedBackupDeviceConnected()
+            ? 'Connected device ready for backup.'
+            : 'No connected device scanned yet.')
+      }}
+    </p>
+
+    @if (store.connectedBackupPreview(); as connectedSnapshot) {
+      <div class="mt-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p
+            class="font-mono text-xs font-semibold uppercase tracking-wider"
+            [class.text-light-text]="!store.isDark()"
+            [class.text-dark-text]="store.isDark()"
+          >
+            {{ connectedSnapshot.title }} — Selected:
+            {{ store.connectedBackupPreviewSelectedCount() }}/{{
+              connectedSnapshot.apps.length
+            }}
+            apps, {{ store.connectedBackupPreviewMediaSelectedCount() }}/{{
+              connectedSnapshot.media.length
+            }}
+            media, {{ store.connectedBackupPreviewContactsSelectedCount() }}/{{
+              connectedSnapshot.contacts.length
+            }}
+            contacts, {{ store.connectedBackupPreviewMessagesSelectedCount() }}/{{
+              connectedSnapshot.messages.length
+            }}
+            messages, {{ store.connectedBackupPreviewFilesSelectedCount() }}/{{
+              connectedSnapshot.files.length
+            }}
+            files
+          </p>
+          <p
+            class="font-mono text-xs font-semibold uppercase tracking-wider"
+            [class.text-light-text]="!store.isDark()"
+            [class.text-dark-text]="store.isDark()"
+          >
+            Selected size estimate:
+            {{ formatBytes(store.connectedBackupPreviewSelectedSizeBytes()) }}
+          </p>
+        </div>
+
+        <app-backup-preview-category-controls [snapshot]="connectedSnapshot" />
+
+        @if (store.connectedBackupPreviewTab() === 'apps') {
+          <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <app-ui-action-button
+                label="Select all"
+                [isDark]="store.isDark()"
+                size="sm"
+                [disabled]="store.connectedBackupPreviewAllSelected()"
+                (clicked)="store.selectAllConnectedBackupPreviewApps()"
+              />
+              <app-ui-action-button
+                label="Clear all"
+                [isDark]="store.isDark()"
+                size="sm"
+                [disabled]="store.connectedBackupPreviewSelectedCount() === 0"
+                (clicked)="store.clearConnectedBackupPreviewAppSelection()"
+              />
+              <app-ui-action-button
+                label="Select page"
+                [isDark]="store.isDark()"
+                size="sm"
+                [disabled]="store.connectedBackupPreviewPageAllSelected()"
+                (clicked)="store.selectConnectedBackupPreviewPageApps()"
+              />
+              <app-ui-action-button
+                label="Clear page"
+                [isDark]="store.isDark()"
+                size="sm"
+                (clicked)="store.clearConnectedBackupPreviewPageApps()"
+              />
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <app-ui-action-button
+                label="Prev"
+                [isDark]="store.isDark()"
+                size="sm"
+                [disabled]="!store.connectedBackupPreviewHasPrevPage()"
+                (clicked)="store.prevConnectedBackupPreviewPage()"
+              />
+              <p
+                class="font-mono text-xs font-semibold uppercase tracking-wider"
+                [class.text-light-text]="!store.isDark()"
+                [class.text-dark-text]="store.isDark()"
+              >
+                Page {{ connectedPreviewPageLabel() }}
+              </p>
+              <app-ui-action-button
+                label="Next"
+                [isDark]="store.isDark()"
+                size="sm"
+                [disabled]="!store.connectedBackupPreviewHasNextPage()"
+                (clicked)="store.nextConnectedBackupPreviewPage()"
+              />
+            </div>
+          </div>
+
+          <div class="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            @if (connectedPreviewAppItems().length === 0 && store.connectedBackupPreviewLoading()) {
+              @for (placeholder of previewLoadingSkeletons; track placeholder) {
+                <article
+                  class="flex items-center gap-3 rounded-lg border p-2"
+                  [class.border-light-border]="!store.isDark()"
+                  [class.bg-light-elevated]="!store.isDark()"
+                  [class.border-dark-border-bright]="store.isDark()"
+                  [class.bg-dark-surface]="store.isDark()"
+                >
+                  <div
+                    class="h-10 w-10 shrink-0 rounded-lg border animate-pulse"
+                    [class.bg-light-border]="!store.isDark()"
+                    [class.bg-dark-border]="store.isDark()"
+                  ></div>
+                  <div class="min-w-0 flex-1 space-y-1">
+                    <div
+                      class="h-3 w-24 rounded animate-pulse"
+                      [class.bg-light-border]="!store.isDark()"
+                      [class.bg-dark-border]="store.isDark()"
+                    ></div>
+                    <div
+                      class="h-2 w-40 rounded animate-pulse"
+                      [class.bg-light-border]="!store.isDark()"
+                      [class.bg-dark-border]="store.isDark()"
+                    ></div>
+                  </div>
+                </article>
+              }
+            }
+            @for (app of connectedPreviewAppItems(); track app.id) {
+              <article
+                class="flex cursor-pointer items-center gap-3 rounded-lg border p-2 transition"
+                [class.border-success]="isConnectedPreviewAppSelected(app)"
+                [class.bg-success-light]="isConnectedPreviewAppSelected(app) && !store.isDark()"
+                [class.bg-success/10]="isConnectedPreviewAppSelected(app) && store.isDark()"
+                [class.border-light-border]="!isConnectedPreviewAppSelected(app) && !store.isDark()"
+                [class.bg-light-elevated]="!store.isDark()"
+                [class.border-dark-border-bright]="!isConnectedPreviewAppSelected(app) && store.isDark()"
+                [class.bg-dark-surface]="store.isDark()"
+                (click)="toggleConnectedPreviewAppSelection(app)"
+              >
+                <div
+                  class="h-10 w-10 shrink-0 overflow-hidden rounded-lg border"
+                  [class.bg-accent-light]="!store.isDark()"
+                  [class.bg-accent/20]="store.isDark()"
+                >
+                  @if (app.iconDataUrl) {
+                    <img
+                      [src]="app.iconDataUrl"
+                      [alt]="app.appName"
+                      class="h-full w-full object-cover"
+                    />
+                  } @else if (store.connectedBackupPreviewLoading()) {
+                    <div
+                      class="h-full w-full animate-pulse"
+                      [class.bg-light-border]="!store.isDark()"
+                      [class.bg-dark-border]="store.isDark()"
+                    ></div>
+                  } @else {
+                    <div
+                      class="flex h-full w-full items-center justify-center text-xs font-bold"
+                      [class.text-accent]="true"
+                    >
+                      {{ appInitials(app) }}
+                    </div>
+                  }
+                </div>
+                <div class="min-w-0">
+                  <p
+                    class="truncate font-mono text-xs font-semibold uppercase tracking-wider"
+                    [class.text-light-text-bright]="!store.isDark()"
+                    [class.text-dark-text-bright]="store.isDark()"
+                  >
+                    {{ app.appName }}
+                  </p>
+                  <p
+                    class="truncate text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    {{ app.packageName || 'Unknown package' }}
+                  </p>
+                </div>
+                <div class="ml-auto shrink-0">
+                  <div
+                    class="flex h-5 w-5 items-center justify-center rounded border text-[10px] font-bold"
+                    [class.border-success]="isConnectedPreviewAppSelected(app)"
+                    [class.bg-success]="isConnectedPreviewAppSelected(app)"
+                    [class.text-white]="isConnectedPreviewAppSelected(app)"
+                    [class.border-dark-border-bright]="!isConnectedPreviewAppSelected(app) && store.isDark()"
+                    [class.border-light-border-bright]="!isConnectedPreviewAppSelected(app) && !store.isDark()"
+                    [class.text-light-text-dim]="!isConnectedPreviewAppSelected(app)"
+                  >
+                    @if (isConnectedPreviewAppSelected(app)) {
+                      ✓
+                    }
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        } @else if (store.connectedBackupPreviewTab() === 'media') {
+          <app-backup-selection-toolbar
+            [isDark]="store.isDark()"
+            [pageLabel]="connectedMediaPageLabel()"
+            [selectAllDisabled]="store.connectedBackupPreviewMediaAllSelected()"
+            [clearAllDisabled]="store.connectedBackupPreviewMediaSelectedCount() === 0"
+            [selectPageDisabled]="store.connectedBackupPreviewMediaPageAllSelected()"
+            [hasPrevPage]="store.connectedBackupPreviewMediaHasPrevPage()"
+            [hasNextPage]="store.connectedBackupPreviewMediaHasNextPage()"
+            (selectAll)="store.selectAllCategoryItems('media')"
+            (clearAll)="store.clearCategorySelection('media')"
+            (selectPage)="store.selectCategoryPage('media')"
+            (clearPage)="store.clearCategoryPage('media')"
+            (prevPage)="store.prevCategoryPage('media')"
+            (nextPage)="store.nextCategoryPage('media')"
+          />
+
+          <div class="mt-1.5 flex items-center gap-1.5">
+            @for (filterOption of mediaFilterOptions; track filterOption.value) {
+              <button
+                type="button"
+                class="rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition"
+                [class.border-accent]="
+                  store.connectedBackupPreviewMediaFilter() === filterOption.value
+                "
+                [class.bg-accent-subtle]="
+                  store.connectedBackupPreviewMediaFilter() === filterOption.value &&
+                  !store.isDark()
+                "
+                [class.text-accent]="
+                  store.connectedBackupPreviewMediaFilter() === filterOption.value
+                "
+                [class.bg-accent/10]="
+                  store.connectedBackupPreviewMediaFilter() === filterOption.value && store.isDark()
+                "
+                [class.border-light-border-bright]="
+                  store.connectedBackupPreviewMediaFilter() !== filterOption.value &&
+                  !store.isDark()
+                "
+                [class.bg-light-elevated]="
+                  store.connectedBackupPreviewMediaFilter() !== filterOption.value &&
+                  !store.isDark()
+                "
+                [class.text-light-text]="
+                  store.connectedBackupPreviewMediaFilter() !== filterOption.value &&
+                  !store.isDark()
+                "
+                [class.border-dark-border-bright]="
+                  store.connectedBackupPreviewMediaFilter() !== filterOption.value && store.isDark()
+                "
+                [class.bg-dark-surface]="
+                  store.connectedBackupPreviewMediaFilter() !== filterOption.value && store.isDark()
+                "
+                [class.text-dark-text-dim]="
+                  store.connectedBackupPreviewMediaFilter() !== filterOption.value && store.isDark()
+                "
+                (click)="store.setConnectedBackupPreviewMediaFilter(filterOption.value)"
+              >
+                {{ filterOption.label }}
+              </button>
+            }
+          </div>
+
+          <div class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+            @for (entry of connectedPreviewMediaItems(); track entry.id) {
+              <article
+                class="cursor-pointer overflow-hidden rounded-lg border transition"
+                [class.border-success]="isConnectedPreviewMediaSelected(entry)"
+                [class.bg-success-light]="isConnectedPreviewMediaSelected(entry) && !store.isDark()"
+                [class.bg-success/10]="isConnectedPreviewMediaSelected(entry) && store.isDark()"
+                [class.border-light-border]="
+                  !isConnectedPreviewMediaSelected(entry) && !store.isDark()
+                "
+                [class.bg-light-elevated]="!store.isDark()"
+                [class.border-dark-border-bright]="!isConnectedPreviewMediaSelected(entry) && store.isDark()"
+                [class.bg-dark-surface]="store.isDark()"
+                (click)="toggleConnectedPreviewMediaSelection(entry)"
+              >
+                <div class="relative aspect-square w-full">
+                  @if (entry.thumbnailDataUrl) {
+                    <img
+                      [src]="entry.thumbnailDataUrl"
+                      [alt]="entry.fileName"
+                      class="h-full w-full object-cover"
+                    />
+                  } @else if (store.connectedBackupPreviewLoading()) {
+                    <div
+                      class="h-full w-full animate-pulse"
+                      [class.bg-light-border]="!store.isDark()"
+                      [class.bg-dark-border]="store.isDark()"
+                    ></div>
+                  } @else {
+                    <div
+                      class="flex h-full w-full items-center justify-center text-[11px]"
+                      [class.text-light-text-dim]="!store.isDark()"
+                      [class.text-dark-text-dim]="store.isDark()"
+                    >
+                      {{ mediaTypeLabel(entry) }}
+                    </div>
+                  }
+                  <span
+                    class="absolute bottom-1 left-1 rounded px-1 py-0.5 text-[9px] font-bold uppercase leading-none"
+                    [class.bg-black/50]="entry.thumbnailDataUrl"
+                    [class.text-dark-text-bright]="entry.thumbnailDataUrl"
+                    [class.bg-light-border]="!entry.thumbnailDataUrl && !store.isDark()"
+                    [class.text-light-text]="!entry.thumbnailDataUrl && !store.isDark()"
+                    [class.bg-dark-border]="!entry.thumbnailDataUrl && store.isDark()"
+                    [class.text-dark-text]="!entry.thumbnailDataUrl && store.isDark()"
+                  >
+                    {{ mediaTypeLabel(entry) }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-1 px-1.5 py-1">
+                  <p
+                    class="min-w-0 flex-1 truncate text-[11px]"
+                    [class.text-light-text]="!store.isDark()"
+                    [class.text-dark-text]="store.isDark()"
+                  >
+                    {{ entry.fileName }}
+                  </p>
+                  <div
+                    class="flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[9px] font-bold"
+                    [class.border-success]="isConnectedPreviewMediaSelected(entry)"
+                    [class.bg-success]="isConnectedPreviewMediaSelected(entry)"
+                    [class.text-white]="isConnectedPreviewMediaSelected(entry)"
+                    [class.border-dark-border-bright]="!isConnectedPreviewMediaSelected(entry) && store.isDark()"
+                    [class.border-light-border-bright]="!isConnectedPreviewMediaSelected(entry) && !store.isDark()"
+                    [class.text-light-text-dim]="!isConnectedPreviewMediaSelected(entry)"
+                  >
+                    @if (isConnectedPreviewMediaSelected(entry)) {
+                      ✓
+                    }
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        } @else if (store.connectedBackupPreviewTab() === 'contacts') {
+          <app-backup-selection-toolbar
+            [isDark]="store.isDark()"
+            [pageLabel]="connectedContactsPageLabel()"
+            [selectAllDisabled]="store.connectedBackupPreviewContactsAllSelected()"
+            [clearAllDisabled]="store.connectedBackupPreviewContactsSelectedCount() === 0"
+            [selectPageDisabled]="store.connectedBackupPreviewContactsPageAllSelected()"
+            [hasPrevPage]="store.connectedBackupPreviewContactsHasPrevPage()"
+            [hasNextPage]="store.connectedBackupPreviewContactsHasNextPage()"
+            (selectAll)="store.selectAllCategoryItems('contacts')"
+            (clearAll)="store.clearCategorySelection('contacts')"
+            (selectPage)="store.selectCategoryPage('contacts')"
+            (clearPage)="store.clearCategoryPage('contacts')"
+            (prevPage)="store.prevCategoryPage('contacts')"
+            (nextPage)="store.nextCategoryPage('contacts')"
+          />
+
+          <div class="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            @for (contact of connectedPreviewContactItems(); track contact.id) {
+              <article
+                class="flex cursor-pointer items-center gap-3 rounded-lg border p-2 transition"
+                [class.border-success]="isConnectedPreviewContactSelected(contact)"
+                [class.bg-success-light]="
+                  isConnectedPreviewContactSelected(contact) && !store.isDark()
+                "
+                [class.bg-success/10]="
+                  isConnectedPreviewContactSelected(contact) && store.isDark()
+                "
+                [class.border-light-border]="
+                  !isConnectedPreviewContactSelected(contact) && !store.isDark()
+                "
+                [class.bg-light-elevated]="!store.isDark()"
+                [class.border-dark-border-bright]="
+                  !isConnectedPreviewContactSelected(contact) && store.isDark()
+                "
+                [class.bg-dark-surface]="store.isDark()"
+                (click)="toggleConnectedPreviewContactSelection(contact)"
+              >
+                <div
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-xs font-bold"
+                  [class.bg-accent-light]="!store.isDark()"
+                  [class.text-accent]="true"
+                  [class.bg-accent/20]="store.isDark()"
+                >
+                  {{ contactInitials(contact) }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p
+                    class="truncate font-mono text-xs font-semibold uppercase tracking-wider"
+                    [class.text-light-text-bright]="!store.isDark()"
+                    [class.text-dark-text-bright]="store.isDark()"
+                  >
+                    {{ contact.displayName }}
+                  </p>
+                  <p
+                    class="truncate text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    {{ contactSubtitle(contact) }}
+                  </p>
+                </div>
+                <div class="shrink-0">
+                  <div
+                    class="flex h-5 w-5 items-center justify-center rounded border text-[10px] font-bold"
+                    [class.border-success]="isConnectedPreviewContactSelected(contact)"
+                    [class.bg-success]="isConnectedPreviewContactSelected(contact)"
+                    [class.text-white]="isConnectedPreviewContactSelected(contact)"
+                    [class.border-dark-border-bright]="!isConnectedPreviewContactSelected(contact) && store.isDark()"
+                    [class.border-light-border-bright]="!isConnectedPreviewContactSelected(contact) && !store.isDark()"
+                    [class.text-light-text-dim]="!isConnectedPreviewContactSelected(contact)"
+                  >
+                    @if (isConnectedPreviewContactSelected(contact)) {
+                      ✓
+                    }
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        } @else if (store.connectedBackupPreviewTab() === 'messages') {
+          <app-backup-selection-toolbar
+            [isDark]="store.isDark()"
+            [pageLabel]="connectedMessagesPageLabel()"
+            [selectAllDisabled]="store.connectedBackupPreviewMessagesAllSelected()"
+            [clearAllDisabled]="store.connectedBackupPreviewMessagesSelectedCount() === 0"
+            [selectPageDisabled]="store.connectedBackupPreviewMessagesPageAllSelected()"
+            [hasPrevPage]="store.connectedBackupPreviewMessagesHasPrevPage()"
+            [hasNextPage]="store.connectedBackupPreviewMessagesHasNextPage()"
+            (selectAll)="store.selectAllCategoryItems('messages')"
+            (clearAll)="store.clearCategorySelection('messages')"
+            (selectPage)="store.selectCategoryPage('messages')"
+            (clearPage)="store.clearCategoryPage('messages')"
+            (prevPage)="store.prevCategoryPage('messages')"
+            (nextPage)="store.nextCategoryPage('messages')"
+          />
+
+          <app-backup-message-thread-list
+            [threads]="connectedMessageThreads()"
+            [isDark]="store.isDark()"
+            [selectedIds]="selectedMessageIdsSet()"
+            (toggleMessage)="onToggleMessage($event)"
+            (toggleThread)="onToggleMessageThread($event)"
+          />
+        } @else if (store.connectedBackupPreviewTab() === 'files') {
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <app-ui-action-button
+              label="Select all"
+              [isDark]="store.isDark()"
+              size="sm"
+              [disabled]="store.connectedBackupPreviewFilesAllSelected()"
+              (clicked)="store.selectAllCategoryItems('files')"
+            />
+            <app-ui-action-button
+              label="Clear all"
+              [isDark]="store.isDark()"
+              size="sm"
+              [disabled]="store.connectedBackupPreviewFilesSelectedCount() === 0"
+              (clicked)="store.clearCategorySelection('files')"
+            />
+          </div>
+
+          <app-backup-file-tree
+            [tree]="connectedFileTree()"
+            [isDark]="store.isDark()"
+            [selectedIds]="selectedFileIdsSet()"
+            (toggleFile)="onToggleFile($event)"
+            (toggleFolder)="onToggleFolder($event)"
+          />
+        }
+      </div>
+    }
+  </div>
+
+  <app-rescue-flash-console
+    [title]="'Backup/Restore Console'"
+    [context]="'backup'"
+    [download]="store.firmwareDownload()"
+    [isDark]="store.isDark()"
+    [statusText]="store.status()"
+    [backupCancelable]="
+      store.connectedBackupPreviewLoading() || store.backupInProgress() || store.restoreInProgress()
+    "
+    (cancelRequested)="store.cancelDownloadById($event)"
+    (backupCancelRequested)="store.cancelConnectedBackupProcess()"
+  />
+
+  @if (store.backupSnapshotsLoading()) {
+    <p
+      class="mt-4 text-sm"
+      [class.text-light-text]="!store.isDark()"
+      [class.text-dark-text]="store.isDark()"
+    >
+      Scanning backup snapshots...
+    </p>
+  }
+
+  @if (store.backupSnapshots().length === 0 && !store.backupSnapshotsLoading()) {
+    <div
+      class="mt-5 rounded-xl border border-dashed p-5 text-sm transition-all duration-200"
+      [class.border-light-border-bright]="!store.isDark()"
+      [class.text-light-text]="!store.isDark()"
+      [class.border-dark-border-bright]="store.isDark()"
+      [class.text-dark-text]="store.isDark()"
+    >
+      No backups found yet. Put snapshot folders in
+      <span class="font-semibold">~/Downloads/LenovoMotoFirmwareDownloader/backup-restore</span>
+      and press refresh.
+    </div>
+  }
+
+  @if (store.backupSnapshots().length > 0) {
+    <div class="mt-5 grid gap-4 xl:grid-cols-[290px_1fr]">
+      <aside
+        class="rounded-lg border p-3"
+        [class.border-light-border]="!store.isDark()"
+        [class.bg-light-surface]="!store.isDark()"
+        [class.border-dark-border-bright]="store.isDark()"
+        [class.bg-dark-elevated]="store.isDark()"
+      >
+        <h4
+          class="text-sm font-bold uppercase tracking-wide"
+          [class.text-light-text]="!store.isDark()"
+          [class.text-dark-text-bright]="store.isDark()"
+        >
+          Snapshots ({{ store.backupSnapshots().length }})
+        </h4>
+
+        <div class="mt-3 grid gap-2">
+          @for (snapshot of store.backupSnapshots(); track snapshot.id) {
+            <div
+              class="relative rounded-lg border p-3 pr-12 text-left transition"
+              [class.border-accent]="store.activeBackupSnapshot()?.id === snapshot.id"
+              [class.bg-accent-subtle]="
+                store.activeBackupSnapshot()?.id === snapshot.id && !store.isDark()
+              "
+              [class.bg-accent/10]="
+                store.activeBackupSnapshot()?.id === snapshot.id && store.isDark()
+              "
+              [class.border-light-border]="
+                store.activeBackupSnapshot()?.id !== snapshot.id && !store.isDark()
+              "
+              [class.bg-light-elevated]="store.activeBackupSnapshot()?.id !== snapshot.id && !store.isDark()"
+              [class.border-dark-border-bright]="
+                store.activeBackupSnapshot()?.id !== snapshot.id && store.isDark()
+              "
+              [class.bg-dark-surface]="
+                store.activeBackupSnapshot()?.id !== snapshot.id && store.isDark()
+              "
+              role="button"
+              tabindex="0"
+              (click)="selectSnapshot(snapshot)"
+              (keydown)="onSnapshotCardKeydown(snapshot, $event)"
+            >
+              <button
+                class="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center  border transition"
+                [class.border-rose-200]="!store.isDark()"
+                [class.text-rose-600]="!store.isDark()"
+                [class.hover:bg-rose-50]="!store.isDark()"
+                [class.border-rose-800]="store.isDark()"
+                [class.text-rose-300]="store.isDark()"
+                [class.hover:bg-rose-950]="store.isDark()"
+                type="button"
+                aria-label="Delete snapshot"
+                (click)="onDeleteSnapshot(snapshot, $event)"
+              >
+                <svg
+                  class="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                </svg>
+              </button>
+              <div class="flex flex-wrap items-center gap-2 pr-10">
+                <p
+                  class="text-sm font-bold uppercase tracking-wide"
+                  [class.text-light-text-bright]="!store.isDark()"
+                  [class.text-dark-text-bright]="store.isDark()"
+                >
+                  {{ snapshot.title }}
+                </p>
+                @if (isSnapshotBeingBackedUp(snapshot)) {
+                  <span
+                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em]"
+                    [class.bg-amber-100]="!store.isDark()"
+                    [class.text-amber-800]="!store.isDark()"
+                    [class.bg-amber-900/40]="store.isDark()"
+                    [class.text-amber-200]="store.isDark()"
+                  >
+                    Backing up
+                  </span>
+                }
+              </div>
+              <p
+                class="mt-1 text-[11px]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                {{ formatTime(snapshot.createdAt) }}
+              </p>
+              <p
+                class="mt-1 text-[11px]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                {{ formatBytes(snapshot.sizeBytes) }}
+              </p>
+              <p
+                class="mt-1 text-[11px]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text]="store.isDark()"
+              >
+                {{ snapshot.categories.join(', ') || 'No detected categories' }}
+              </p>
+            </div>
+          }
+        </div>
+      </aside>
+
+      @if (store.activeBackupSnapshot(); as snapshot) {
+        <section class="space-y-4">
+          <div class="grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] gap-3">
+            <article
+              class="min-w-0 rounded-lg border p-3"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <p
+                class="min-w-0 text-[10px] uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                Size
+              </p>
+              <p
+                class="mt-2 text-xl font-black"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                {{ formatBytes(snapshot.sizeBytes) }}
+              </p>
+            </article>
+            <article
+              class="min-w-0 rounded-lg border p-3"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <p
+                class="min-w-0 text-[10px] uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                Apps
+              </p>
+              <p
+                class="mt-2 text-xl font-black"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                {{ snapshot.apps.length }}
+              </p>
+            </article>
+            <article
+              class="min-w-0 rounded-lg border p-3"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <p
+                class="min-w-0 text-[10px] uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                Media
+              </p>
+              <p
+                class="mt-2 text-xl font-black"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                {{ snapshot.media.length }}
+              </p>
+            </article>
+            <article
+              class="min-w-0 rounded-lg border p-3"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <p
+                class="min-w-0 text-[10px] uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                Contacts
+              </p>
+              <p
+                class="mt-2 text-xl font-black"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                {{ snapshot.contacts.length }}
+              </p>
+            </article>
+            <article
+              class="min-w-0 rounded-lg border p-3"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <p
+                class="min-w-0 text-[10px] uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                Messages
+              </p>
+              <p
+                class="mt-2 text-xl font-black"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                {{ snapshot.messages.length }}
+              </p>
+            </article>
+            <article
+              class="min-w-0 rounded-lg border p-3"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <p
+                class="min-w-0 text-[10px] uppercase tracking-[0.14em] sm:text-[11px] sm:tracking-[0.16em]"
+                [class.text-light-text-dim]="!store.isDark()"
+                [class.text-dark-text-dim]="store.isDark()"
+              >
+                Files
+              </p>
+              <p
+                class="mt-2 text-xl font-black"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                {{ snapshot.files.length }}
+              </p>
+            </article>
+          </div>
+
+          @if (activeSnapshotRestoreState(); as restoreState) {
+            <section
+              class="rounded-xl border p-4 transition-all duration-200"
+              [class.border-success]="restoreState.response.ok"
+              [class.bg-success-light]="restoreState.response.ok && !store.isDark()"
+              [class.bg-success/10]="restoreState.response.ok && store.isDark()"
+              [class.border-warning]="!restoreState.response.ok"
+              [class.bg-warning-light]="!restoreState.response.ok && !store.isDark()"
+              [class.bg-warning/10]="!restoreState.response.ok && store.isDark()"
+            >
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p
+                    class="text-xs uppercase tracking-[0.18em]"
+                    [class.text-success]="restoreState.response.ok"
+                    [class.text-warning]="!restoreState.response.ok"
+                  >
+                    Last restore
+                  </p>
+                  <p
+                    class="mt-1 text-sm font-bold uppercase tracking-wide"
+                    [class.text-light-text-bright]="!store.isDark()"
+                    [class.text-dark-text-bright]="store.isDark()"
+                  >
+                    {{
+                      restoreState.response.detail ||
+                        (restoreState.response.ok
+                          ? 'Restore completed.'
+                          : 'Restore finished with failures.')
+                    }}
+                  </p>
+                  <p
+                    class="mt-1 text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    {{ formatTime(restoreState.completedAt) }}
+                  </p>
+                </div>
+                <app-ui-action-button
+                  label="Dismiss"
+                  [isDark]="store.isDark()"
+                  size="sm"
+                  (clicked)="dismissRestoreSummary()"
+                />
+              </div>
+
+              <div class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <article
+                  class="rounded-lg border p-3"
+                  [class.border-light-border]="!store.isDark()"
+                  [class.bg-light-elevated]="!store.isDark()"
+                  [class.border-dark-border-bright]="store.isDark()"
+                  [class.bg-dark-surface]="store.isDark()"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <p
+                      class="font-mono text-xs font-semibold uppercase tracking-wider uppercase tracking-[0.16em]"
+                      [class.text-light-text-dim]="!store.isDark()"
+                      [class.text-dark-text-dim]="store.isDark()"
+                    >
+                      Apps
+                    </p>
+                    <p
+                      class="text-[11px] font-bold"
+                      [class.text-light-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'idle' && !store.isDark()
+                      "
+                      [class.text-dark-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'idle' && store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'success' && !store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'success' && store.isDark()
+                      "
+                      [class.text-amber-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'partial' && !store.isDark()
+                      "
+                      [class.text-amber-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'partial' && store.isDark()
+                      "
+                      [class.text-rose-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'failed' && !store.isDark()
+                      "
+                      [class.text-rose-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedApps,
+                          restoreState.response.restoredApps,
+                          restoreState.response.failedApps
+                        ) === 'failed' && store.isDark()
+                      "
+                    >
+                      {{ restoreState.response.restoredApps }}/{{
+                        restoreState.response.attemptedApps
+                      }}
+                    </p>
+                  </div>
+                  <p
+                    class="mt-2 text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    Failed: {{ restoreState.response.failedApps }}
+                  </p>
+                </article>
+
+                <article
+                  class="rounded-lg border p-3"
+                  [class.border-light-border]="!store.isDark()"
+                  [class.bg-light-elevated]="!store.isDark()"
+                  [class.border-dark-border-bright]="store.isDark()"
+                  [class.bg-dark-surface]="store.isDark()"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <p
+                      class="font-mono text-xs font-semibold uppercase tracking-wider uppercase tracking-[0.16em]"
+                      [class.text-light-text-dim]="!store.isDark()"
+                      [class.text-dark-text-dim]="store.isDark()"
+                    >
+                      Media
+                    </p>
+                    <p
+                      class="text-[11px] font-bold"
+                      [class.text-light-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'idle' && !store.isDark()
+                      "
+                      [class.text-dark-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'idle' && store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'success' && !store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'success' && store.isDark()
+                      "
+                      [class.text-amber-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'partial' && !store.isDark()
+                      "
+                      [class.text-amber-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'partial' && store.isDark()
+                      "
+                      [class.text-rose-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'failed' && !store.isDark()
+                      "
+                      [class.text-rose-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMedia,
+                          restoreState.response.restoredMedia,
+                          restoreState.response.failedMedia
+                        ) === 'failed' && store.isDark()
+                      "
+                    >
+                      {{ restoreState.response.restoredMedia }}/{{
+                        restoreState.response.attemptedMedia
+                      }}
+                    </p>
+                  </div>
+                  <p
+                    class="mt-2 text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    Failed: {{ restoreState.response.failedMedia }}
+                  </p>
+                </article>
+
+                <article
+                  class="rounded-lg border p-3"
+                  [class.border-light-border]="!store.isDark()"
+                  [class.bg-light-elevated]="!store.isDark()"
+                  [class.border-dark-border-bright]="store.isDark()"
+                  [class.bg-dark-surface]="store.isDark()"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <p
+                      class="font-mono text-xs font-semibold uppercase tracking-wider uppercase tracking-[0.16em]"
+                      [class.text-light-text-dim]="!store.isDark()"
+                      [class.text-dark-text-dim]="store.isDark()"
+                    >
+                      Contacts
+                    </p>
+                    <p
+                      class="text-[11px] font-bold"
+                      [class.text-light-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'idle' && !store.isDark()
+                      "
+                      [class.text-dark-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'idle' && store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'success' && !store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'success' && store.isDark()
+                      "
+                      [class.text-amber-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'partial' && !store.isDark()
+                      "
+                      [class.text-amber-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'partial' && store.isDark()
+                      "
+                      [class.text-rose-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'failed' && !store.isDark()
+                      "
+                      [class.text-rose-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedContacts,
+                          restoreState.response.restoredContacts,
+                          restoreState.response.failedContacts
+                        ) === 'failed' && store.isDark()
+                      "
+                    >
+                      {{ restoreState.response.restoredContacts }}/{{
+                        restoreState.response.attemptedContacts
+                      }}
+                    </p>
+                  </div>
+                  <p
+                    class="mt-2 text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    Failed: {{ restoreState.response.failedContacts }}
+                  </p>
+                </article>
+
+                <article
+                  class="rounded-lg border p-3"
+                  [class.border-light-border]="!store.isDark()"
+                  [class.bg-light-elevated]="!store.isDark()"
+                  [class.border-dark-border-bright]="store.isDark()"
+                  [class.bg-dark-surface]="store.isDark()"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <p
+                      class="font-mono text-xs font-semibold uppercase tracking-wider uppercase tracking-[0.16em]"
+                      [class.text-light-text-dim]="!store.isDark()"
+                      [class.text-dark-text-dim]="store.isDark()"
+                    >
+                      Messages
+                    </p>
+                    <p
+                      class="text-[11px] font-bold"
+                      [class.text-light-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'idle' && !store.isDark()
+                      "
+                      [class.text-dark-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'idle' && store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'success' && !store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'success' && store.isDark()
+                      "
+                      [class.text-amber-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'partial' && !store.isDark()
+                      "
+                      [class.text-amber-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'partial' && store.isDark()
+                      "
+                      [class.text-rose-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'failed' && !store.isDark()
+                      "
+                      [class.text-rose-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedMessages,
+                          restoreState.response.restoredMessages,
+                          restoreState.response.failedMessages
+                        ) === 'failed' && store.isDark()
+                      "
+                    >
+                      {{ restoreState.response.restoredMessages }}/{{
+                        restoreState.response.attemptedMessages
+                      }}
+                    </p>
+                  </div>
+                  <p
+                    class="mt-2 text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    Failed: {{ restoreState.response.failedMessages }}
+                  </p>
+                </article>
+
+                <article
+                  class="rounded-lg border p-3"
+                  [class.border-light-border]="!store.isDark()"
+                  [class.bg-light-elevated]="!store.isDark()"
+                  [class.border-dark-border-bright]="store.isDark()"
+                  [class.bg-dark-surface]="store.isDark()"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <p
+                      class="font-mono text-xs font-semibold uppercase tracking-wider uppercase tracking-[0.16em]"
+                      [class.text-light-text-dim]="!store.isDark()"
+                      [class.text-dark-text-dim]="store.isDark()"
+                    >
+                      Files
+                    </p>
+                    <p
+                      class="text-[11px] font-bold"
+                      [class.text-light-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'idle' && !store.isDark()
+                      "
+                      [class.text-dark-text-dim]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'idle' && store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'success' && !store.isDark()
+                      "
+                      [class.text-success]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'success' && store.isDark()
+                      "
+                      [class.text-amber-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'partial' && !store.isDark()
+                      "
+                      [class.text-amber-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'partial' && store.isDark()
+                      "
+                      [class.text-rose-700]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'failed' && !store.isDark()
+                      "
+                      [class.text-rose-300]="
+                        restoreRowStatus(
+                          restoreState.response.attemptedFiles,
+                          restoreState.response.restoredFiles,
+                          restoreState.response.failedFiles
+                        ) === 'failed' && store.isDark()
+                      "
+                    >
+                      {{ restoreState.response.restoredFiles }}/{{
+                        restoreState.response.attemptedFiles
+                      }}
+                    </p>
+                  </div>
+                  <p
+                    class="mt-2 text-[11px]"
+                    [class.text-light-text-dim]="!store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                  >
+                    Failed: {{ restoreState.response.failedFiles }}
+                  </p>
+                </article>
+              </div>
+            </section>
+          }
+
+          <app-backup-snapshot-tab-selector [snapshot]="snapshot" />
+
+          @if (store.backupSnapshotTab() === 'apps') {
+            <div
+              class="rounded-xl border p-4 transition-all duration-200"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <h4
+                class="text-sm font-bold uppercase tracking-wide"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                Apps
+              </h4>
+              <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p
+                  class="font-mono text-xs font-semibold uppercase tracking-wider"
+                  [class.text-light-text]="!store.isDark()"
+                  [class.text-dark-text]="store.isDark()"
+                >
+                  Page {{ snapshotPageLabel('apps') }}
+                </p>
+                <div class="flex items-center gap-2">
+                  <app-ui-action-button
+                    label="Prev"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasPrevPage('apps')"
+                    (clicked)="prevSnapshotPage('apps')"
+                  />
+                  <app-ui-action-button
+                    label="Next"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasNextPage('apps')"
+                    (clicked)="nextSnapshotPage('apps')"
+                  />
+                </div>
+              </div>
+              <div class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                @for (app of snapshotAppItems(); track app.id) {
+                  <article
+                    class="flex items-center gap-3 rounded-lg border p-2"
+                    [class.border-light-border]="!store.isDark()"
+                    [class.bg-light-elevated]="!store.isDark()"
+                    [class.border-dark-border-bright]="store.isDark()"
+                    [class.bg-dark-surface]="store.isDark()"
+                  >
+                    <div
+                      class="h-10 w-10 shrink-0 overflow-hidden rounded-lg border"
+                      [class.bg-accent-light]="!store.isDark()"
+                      [class.bg-accent/20]="store.isDark()"
+                    >
+                      @if (app.iconDataUrl) {
+                        <img
+                          [src]="app.iconDataUrl"
+                          [alt]="app.appName"
+                          class="h-full w-full object-cover"
+                        />
+                      } @else {
+                        <div
+                          class="flex h-full w-full items-center justify-center text-xs font-bold"
+                          [class.text-accent]="!store.isDark()"
+                          [class.text-accent]="store.isDark()"
+                        >
+                          {{ appInitials(app) }}
+                        </div>
+                      }
+                    </div>
+                    <div class="min-w-0">
+                      <p
+                        class="truncate font-mono text-xs font-semibold uppercase tracking-wider"
+                        [class.text-light-text-bright]="!store.isDark()"
+                        [class.text-dark-text-bright]="store.isDark()"
+                      >
+                        {{ app.appName }}
+                      </p>
+                      <p
+                        class="truncate text-[11px]"
+                        [class.text-light-text-dim]="!store.isDark()"
+                        [class.text-dark-text-dim]="store.isDark()"
+                      >
+                        {{ app.packageName || 'Unknown package' }}
+                      </p>
+                    </div>
+                  </article>
+                }
+              </div>
+            </div>
+          } @else if (store.backupSnapshotTab() === 'media') {
+            <div
+              class="rounded-xl border p-4 transition-all duration-200"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <h4
+                class="text-sm font-bold uppercase tracking-wide"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                Photos / Videos
+              </h4>
+              <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p
+                  class="font-mono text-xs font-semibold uppercase tracking-wider"
+                  [class.text-light-text]="!store.isDark()"
+                  [class.text-dark-text]="store.isDark()"
+                >
+                  Page {{ snapshotPageLabel('media') }}
+                </p>
+                <div class="flex items-center gap-2">
+                  <app-ui-action-button
+                    label="Prev"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasPrevPage('media')"
+                    (clicked)="prevSnapshotPage('media')"
+                  />
+                  <app-ui-action-button
+                    label="Next"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasNextPage('media')"
+                    (clicked)="nextSnapshotPage('media')"
+                  />
+                </div>
+              </div>
+              <div class="mt-3 grid grid-cols-3 gap-2">
+                @for (entry of snapshotMediaItems(); track entry.id) {
+                  <article
+                    class="overflow-hidden rounded-lg border"
+                    [class.border-light-border]="!store.isDark()"
+                    [class.bg-light-elevated]="!store.isDark()"
+                    [class.border-dark-border-bright]="store.isDark()"
+                    [class.bg-dark-surface]="store.isDark()"
+                  >
+                    <div class="relative aspect-4/3 w-full">
+                      @if (entry.thumbnailDataUrl) {
+                        <img
+                          [src]="entry.thumbnailDataUrl"
+                          [alt]="entry.fileName"
+                          class="h-full w-full object-cover"
+                        />
+                      } @else {
+                        <div
+                          class="flex h-full w-full items-center justify-center text-[11px]"
+                          [class.text-light-text-dim]="!store.isDark()"
+                          [class.text-dark-text-dim]="store.isDark()"
+                        >
+                          {{ mediaTypeLabel(entry) }}
+                        </div>
+                      }
+                      <span
+                        class="absolute bottom-1 left-1 rounded px-1 py-0.5 text-[9px] font-bold uppercase leading-none"
+                        [class.bg-black/50]="entry.thumbnailDataUrl"
+                        [class.text-dark-text-bright]="entry.thumbnailDataUrl"
+                        [class.bg-light-border]="!entry.thumbnailDataUrl && !store.isDark()"
+                        [class.text-light-text]="!entry.thumbnailDataUrl && !store.isDark()"
+                        [class.bg-dark-border]="!entry.thumbnailDataUrl && store.isDark()"
+                        [class.text-dark-text]="!entry.thumbnailDataUrl && store.isDark()"
+                      >
+                        {{ mediaTypeLabel(entry) }}
+                      </span>
+                    </div>
+                    <p
+                      class="truncate px-2 py-1 text-[11px]"
+                      [class.text-light-text]="!store.isDark()"
+                      [class.text-dark-text]="store.isDark()"
+                    >
+                      {{ entry.fileName }}
+                    </p>
+                  </article>
+                }
+              </div>
+            </div>
+          } @else if (store.backupSnapshotTab() === 'contacts') {
+            <div
+              class="rounded-xl border p-4 transition-all duration-200"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <h4
+                class="text-sm font-bold uppercase tracking-wide"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                Contacts
+              </h4>
+              <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p
+                  class="font-mono text-xs font-semibold uppercase tracking-wider"
+                  [class.text-light-text]="!store.isDark()"
+                  [class.text-dark-text]="store.isDark()"
+                >
+                  Page {{ snapshotPageLabel('contacts') }}
+                </p>
+                <div class="flex items-center gap-2">
+                  <app-ui-action-button
+                    label="Prev"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasPrevPage('contacts')"
+                    (clicked)="prevSnapshotPage('contacts')"
+                  />
+                  <app-ui-action-button
+                    label="Next"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasNextPage('contacts')"
+                    (clicked)="nextSnapshotPage('contacts')"
+                  />
+                </div>
+              </div>
+              <div class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                @for (contact of snapshotContactItems(); track contact.id) {
+                  <article
+                    class="flex items-center gap-3 rounded-lg border p-2"
+                    [class.border-light-border]="!store.isDark()"
+                    [class.bg-light-elevated]="!store.isDark()"
+                    [class.border-dark-border-bright]="store.isDark()"
+                    [class.bg-dark-surface]="store.isDark()"
+                  >
+                    <div
+                      class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-xs font-bold"
+                      [class.bg-cyan-100]="!store.isDark()"
+                      [class.text-cyan-700]="!store.isDark()"
+                      [class.bg-cyan-700/20]="store.isDark()"
+                      [class.text-cyan-300]="store.isDark()"
+                    >
+                      {{ contactInitials(contact) }}
+                    </div>
+                    <div class="min-w-0">
+                      <p
+                        class="truncate font-mono text-xs font-semibold uppercase tracking-wider"
+                        [class.text-light-text-bright]="!store.isDark()"
+                        [class.text-dark-text-bright]="store.isDark()"
+                      >
+                        {{ contact.displayName }}
+                      </p>
+                      <p
+                        class="truncate text-[11px]"
+                        [class.text-light-text-dim]="!store.isDark()"
+                        [class.text-dark-text-dim]="store.isDark()"
+                      >
+                        {{ contactSubtitle(contact) }}
+                      </p>
+                    </div>
+                  </article>
+                }
+              </div>
+            </div>
+          } @else if (store.backupSnapshotTab() === 'messages') {
+            <div
+              class="rounded-xl border p-4 transition-all duration-200"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <h4
+                class="text-sm font-bold uppercase tracking-wide"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                Messages
+              </h4>
+              <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p
+                  class="font-mono text-xs font-semibold uppercase tracking-wider"
+                  [class.text-light-text]="!store.isDark()"
+                  [class.text-dark-text]="store.isDark()"
+                >
+                  Page {{ snapshotPageLabel('messages') }}
+                </p>
+                <div class="flex items-center gap-2">
+                  <app-ui-action-button
+                    label="Prev"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasPrevPage('messages')"
+                    (clicked)="prevSnapshotPage('messages')"
+                  />
+                  <app-ui-action-button
+                    label="Next"
+                    [isDark]="store.isDark()"
+                    size="sm"
+                    [disabled]="!snapshotHasNextPage('messages')"
+                    (clicked)="nextSnapshotPage('messages')"
+                  />
+                </div>
+              </div>
+              <app-backup-message-thread-list
+                [threads]="snapshotMessageThreads()"
+                [isDark]="store.isDark()"
+                [selectedIds]="null"
+              />
+            </div>
+          } @else if (store.backupSnapshotTab() === 'files') {
+            <div
+              class="rounded-xl border p-4 transition-all duration-200"
+              [class.border-light-border]="!store.isDark()"
+              [class.bg-light-surface]="!store.isDark()"
+              [class.border-dark-border-bright]="store.isDark()"
+              [class.bg-dark-elevated]="store.isDark()"
+            >
+              <h4
+                class="text-sm font-bold uppercase tracking-wide"
+                [class.text-light-text-bright]="!store.isDark()"
+                [class.text-dark-text-bright]="store.isDark()"
+              >
+                Files
+              </h4>
+              <app-backup-file-tree
+                [tree]="snapshotFileTree()"
+                [isDark]="store.isDark()"
+                [selectedIds]="null"
+              />
+            </div>
+          }
+        </section>
+      }
+    </div>
+  }
+</section>

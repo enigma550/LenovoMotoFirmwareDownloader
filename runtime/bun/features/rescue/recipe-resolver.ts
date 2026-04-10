@@ -9,6 +9,7 @@ import {
   isRescueRecipeContent,
   type JsonValue,
   normalizeRemoteUrl,
+  parseCommandTokens,
 } from '../../firmware-package-utils';
 
 export type RescueRecipeHints = {
@@ -155,6 +156,65 @@ function collectRecipeReferences(recipeContent: JsonValue) {
       if (fileValue) {
         references.push(fileValue);
       }
+    }
+
+    if (stepName.includes('fastbootmatchflashfile')) {
+      const condMap =
+        (Array.isArray(args.CondMap) && args.CondMap) ||
+        (Array.isArray(args.condMap) && args.condMap) ||
+        [];
+      for (const item of condMap) {
+        const entry = asRecord(item);
+        const value = firstStringField(entry, ['value', 'Value']);
+        if (value) {
+          references.push(value);
+        }
+      }
+    }
+
+    if (stepName.includes('shell')) {
+      const startupFile = firstStringField(args, ['StartupFile', 'startupFile']);
+      if (startupFile) {
+        references.push(startupFile);
+      }
+
+      const commandValue = firstStringField(args, ['Command', 'command']);
+      if (commandValue) {
+        for (const reference of collectShellCommandReferences(commandValue)) {
+          references.push(reference);
+        }
+      }
+    }
+  }
+
+  return references;
+}
+
+function collectShellCommandReferences(commandValue: string) {
+  const references: string[] = [];
+  const tokens = parseCommandTokens(commandValue);
+
+  for (const token of tokens) {
+    const trimmed = token.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    const [, optionValueRaw = ''] =
+      /^[-/](?:programmer|rawprogram|patch|searchpath|e|r|p|f)=(.+)$/i.exec(trimmed) || [];
+
+    if (optionValueRaw) {
+      const optionValue = optionValueRaw.split(';').pop()?.trim() || '';
+      const normalized = basename(optionValue.replace(/\\/g, '/'));
+      if (normalized) {
+        references.push(normalized);
+      }
+      continue;
+    }
+
+    const normalizedToken = basename(trimmed.replace(/\\/g, '/'));
+    if (/\.(?:mbn|elf|bin|xml|cpio|cmd|bat|sh)$/i.test(normalizedToken)) {
+      references.push(normalizedToken);
     }
   }
 

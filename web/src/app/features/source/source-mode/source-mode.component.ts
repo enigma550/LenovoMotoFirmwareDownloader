@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
+import { CatalogFacade } from '../../catalog/state';
 
 @Component({
   selector: 'app-source-mode',
@@ -7,5 +7,5 @@ import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
   templateUrl: './source-mode.component.html',
 })
 export class SourceModeComponent {
-  protected readonly store = inject(WorkflowStore);
+  protected readonly store = inject(CatalogFacade);
 }

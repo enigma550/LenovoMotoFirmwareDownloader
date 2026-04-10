@@ -1,6 +1,10 @@
-import type { RequestOptions } from '../../shared/types/index.ts';
+import type { RequestOptions } from '../../common/request-options.ts';
 import { API_URL, BASE_URL, USER_AGENT } from './constants.ts';
 import { cookieJar, session } from './state.ts';
+
+const clientVersion = '7.5.5.19';
+const requestLanguage = 'en-US';
+const requestWindowsInfo = 'Microsoft Windows 10 Pro, 64-bit';
 
 function serializeCookies() {
   return [...cookieJar.entries()]
@@ -49,11 +53,51 @@ function refreshAuth(headers: Headers) {
 }
 
 export async function bootstrapSessionCookie() {
-  const response = await fetch(`${BASE_URL}/lmsa-web/index.jsp`);
+  const response = await fetch(`${BASE_URL}/lmsa-web/index.jsp`, { redirect: 'manual' });
   updateCookies(response.headers);
 }
 
-type ApiRequestBody = object;
+type ApiRequestBody = BodyInit | object;
+
+function isBodyInit(value: ApiRequestBody): value is BodyInit {
+  return (
+    typeof value === 'string' ||
+    value instanceof ArrayBuffer ||
+    ArrayBuffer.isView(value) ||
+    value instanceof Blob ||
+    value instanceof FormData ||
+    value instanceof URLSearchParams ||
+    value instanceof ReadableStream
+  );
+}
+
+function buildRequestBody(
+  body: ApiRequestBody,
+  payload: ApiRequestBody,
+  isGet: boolean,
+  isFormUrlEncoded: boolean,
+) {
+  if (isGet) {
+    return undefined;
+  }
+
+  if (isFormUrlEncoded) {
+    if (isBodyInit(body)) {
+      return body;
+    }
+
+    const formBody = new URLSearchParams();
+    for (const [key, value] of Object.entries(body)) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+      formBody.set(key, String(value));
+    }
+    return formBody;
+  }
+
+  return JSON.stringify(payload);
+}
 
 export async function requestApi(
   path: string,
@@ -61,32 +105,45 @@ export async function requestApi(
   options: RequestOptions = {},
 ) {
   const url = path.startsWith('http') ? path : `${API_URL}${path}`;
+  const isFormUrlEncoded =
+    options.headers?.['Content-Type'] === 'application/x-www-form-urlencoded';
 
   const headers = new Headers({
-    'Content-Type': 'application/json',
+    'Content-Type': options.headers?.['Content-Type'] || 'application/json',
     'Request-Tag': 'lmsa',
     'User-Agent': USER_AGENT,
     ['Guid']: session.guid,
     ['Cookie']: serializeCookies(),
+    clientVersion,
+    language: requestLanguage,
+    windowsInfo: Buffer.from(requestWindowsInfo).toString('base64'),
   });
 
-  if (session.jwt) {
+  if (session.clientUuid) {
+    headers.set('clientUUID', session.clientUuid);
+  }
+
+  if (!options.withoutAuth && session.jwt) {
     headers.set('Authorization', session.jwt);
   }
 
   const payload = options.raw
     ? body
     : {
-        client: { version: '7.4.3.4' },
+        client: {
+          version: clientVersion,
+        },
+        language: requestLanguage,
+        windowsInfo: requestWindowsInfo,
         dparams: body,
-        language: 'en-US',
-        windowsInfo: 'Microsoft Windows 10 Pro, 64-bit',
       };
 
+  const isGet = (options.method || 'POST').toUpperCase() === 'GET';
+
   const response = await fetch(url, {
-    method: 'POST',
+    method: options.method || 'POST',
     headers,
-    body: JSON.stringify(payload),
+    body: buildRequestBody(body, payload, isGet, isFormUrlEncoded),
   });
 
   updateCookies(response.headers);

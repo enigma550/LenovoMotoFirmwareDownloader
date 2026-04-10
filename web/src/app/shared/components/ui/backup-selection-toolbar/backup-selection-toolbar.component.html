@@ -1,0 +1,54 @@
+<div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+  <div class="flex flex-wrap items-center gap-2">
+    <app-ui-action-button
+      label="Select all"
+      [isDark]="isDark()"
+      size="sm"
+      [disabled]="selectAllDisabled()"
+      (clicked)="selectAll.emit()"
+    />
+    <app-ui-action-button
+      label="Clear all"
+      [isDark]="isDark()"
+      size="sm"
+      [disabled]="clearAllDisabled()"
+      (clicked)="clearAll.emit()"
+    />
+    <app-ui-action-button
+      label="Select page"
+      [isDark]="isDark()"
+      size="sm"
+      [disabled]="selectPageDisabled()"
+      (clicked)="selectPage.emit()"
+    />
+    <app-ui-action-button
+      label="Clear page"
+      [isDark]="isDark()"
+      size="sm"
+      (clicked)="clearPage.emit()"
+    />
+  </div>
+  <div class="flex flex-wrap items-center gap-2">
+    <app-ui-action-button
+      label="Prev"
+      [isDark]="isDark()"
+      size="sm"
+      [disabled]="!hasPrevPage()"
+      (clicked)="prevPage.emit()"
+    />
+    <p
+      class="text-xs font-semibold"
+      [class.text-light-text]="!isDark()"
+      [class.text-dark-text]="isDark()"
+    >
+      Page {{ pageLabel() }}
+    </p>
+    <app-ui-action-button
+      label="Next"
+      [isDark]="isDark()"
+      size="sm"
+      [disabled]="!hasNextPage()"
+      (clicked)="nextPage.emit()"
+    />
+  </div>
+</div>

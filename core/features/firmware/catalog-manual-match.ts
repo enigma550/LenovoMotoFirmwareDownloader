@@ -1,75 +1,19 @@
+import type { CatalogCountryOptions } from '../../domain/catalog/country-options.ts';
+import type { ModelCatalogEntry } from '../../domain/catalog/model.ts';
+import type { CatalogFirmwareLookupResult } from '../../domain/firmware/catalog-lookup-result.ts';
+import type { FirmwareVariant } from '../../domain/firmware/variant.ts';
 import { requestApi } from '../../infra/lmsa/api.ts';
-import type {
-  CatalogCountryOptions,
-  CatalogFirmwareLookupResult,
-  FirmwareVariant,
-  JsonObject,
-  JsonValue,
-  ModelCatalogEntry,
-} from '../../shared/types/index.ts';
+import {
+  buildInitialParameters,
+  countryParameterKeys,
+  getValuesToExplore,
+  maximumExplorationDepth,
+  serializeParameterState,
+  toManualMatchResponse,
+  toRomMatchParamsResponse,
+  uniqueValues,
+} from './catalog-manual-match.helpers.ts';
 import { createFirmwareVariantFromResourceItem } from './resource-variant.ts';
-
-interface ManualMatchParameterProperty {
-  property: string;
-}
-
-interface ManualMatchResourceModel {
-  name?: string;
-  uri?: string;
-  publishDate?: string;
-}
-
-interface ManualMatchContentItem {
-  paramProperty?: ManualMatchParameterProperty;
-  paramValues?: string[];
-  romResource?: ManualMatchResourceModel;
-  romMatchId?: string;
-  flashFlow?: string;
-}
-
-interface ManualMatchResponse {
-  code?: string;
-  desc?: string;
-  content?: ManualMatchContentItem[];
-}
-
-interface RomMatchParamsResponse {
-  code?: string;
-  desc?: string;
-  content?: {
-    platform?: string;
-    params?: string[];
-  };
-}
-
-const maximumExplorationDepth = 15;
-const countryParameterKeys = new Set(['country', 'countryCode']);
-
-function toJsonObject(value: JsonValue | null | undefined): JsonObject | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  return value;
-}
-
-function toManualMatchResponse(value: JsonValue) {
-  if (!toJsonObject(value)) return null;
-  return value as ManualMatchResponse;
-}
-
-function toRomMatchParamsResponse(value: JsonValue) {
-  if (!toJsonObject(value)) return null;
-  return value as RomMatchParamsResponse;
-}
-
-function uniqueValues(values: string[]) {
-  return [...new Set(values)];
-}
-
-function serializeParameterState(parameters: Record<string, string>) {
-  const sortedEntries = Object.entries(parameters).sort(([leftKey], [rightKey]) =>
-    leftKey.localeCompare(rightKey),
-  );
-  return JSON.stringify(sortedEntries);
-}
 
 function pushUniqueVariant(
   variants: FirmwareVariant[],
@@ -80,22 +24,6 @@ function pushUniqueVariant(
   if (seenRomUrls.has(variantKey)) return;
   seenRomUrls.add(variantKey);
   variants.push(variant);
-}
-
-function buildInitialParameters(
-  selectedModel: ModelCatalogEntry,
-  initialParametersOverride?: Record<string, string>,
-) {
-  const initialParameters = initialParametersOverride ? { ...initialParametersOverride } : {};
-
-  if (!initialParameters.modelName) {
-    initialParameters.modelName = selectedModel.modelName;
-  }
-  if (!initialParameters.marketName) {
-    initialParameters.marketName = selectedModel.marketName;
-  }
-
-  return initialParameters;
 }
 
 async function fetchAutoMatchParameterHints(modelName: string) {
@@ -119,11 +47,6 @@ async function fetchAutoMatchParameterHints(modelName: string) {
     platform: typeof payload.content.platform === 'string' ? payload.content.platform : '',
     requiredParameters,
   };
-}
-
-function getValuesToExplore(parameterKey: string, parameterValues: string[]) {
-  if (!parameterKey) return [];
-  return [...new Set(parameterValues)];
 }
 
 async function exploreManualMatchTree(
@@ -182,7 +105,7 @@ async function exploreManualMatchTree(
     return { code, description };
   }
 
-  const valuesToExplore = getValuesToExplore(nextParameterKey, nextParameterValues);
+  const valuesToExplore = getValuesToExplore(nextParameterValues);
   const branchValues = exploreAllBranches ? valuesToExplore : valuesToExplore.slice(0, 1);
 
   for (const valueToExplore of branchValues) {

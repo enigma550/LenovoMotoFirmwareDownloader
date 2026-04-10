@@ -2,9 +2,9 @@
 node_modules
 
 # output
-out
-dist
-build
+/out
+/dist
+/build
 *.tgz
 *.zsync
 uruntime-appimage-dwarfs-x86_64
@@ -29,6 +29,12 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .eslintcache
 .cache
 *.tsbuildinfo
+runtime/bun/features/backup-restore/on-device/**/.build/
+runtime/bun/features/backup-restore/on-device/**/.debug.keystore
+runtime/bun/features/backup-restore/on-device/**/*.idsig
+runtime/bun/features/backup-restore/on-device/restore-helper/lmfd_restore_helper.apk
+runtime/bun/features/backup-restore/on-device/system-prompt/system_prompt_helper.dex
+runtime/bun/features/rescue/fastboot-native/linux-helper/lmfd_fastboot_helper
 
 # IntelliJ based IDEs
 .idea
@@ -60,6 +66,27 @@ assets/tools/qdl/darwin-arm64/**
 !assets/tools/qdl/win32-x64/
 assets/tools/qdl/win32-x64/**
 !assets/tools/qdl/win32-x64/.gitkeep
+
+# ffmpeg tooling artifacts: ignore by default, keep platform folders and placeholders
+assets/tools/ffmpeg/**
+!assets/tools/ffmpeg/linux-x64/
+assets/tools/ffmpeg/linux-x64/**
+!assets/tools/ffmpeg/linux-x64/.gitkeep
+!assets/tools/ffmpeg/linux-arm64/
+assets/tools/ffmpeg/linux-arm64/**
+!assets/tools/ffmpeg/linux-arm64/.gitkeep
+!assets/tools/ffmpeg/darwin-x64/
+assets/tools/ffmpeg/darwin-x64/**
+!assets/tools/ffmpeg/darwin-x64/.gitkeep
+!assets/tools/ffmpeg/darwin-arm64/
+assets/tools/ffmpeg/darwin-arm64/**
+!assets/tools/ffmpeg/darwin-arm64/.gitkeep
+!assets/tools/ffmpeg/win32-x64/
+assets/tools/ffmpeg/win32-x64/**
+!assets/tools/ffmpeg/win32-x64/.gitkeep
+!assets/tools/ffmpeg/win32-arm64/
+assets/tools/ffmpeg/win32-arm64/**
+!assets/tools/ffmpeg/win32-arm64/.gitkeep
 
 # stuff
 local-dev/

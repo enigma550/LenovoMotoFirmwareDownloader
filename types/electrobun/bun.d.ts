@@ -8,36 +8,66 @@ export type DefinedRpc = {
   send: (message: string, payload?: any) => void;
 };
 
-export const BrowserView: {
-  defineRPC<TSchema>(options: {
+export declare class BrowserView {
+  constructor(options: any);
+  id: number;
+  on(eventName: string, callback: (event?: unknown) => void): void;
+  remove(): void;
+  loadURL(url: string): void;
+  static defineRPC<TSchema>(options: {
     maxRequestTime?: number;
     handlers: DefineRpcHandlers;
   }): DefinedRpc;
-};
+}
 
-export class BrowserWindow {
+export declare class BrowserWindow {
   constructor(options: any);
+  id: number;
+  renderer: "native" | "cef";
+  frame: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
   webview: {
-    on(eventName: string, callback: () => void): void;
+    on(eventName: string, callback: (event?: unknown) => void): void;
+    loadURL(url: string): void;
+  };
+  close(): unknown;
+  focus(): unknown;
+  setSize(width: number, height: number): unknown;
+  getFrame(): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
   };
   maximize(): void;
+  on(eventName: string, callback: (event?: unknown) => void): void;
   ptr?: any;
 }
 
-export const BuildConfig: {
+export declare const BuildConfig: {
   get(): Promise<{
     availableRenderers?: string[];
     defaultRenderer: "native" | "cef";
   }>;
 };
 
-export const Utils: {
+export declare const Utils: {
   paths: {
     userCache: string;
   };
+  showNotification(options: {
+    title: string;
+    body?: string;
+    subtitle?: string;
+    silent?: boolean;
+  }): void;
 };
 
-export const Updater: {
+export declare const Updater: {
   onStatusChange(
     callback: (entry: {
       status: string;

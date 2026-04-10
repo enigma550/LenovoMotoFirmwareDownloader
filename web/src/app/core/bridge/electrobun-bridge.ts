@@ -3,7 +3,7 @@ import {
   createDesktopRpcClient,
   type DesktopBridgeWindowGlobals,
   type DesktopRpcInvoker,
-} from '../../../../../core/shared/bridge';
+} from '../../../../../core/contracts/desktop/bridge';
 
 let initializationPromise: Promise<boolean> | null = null;
 let lastInitializationError = '';
@@ -27,8 +27,22 @@ type WebView2Window = Window & {
   };
 };
 
-function isDesktopViewsRuntime() {
-  return window.location.protocol === 'views:';
+export function isDesktopRuntimeSignalPresent() {
+  if (window.location.protocol === 'views:') {
+    return true;
+  }
+
+  const globals = window as BridgeWindowGlobals;
+  const webviewId = Number(globals.__electrobunWebviewId);
+  if (Number.isFinite(webviewId) && webviewId > 0) {
+    return true;
+  }
+
+  if (typeof globals.__electrobunBunBridge?.postMessage === 'function') {
+    return true;
+  }
+
+  return bunBridgeRpcClient.hasBunBridge();
 }
 
 function wait(durationMs: number) {
@@ -107,6 +121,18 @@ async function waitForDesktopApiReady() {
   return Boolean(window.desktopApi?.isDesktop);
 }
 
+async function waitForDesktopRuntimeSignal() {
+  for (let attempt = 0; attempt < BRIDGE_WAIT_ATTEMPTS; attempt += 1) {
+    if (isDesktopRuntimeSignalPresent()) {
+      return true;
+    }
+
+    await wait(BRIDGE_WAIT_INTERVAL_MS);
+  }
+
+  return isDesktopRuntimeSignalPresent();
+}
+
 export function ensureDesktopBridgeReady(): Promise<boolean> {
   return ensureDesktopBridgeReadyInternal();
 }
@@ -122,7 +148,8 @@ async function ensureDesktopBridgeReadyInternal(): Promise<boolean> {
     return true;
   }
 
-  if (!isDesktopViewsRuntime()) {
+  const hasDesktopSignal = await waitForDesktopRuntimeSignal();
+  if (!hasDesktopSignal) {
     return false;
   }
 
@@ -139,7 +166,7 @@ async function ensureDesktopBridgeReadyInternal(): Promise<boolean> {
     const webviewId = Number(globals.__electrobunWebviewId);
     const hasBunBridge = Boolean(globals.__electrobunBunBridge?.postMessage);
     lastInitializationError =
-      'Desktop bridge did not initialize in views runtime. ' +
+      'Desktop bridge did not initialize in desktop runtime. ' +
       `webviewId=${Number.isFinite(webviewId) ? webviewId : 'N/A'}, ` +
       `bunBridge=${hasBunBridge ? 'yes' : 'no'}.`;
     return false;

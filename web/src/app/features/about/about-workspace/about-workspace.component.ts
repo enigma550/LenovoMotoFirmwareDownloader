@@ -1,8 +1,8 @@
 import type { OnInit } from '@angular/core';
 import { Component, inject, signal } from '@angular/core';
 import type { FrameworkUpdateInfo } from '../../../core/models/desktop-api';
-import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
-import { WorkflowUiService } from '../../../core/state/workflow/workflow-ui.service';
+import { WorkflowUiService } from '../../../shared/state/workflow-ui.service';
+import { AboutFacade } from '../state';
 
 type GitHubRelease = {
   prerelease: boolean;
@@ -55,7 +55,7 @@ function parseGitHubReleases(value: ReleasePayload) {
   templateUrl: './about-workspace.component.html',
 })
 export class AboutWorkspaceComponent implements OnInit {
-  protected readonly store = inject(WorkflowStore);
+  protected readonly store = inject(AboutFacade);
   protected readonly ui = inject(WorkflowUiService);
   protected desktopStatus = signal<
     'checking' | 'ok' | 'missing' | 'wrong_wmclass' | 'not_linux' | 'creating'

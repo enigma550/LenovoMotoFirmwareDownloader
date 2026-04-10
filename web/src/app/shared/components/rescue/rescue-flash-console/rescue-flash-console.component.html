@@ -1,19 +1,19 @@
 @if (shouldShow()) {
   <section
     #consoleSection
-    class="mt-4 rounded-2xl border p-3"
-    [class.border-slate-200]="!isDark()"
-    [class.bg-slate-50]="!isDark()"
-    [class.border-slate-700]="isDark()"
-    [class.bg-slate-900]="isDark()"
+    class="mt-4 rounded-xl border p-4"
+    [class.border-dark-border]="isDark()"
+    [class.bg-dark-surface]="isDark()"
+    [class.border-light-border]="!isDark()"
+    [class.bg-light-surface]="!isDark()"
   >
-    <div class="mb-2 flex items-center justify-between gap-2">
+    <div class="mb-3 flex items-center justify-between gap-2">
       <p
-        class="text-xs font-semibold"
-        [class.text-slate-700]="!isDark()"
-        [class.text-slate-200]="isDark()"
+        class="text-sm font-semibold"
+        [class.text-dark-text-bright]="isDark()"
+        [class.text-light-text-bright]="!isDark()"
       >
-        Flash Console
+        {{ title() }}
       </p>
       <div class="flex items-center gap-2">
         <app-ui-action-button
@@ -23,6 +23,13 @@
           appearance="outline"
           [disabled]="!canCancelCurrentAction()"
           (clicked)="requestCancelCurrentAction()"
+        />
+        <app-ui-action-button
+          label="Copy"
+          [isDark]="isDark()"
+          variant="neutral"
+          appearance="outline"
+          (clicked)="copyConsoleToClipboard()"
         />
         <app-ui-action-button
           label="Clear"
@@ -35,8 +42,9 @@
     </div>
     <div
       class="h-56 overflow-hidden rounded-lg border"
-      [class.border-slate-300]="!isDark()"
-      [class.border-slate-700]="isDark()"
+      [class.border-dark-border]="isDark()"
+      [class.border-light-border]="!isDark()"
+      (wheel)="onConsoleWheel($event)"
     >
       <ng-terminal #flashTerminal [xtermOptions]="terminalOptions()" />
     </div>

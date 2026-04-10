@@ -11,11 +11,11 @@ import {
   isInProgressStatus,
   isRecipeGuidedEntry,
   isRescueLiteEntry,
-} from '../../../../../core/state/workflow/download-utils';
-import { WorkflowStore } from '../../../../../core/state/workflow/workflow.store';
-import type { DownloadHistoryEntry } from '../../../../../core/state/workflow/workflow.types';
+} from '../../../../../features/downloads/state/download-utils';
 import { ProgressBarComponent } from '../../../../../shared/components/progress-bar/progress-bar.component';
 import { UiActionButtonComponent } from '../../../../../shared/components/ui/ui-action-button/ui-action-button.component';
+import type { DownloadHistoryEntry } from '../../../../../shared/state/workflow.types';
+import { DownloadsFacade } from '../../../state';
 
 @Component({
   selector: 'app-download-history-entry-card',
@@ -28,7 +28,7 @@ export class DownloadHistoryEntryCardComponent {
   readonly entry = input.required<DownloadHistoryEntry>();
   readonly isDark = input(false);
 
-  private readonly store = inject(WorkflowStore);
+  private readonly store = inject(DownloadsFacade);
 
   protected readonly formatBytes = formatByteSize;
   protected readonly dataResetLabel = formatDataResetLabel;
@@ -67,6 +67,19 @@ export class DownloadHistoryEntryCardComponent {
       return null;
     }
     return Math.min(100, (activeEntry.downloadedBytes / activeEntry.totalBytes) * 100);
+  }
+
+  protected showsByteProgress() {
+    const entry = this.entry();
+    if (entry.commandSource === 'local-extract') {
+      return false;
+    }
+    if (entry.mode === 'rescue-lite') {
+      return entry.phase === 'download';
+    }
+    return (
+      entry.status === 'downloading' || entry.status === 'paused' || entry.status === 'canceling'
+    );
   }
 
   protected onPause() {

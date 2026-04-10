@@ -1,0 +1,94 @@
+<div class="mt-2">
+  <p
+    class="text-[11px] font-semibold uppercase tracking-[0.18em]"
+    [class.text-light-text-dim]="!store.isDark()"
+    [class.text-dark-text-dim]="store.isDark()"
+  >
+    Backup content
+  </p>
+  <div class="mt-1 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    @for (category of categoryTabs; track category) {
+      <button
+        class="flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition"
+        type="button"
+        [class.border-success]="store.isConnectedBackupCategoryEnabled(category)"
+        [class.bg-success-light]="store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
+        [class.bg-success/10]="store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
+        [class.border-light-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
+        [class.bg-light-elevated]="!store.isDark()"
+        [class.border-dark-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
+        [class.bg-dark-surface]="store.isDark()"
+        (click)="store.toggleConnectedBackupCategory(category)"
+      >
+        <span
+          class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-sm font-extrabold leading-none"
+          [class.border-success]="store.isConnectedBackupCategoryEnabled(category)"
+          [class.bg-success]="store.isConnectedBackupCategoryEnabled(category)"
+          [class.text-white]="store.isConnectedBackupCategoryEnabled(category)"
+          [class.border-dark-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
+          [class.bg-dark-elevated]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
+          [class.border-light-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
+          [class.bg-light-elevated]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
+          [class.text-transparent]="!store.isConnectedBackupCategoryEnabled(category)"
+        >
+          ✓
+        </span>
+        <span class="min-w-0">
+          <span
+            class="block text-xs font-semibold"
+            [class.text-light-text]="!store.isDark()"
+            [class.text-dark-text-bright]="store.isDark()"
+          >
+            {{ categoryLabel(category) }}
+          </span>
+          <span
+            class="block text-[11px]"
+            [class.text-light-text-dim]="!store.isDark()"
+            [class.text-dark-text-dim]="store.isDark()"
+          >
+            {{ connectedCategorySelectedCount(category) }}/{{ connectedCategoryTotalCount(category) }}
+            selected
+          </span>
+        </span>
+      </button>
+    }
+  </div>
+</div>
+
+<div class="mt-4">
+  <p
+    class="text-[11px] font-semibold uppercase tracking-[0.18em]"
+    [class.text-light-text-dim]="!store.isDark()"
+    [class.text-dark-text-dim]="store.isDark()"
+  >
+    Inspect
+  </p>
+  <div
+    class="mt-1 flex flex-wrap items-end gap-x-4 gap-y-2 border-b pb-1"
+    [class.border-light-border]="!store.isDark()"
+    [class.border-dark-border-bright]="store.isDark()"
+  >
+    @for (tab of previewTabs; track tab) {
+      <button
+        class="border-b-2 pb-1 text-xs font-semibold transition"
+        type="button"
+        [class.border-accent]="store.connectedBackupPreviewTab() === tab"
+        [class.text-accent]="store.connectedBackupPreviewTab() === tab"
+        [class.border-transparent]="store.connectedBackupPreviewTab() !== tab"
+        [class.text-light-text]="store.connectedBackupPreviewTab() !== tab && !store.isDark()"
+        [class.text-dark-text]="store.connectedBackupPreviewTab() !== tab && store.isDark()"
+        (click)="store.setConnectedBackupPreviewTab(tab)"
+      >
+        {{ categoryLabel(tab) }}
+        <span
+          class="ml-1 text-[11px]"
+          [class.text-light-text-dim]="store.connectedBackupPreviewTab() !== tab && !store.isDark()"
+          [class.text-dark-text-dim]="store.connectedBackupPreviewTab() !== tab && store.isDark()"
+          [class.text-accent]="store.connectedBackupPreviewTab() === tab"
+        >
+          ({{ connectedCategoryTotalCount(tab) }})
+        </span>
+      </button>
+    }
+  </div>
+</div>

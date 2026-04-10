@@ -1,195 +1,244 @@
 <main
-  [class]="
-    store.isDark()
-      ? 'min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 p-4 text-slate-100 md:p-8'
-      : 'min-h-screen bg-linear-to-br from-slate-50 via-white to-sky-50 p-4 text-slate-900 md:p-8'
-  "
+  class="min-h-screen p-4 transition-colors duration-200 md:p-6"
+  [class.bg-dark-bg]="store.isDark()"
+  [class.text-dark-text]="store.isDark()"
+  [class.bg-light-bg]="!store.isDark()"
+  [class.text-light-text]="!store.isDark()"
 >
   <div class="mx-auto max-w-7xl">
+    <!-- HEADER -->
     <header
-      class="relative rounded-3xl border p-6"
-      [class.border-slate-200]="!store.isDark()"
-      [class.bg-white]="!store.isDark()"
+      class="rounded-xl border p-5 transition-all duration-200 md:p-6"
+      [class.border-dark-border]="store.isDark()"
+      [class.bg-dark-surface]="store.isDark()"
+      [class.border-light-border]="!store.isDark()"
+      [class.bg-light-surface]="!store.isDark()"
       [class.shadow-sm]="!store.isDark()"
-      [class.border-slate-700]="store.isDark()"
-      [class.bg-slate-900]="store.isDark()"
-      [class.shadow-xl]="store.isDark()"
     >
-      <p
-        class="absolute right-6 top-6 text-sm font-bold"
-        [class.text-emerald-700]="store.bridgeHealthy() && !store.isDark()"
-        [class.text-emerald-300]="store.bridgeHealthy() && store.isDark()"
-        [class.text-rose-700]="!store.bridgeHealthy() && !store.isDark()"
-        [class.text-rose-300]="!store.bridgeHealthy() && store.isDark()"
-      >
-        {{ store.bridgeStatus() }}
-      </p>
-      <p
-        class="text-xs font-semibold uppercase tracking-[0.2em]"
-        [class.text-slate-500]="!store.isDark()"
-        [class.text-slate-400]="store.isDark()"
-      >
-        Lenovo Motorola Firmware Downloader
-      </p>
-      <h1
-        class="mt-3 text-3xl font-black tracking-tight md:text-4xl"
-        [class.text-slate-900]="!store.isDark()"
-        [class.text-white]="store.isDark()"
-      >
-        Firmware Control Deck
-      </h1>
-      <p
-        class="mt-2 text-sm"
-        [class.text-slate-500]="!store.isDark()"
-        [class.text-slate-300]="store.isDark()"
-      >
-        Desktop workflow (Angular standalone + Electrobun bridge)
-      </p>
-      <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div class="flex flex-wrap items-center gap-3">
-          <span
-            class="inline-flex items-center gap-2 rounded-full border px-3 py-1"
-            [class.border-slate-200]="!store.isDark()"
-            [class.bg-slate-100]="!store.isDark()"
-            [class.text-slate-700]="!store.isDark()"
-            [class.border-slate-600]="store.isDark()"
-            [class.bg-slate-800]="store.isDark()"
-            [class.text-slate-200]="store.isDark()"
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <!-- Logo and title -->
+        <div class="flex items-center gap-4">
+          <div
+            class="hidden md:flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg"
+            [class.bg-dark-elevated]="store.isDark()"
+            [class.bg-accent-light]="!store.isDark()"
           >
-            @if (store.isBusy()) {
             <span
-              class="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent"
-              aria-hidden="true"
-            ></span>
-            }
-            <span>Status: {{ store.status() }}</span>
-          </span>
-          <span
-            class="rounded-full border px-3 py-1"
-            [class.border-slate-300]="!store.isDark()"
-            [class.bg-slate-100]="!store.isDark()"
-            [class.text-slate-700]="!store.isDark()"
-            [class.border-slate-600]="store.isDark()"
-            [class.bg-slate-800]="store.isDark()"
-            [class.text-slate-200]="store.isDark()"
-          >
-            @if (store.selectedModel(); as selectedModel) { Selected model: {{
-            selectedModel.modelName }} @if (selectedModel.marketName) { ({{ selectedModel.marketName
-            }}) } } @else { Selected model: none }
-          </span>
+              class="block w-[2.6ch] text-center font-mono text-base font-black leading-none tracking-wide"
+              [class.text-accent]="true"
+              >LM</span
+            >
+            <span
+              class="block w-[2.6ch] text-center font-mono text-base font-black leading-none tracking-wide"
+              [class.text-accent]="true"
+              >FD</span
+            >
+          </div>
+          <div>
+            <h1
+              class="text-xl font-semibold md:text-2xl"
+              [class.text-dark-text-bright]="store.isDark()"
+              [class.text-light-text-bright]="!store.isDark()"
+            >
+              Lenovo Moto Firmware Downloader
+            </h1>
+            <p
+              class="text-sm"
+              [class.text-dark-text-dim]="store.isDark()"
+              [class.text-light-text-dim]="!store.isDark()"
+            >
+              Device management tool
+            </p>
+          </div>
         </div>
 
-        <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
-          <span
-            class="rounded-full border px-3 py-1"
-            [class.border-emerald-200]="store.authComplete()"
-            [class.bg-emerald-50]="store.authComplete()"
-            [class.text-emerald-800]="store.authComplete()"
-            [class.border-amber-200]="!store.authComplete()"
-            [class.bg-amber-50]="!store.authComplete()"
-            [class.text-amber-800]="!store.authComplete()"
+        <!-- Status indicators -->
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Bridge status -->
+          <div
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm"
+            [class.bg-dark-elevated]="store.isDark()"
+            [class.bg-light-border]="!store.isDark()"
           >
+            <span
+              class="h-2 w-2 rounded-full"
+              [class.bg-success]="store.bridgeHealthy()"
+              [class.bg-danger]="!store.bridgeHealthy()"
+            ></span>
+            <span
+              [class.text-dark-text-dim]="store.isDark()"
+              [class.text-light-text-dim]="!store.isDark()"
+              >{{ store.bridgeStatus() }}</span
+            >
+          </div>
+
+          <!-- Auth status -->
+          <div
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm"
+            [class.bg-success-light]="store.authComplete() && !store.isDark()"
+            [class.text-success]="store.authComplete()"
+            [class.bg-warning-light]="!store.authComplete() && !store.isDark()"
+            [class.text-warning]="!store.authComplete()"
+            [class.bg-dark-elevated]="store.isDark()"
+          >
+            <span
+              class="h-2 w-2 rounded-full"
+              [class.bg-success]="store.authComplete()"
+              [class.bg-warning]="!store.authComplete()"
+            ></span>
             {{ store.authComplete() ? 'Authenticated' : 'Not authenticated' }}
-          </span>
+          </div>
+
+          <!-- Theme toggle -->
           <button
-            class="rounded-full border px-3 py-1 font-semibold transition"
-            [class.border-slate-300]="!store.isDark()"
-            [class.bg-white]="!store.isDark()"
-            [class.text-slate-700]="!store.isDark()"
-            [class.hover:bg-slate-100]="!store.isDark()"
-            [class.border-slate-600]="store.isDark()"
-            [class.bg-slate-800]="store.isDark()"
-            [class.text-slate-100]="store.isDark()"
-            [class.hover:bg-slate-700]="store.isDark()"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+            [class.bg-dark-elevated]="store.isDark()"
+            [class.text-dark-text]="store.isDark()"
+            [class.hover:bg-dark-border]="store.isDark()"
+            [class.bg-light-border]="!store.isDark()"
+            [class.text-light-text]="!store.isDark()"
+            [class.hover:bg-light-border-bright]="!store.isDark()"
             type="button"
             (click)="store.toggleTheme()"
           >
-            {{ store.isDark() ? 'Light mode' : 'Dark mode' }}
+            {{ store.isDark() ? '☀ Light' : '☾ Dark' }}
           </button>
         </div>
       </div>
+
+      <!-- Status bar -->
+      <div
+        class="mt-4 flex flex-wrap items-center gap-3 border-t pt-4"
+        [class.border-dark-border]="store.isDark()"
+        [class.border-light-border]="!store.isDark()"
+      >
+        <!-- Status indicator -->
+        <div
+          class="flex items-center gap-2 text-sm"
+          [class.text-dark-text-dim]="store.isDark()"
+          [class.text-light-text-dim]="!store.isDark()"
+        >
+          @if (store.isBusy()) {
+          <span
+            class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+          ></span>
+          }
+          <span>{{ store.status() }}</span>
+        </div>
+
+        <div class="flex-1"></div>
+
+        <!-- Selected model -->
+        @if (store.selectedModel(); as selectedModel) {
+        <div
+          class="rounded-lg px-3 py-1 text-sm"
+          [class.bg-accent-light]="!store.isDark()"
+          [class.text-accent-dim]="!store.isDark()"
+          [class.bg-dark-elevated]="store.isDark()"
+          [class.text-accent]="store.isDark()"
+        >
+          {{ selectedModel.modelName }} @if (selectedModel.marketName) {
+          <span class="opacity-70">({{ selectedModel.marketName }})</span>
+          }
+        </div>
+        }
+      </div>
     </header>
 
+    <!-- Error message -->
     @if (store.errorMessage()) {
-    <p
-      class="mt-5 rounded-2xl border p-4 text-sm"
-      [class.border-rose-200]="!store.isDark()"
-      [class.bg-rose-50]="!store.isDark()"
-      [class.text-rose-800]="!store.isDark()"
-      [class.border-rose-700]="store.isDark()"
-      [class.bg-rose-900]="store.isDark()"
-      [class.text-rose-200]="store.isDark()"
+    <div
+      class="mt-4 rounded-lg border-l-4 p-4 text-sm animate-fade-in"
+      [class.border-danger]="true"
+      [class.bg-danger-light]="!store.isDark()"
+      [class.text-danger]="true"
+      [class.bg-dark-surface]="store.isDark()"
     >
-      {{ store.errorMessage() }}
-    </p>
-    } @if (!store.authComplete()) {
-    <div class="mt-6">
-      <app-auth-panel />
+      <span class="font-semibold">Error:</span> {{ store.errorMessage() }}
     </div>
-    } @else {
-    <div class="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
-      <aside class="space-y-6">
-        <app-source-mode />
+    }
 
-        @if (store.sourceMode() === 'connected') {
-        <app-connected-lookup />
+    <!-- Main grid layout -->
+    <div class="mt-5 grid gap-5 lg:grid-cols-[280px_1fr]">
+      <!-- SIDEBAR -->
+      <aside class="space-y-4">
+        @if (!store.authComplete()) {
+        <app-auth-panel class="block" />
+        }
+        <app-source-mode class="block" />
+
+        @if (store.sourceMode() === 'connected' && store.authComplete()) {
+        <app-connected-lookup class="block" />
         }
       </aside>
 
-      <section class="space-y-6">
-        @if (store.sourceMode() === 'catalog') {
+      <!-- MAIN CONTENT -->
+      <section class="space-y-5">
+        @if (!store.authComplete() && (store.sourceMode() === 'catalog' || store.sourceMode() ===
+        'connected')) {
+        <div
+          class="rounded-xl border p-6 text-sm"
+          [class.border-dark-border]="store.isDark()"
+          [class.bg-dark-surface]="store.isDark()"
+          [class.text-dark-text-dim]="store.isDark()"
+          [class.border-light-border]="!store.isDark()"
+          [class.bg-light-surface]="!store.isDark()"
+          [class.text-light-text-dim]="!store.isDark()"
+        >
+          Authentication required for Catalog and Connected Device features.
+        </div>
+        } @else if (store.sourceMode() === 'catalog') {
         <app-catalog-workspace />
         } @else if (store.sourceMode() === 'downloads') {
         <app-downloads-panel />
+        } @else if (store.sourceMode() === 'backup-restore') {
+        <app-backup-restore-workspace />
         } @else if (store.sourceMode() === 'about') {
         <app-about-workspace />
         } @else if (store.sourceMode() === null) {
         <div
-          class="rounded-3xl border p-8 text-sm"
-          [class.border-slate-200]="!store.isDark()"
-          [class.bg-white]="!store.isDark()"
-          [class.text-slate-500]="!store.isDark()"
-          [class.border-slate-700]="store.isDark()"
-          [class.bg-slate-900]="store.isDark()"
-          [class.text-slate-300]="store.isDark()"
+          class="rounded-xl border p-8 text-center"
+          [class.border-dark-border]="store.isDark()"
+          [class.bg-dark-surface]="store.isDark()"
+          [class.border-light-border]="!store.isDark()"
+          [class.bg-light-surface]="!store.isDark()"
         >
-          Select a source to begin.
+          <p
+            class="text-sm"
+            [class.text-dark-text-dim]="store.isDark()"
+            [class.text-light-text-dim]="!store.isDark()"
+          >
+            Select a source module to begin
+          </p>
         </div>
-        } @if (store.sourceMode() !== 'downloads') {
+        } @if (store.authComplete() && store.sourceMode() !== 'downloads' && store.sourceMode() !==
+        'backup-restore') {
         <app-rescue-workspace />
         }
       </section>
     </div>
-    }
   </div>
 
-  <section class="pointer-events-none fixed right-4 top-4 z-50 grid max-w-sm gap-2">
+  <!-- TOAST NOTIFICATIONS -->
+  <section class="pointer-events-none fixed right-4 top-4 z-50 grid max-w-md gap-3">
     @for (toast of store.toasts(); track toast.id) {
     <article
-      class="pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur"
-      [class.border-slate-200]="toast.variant === 'info' && !store.isDark()"
-      [class.bg-white]="toast.variant === 'info' && !store.isDark()"
-      [class.text-slate-700]="toast.variant === 'info' && !store.isDark()"
-      [class.border-slate-600]="toast.variant === 'info' && store.isDark()"
-      [class.bg-slate-800]="toast.variant === 'info' && store.isDark()"
-      [class.text-slate-100]="toast.variant === 'info' && store.isDark()"
-      [class.border-emerald-200]="toast.variant === 'success' && !store.isDark()"
-      [class.bg-emerald-50]="toast.variant === 'success' && !store.isDark()"
-      [class.text-emerald-800]="toast.variant === 'success' && !store.isDark()"
-      [class.border-emerald-700]="toast.variant === 'success' && store.isDark()"
-      [class.bg-emerald-900]="toast.variant === 'success' && store.isDark()"
-      [class.text-emerald-200]="toast.variant === 'success' && store.isDark()"
-      [class.border-rose-200]="toast.variant === 'error' && !store.isDark()"
-      [class.bg-rose-50]="toast.variant === 'error' && !store.isDark()"
-      [class.text-rose-800]="toast.variant === 'error' && !store.isDark()"
-      [class.border-rose-700]="toast.variant === 'error' && store.isDark()"
-      [class.bg-rose-900]="toast.variant === 'error' && store.isDark()"
-      [class.text-rose-200]="toast.variant === 'error' && store.isDark()"
+      class="pointer-events-auto rounded-lg border-l-4 px-4 py-3 text-sm shadow-lg animate-fade-in"
+      [class.border-accent]="toast.variant === 'info'"
+      [class.bg-dark-surface]="store.isDark()"
+      [class.text-dark-text]="store.isDark()"
+      [class.bg-accent-light]="toast.variant === 'info' && !store.isDark()"
+      [class.border-success]="toast.variant === 'success'"
+      [class.bg-success-light]="toast.variant === 'success' && !store.isDark()"
+      [class.text-success]="toast.variant === 'success' && !store.isDark()"
+      [class.border-danger]="toast.variant === 'error'"
+      [class.bg-danger-light]="toast.variant === 'error' && !store.isDark()"
+      [class.text-danger]="toast.variant === 'error' && !store.isDark()"
     >
-      <div class="flex items-start justify-between gap-3">
-        <p class="leading-5">{{ toast.message }}</p>
+      <div class="flex items-start justify-between gap-4">
+        <p>{{ toast.message }}</p>
         <button
-          class="rounded px-1 text-xs opacity-70 transition hover:opacity-100"
+          class="shrink-0 opacity-60 transition hover:opacity-100"
           type="button"
           (click)="store.dismissToast(toast.id)"
         >

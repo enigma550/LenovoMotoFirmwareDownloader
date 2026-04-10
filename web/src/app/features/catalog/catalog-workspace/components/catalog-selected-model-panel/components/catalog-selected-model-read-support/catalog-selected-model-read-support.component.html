@@ -1,0 +1,304 @@
+<p
+  class="mt-2 text-sm"
+  [class.text-light-text]="!store.isDark()"
+  [class.text-dark-text]="store.isDark()"
+>
+  readSupport=true → choose lookup mode.
+</p>
+
+@if (store.readSupportHints()) {
+  <p
+    class="mt-2 rounded-lg border p-3 font-mono text-xs"
+    [class.border-light-border]="!store.isDark()"
+    [class.bg-light-surface]="!store.isDark()"
+    [class.text-light-text]="!store.isDark()"
+    [class.border-dark-border-bright]="store.isDark()"
+    [class.bg-dark-elevated]="store.isDark()"
+    [class.text-dark-text]="store.isDark()"
+  >
+    platform={{ store.readSupportHints()!.platform || 'N/A' }}, required={{
+      store.readSupportHints()!.requiredParameters.join(', ') || 'none'
+    }}
+  </p>
+}
+
+<div class="mt-4 flex flex-wrap gap-2">
+  <button
+    class="rounded-lg border px-3 py-1 text-xs font-medium transition"
+    [class.border-accent]="store.readSupportMode() === 'imei'"
+    [class.bg-accent-subtle]="store.readSupportMode() === 'imei' && !store.isDark()"
+    [class.bg-accent/10]="store.readSupportMode() === 'imei' && store.isDark()"
+    [class.text-accent]="store.readSupportMode() === 'imei'"
+    [class.bg-light-surface]="store.readSupportMode() !== 'imei' && !store.isDark()"
+    [class.text-light-text]="store.readSupportMode() !== 'imei' && !store.isDark()"
+    [class.border-light-border]="store.readSupportMode() !== 'imei' && !store.isDark()"
+    [class.bg-dark-elevated]="store.readSupportMode() !== 'imei' && store.isDark()"
+    [class.text-dark-text]="store.readSupportMode() !== 'imei' && store.isDark()"
+    [class.border-dark-border]="store.readSupportMode() !== 'imei' && store.isDark()"
+    type="button"
+    (click)="store.setReadSupportMode('imei')"
+  >
+    IMEI {{ store.recommendedReadSupportMode() === 'imei' ? '(recommended)' : '' }}
+  </button>
+  @if (store.selectedModelSupportsSnLookup()) {
+    <button
+      class="rounded-lg border px-3 py-1 text-xs font-medium transition"
+      [class.border-accent]="store.readSupportMode() === 'sn'"
+      [class.bg-accent-subtle]="store.readSupportMode() === 'sn' && !store.isDark()"
+      [class.bg-accent/10]="store.readSupportMode() === 'sn' && store.isDark()"
+      [class.text-accent]="store.readSupportMode() === 'sn'"
+      [class.bg-light-surface]="store.readSupportMode() !== 'sn' && !store.isDark()"
+      [class.text-light-text]="store.readSupportMode() !== 'sn' && !store.isDark()"
+      [class.border-light-border]="store.readSupportMode() !== 'sn' && !store.isDark()"
+      [class.bg-dark-elevated]="store.readSupportMode() !== 'sn' && store.isDark()"
+      [class.text-dark-text]="store.readSupportMode() !== 'sn' && store.isDark()"
+      [class.border-dark-border]="store.readSupportMode() !== 'sn' && store.isDark()"
+      type="button"
+      (click)="store.setReadSupportMode('sn')"
+    >
+      Serial {{ store.recommendedReadSupportMode() === 'sn' ? '(recommended)' : '' }}
+    </button>
+  }
+  <button
+    class="rounded-lg border px-3 py-1 text-xs font-medium transition"
+    [class.border-accent]="store.readSupportMode() === 'params'"
+    [class.bg-accent-subtle]="store.readSupportMode() === 'params' && !store.isDark()"
+    [class.bg-accent/10]="store.readSupportMode() === 'params' && store.isDark()"
+    [class.text-accent]="store.readSupportMode() === 'params'"
+    [class.bg-light-surface]="store.readSupportMode() !== 'params' && !store.isDark()"
+    [class.text-light-text]="store.readSupportMode() !== 'params' && !store.isDark()"
+    [class.border-light-border]="store.readSupportMode() !== 'params' && !store.isDark()"
+    [class.bg-dark-elevated]="store.readSupportMode() !== 'params' && store.isDark()"
+    [class.text-dark-text]="store.readSupportMode() !== 'params' && store.isDark()"
+    [class.border-dark-border]="store.readSupportMode() !== 'params' && store.isDark()"
+    type="button"
+    (click)="store.setReadSupportMode('params')"
+  >
+    Required Params
+  </button>
+</div>
+
+@if (store.readSupportMode() === 'imei') {
+  <div class="mt-4 grid gap-3 md:grid-cols-2">
+    <div>
+      <label
+        class="block text-xs font-medium"
+        [class.text-light-text-dim]="!store.isDark()"
+        [class.text-dark-text-dim]="store.isDark()"
+        >IMEI</label
+      >
+      <input
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+        [class.border-light-border-bright]="!store.isDark()"
+        [class.bg-light-elevated]="!store.isDark()"
+        [class.text-light-text-bright]="!store.isDark()"
+        [class.border-dark-border-bright]="store.isDark()"
+        [class.bg-dark-elevated]="store.isDark()"
+        [class.text-dark-text-bright]="store.isDark()"
+        placeholder="Required"
+        [ngModel]="store.imei()"
+        (ngModelChange)="store.imei.set($event)"
+      />
+    </div>
+  </div>
+}
+
+@if (store.readSupportMode() === 'sn') {
+  <div class="mt-4 grid gap-3 md:grid-cols-2">
+    <div>
+      <label
+        class="block text-xs font-medium"
+        [class.text-light-text-dim]="!store.isDark()"
+        [class.text-dark-text-dim]="store.isDark()"
+        >SN</label
+      >
+      <input
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+        [class.border-light-border-bright]="!store.isDark()"
+        [class.bg-light-elevated]="!store.isDark()"
+        [class.text-light-text-bright]="!store.isDark()"
+        [class.border-dark-border-bright]="store.isDark()"
+        [class.bg-dark-elevated]="store.isDark()"
+        [class.text-dark-text-bright]="store.isDark()"
+        [ngModel]="store.sn()"
+        (ngModelChange)="store.sn.set($event)"
+      />
+    </div>
+  </div>
+}
+
+@if (store.readSupportMode() === 'params') {
+  <div class="mt-4 grid gap-3 md:grid-cols-2">
+    <div>
+      <label
+        class="block text-xs font-medium"
+        [class.text-light-text-dim]="!store.isDark()"
+        [class.text-dark-text-dim]="store.isDark()"
+        >IMEI</label
+      >
+      <input
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+        [class.border-light-border-bright]="!store.isDark()"
+        [class.bg-light-elevated]="!store.isDark()"
+        [class.text-light-text-bright]="!store.isDark()"
+        [class.border-dark-border-bright]="store.isDark()"
+        [class.bg-dark-elevated]="store.isDark()"
+        [class.text-dark-text-bright]="store.isDark()"
+        placeholder="Optional"
+        [ngModel]="store.imei()"
+        (ngModelChange)="store.imei.set($event)"
+      />
+    </div>
+    <div>
+      <label
+        class="block text-xs font-medium"
+        [class.text-light-text-dim]="!store.isDark()"
+        [class.text-dark-text-dim]="store.isDark()"
+        >IMEI2</label
+      >
+      <input
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+        [class.border-light-border-bright]="!store.isDark()"
+        [class.bg-light-elevated]="!store.isDark()"
+        [class.text-light-text-bright]="!store.isDark()"
+        [class.border-dark-border-bright]="store.isDark()"
+        [class.bg-dark-elevated]="store.isDark()"
+        [class.text-dark-text-bright]="store.isDark()"
+        placeholder="Optional"
+        [ngModel]="store.imei2()"
+        (ngModelChange)="store.imei2.set($event)"
+      />
+    </div>
+    <div>
+      <label
+        class="block text-xs font-medium"
+        [class.text-light-text-dim]="!store.isDark()"
+        [class.text-dark-text-dim]="store.isDark()"
+        >SN</label
+      >
+      <input
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+        [class.border-light-border-bright]="!store.isDark()"
+        [class.bg-light-elevated]="!store.isDark()"
+        [class.text-light-text-bright]="!store.isDark()"
+        [class.border-dark-border-bright]="store.isDark()"
+        [class.bg-dark-elevated]="store.isDark()"
+        [class.text-dark-text-bright]="store.isDark()"
+        placeholder="Optional"
+        [ngModel]="store.sn()"
+        (ngModelChange)="store.sn.set($event)"
+      />
+    </div>
+    <div>
+      <label
+        class="block text-xs font-medium"
+        [class.text-light-text-dim]="!store.isDark()"
+        [class.text-dark-text-dim]="store.isDark()"
+        >channelId</label
+      >
+      <input
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+        [class.border-light-border-bright]="!store.isDark()"
+        [class.bg-light-elevated]="!store.isDark()"
+        [class.text-light-text-bright]="!store.isDark()"
+        [class.border-dark-border-bright]="store.isDark()"
+        [class.bg-dark-elevated]="store.isDark()"
+        [class.text-dark-text-bright]="store.isDark()"
+        placeholder="Optional"
+        [ngModel]="store.channelId()"
+        (ngModelChange)="store.channelId.set($event)"
+      />
+    </div>
+  </div>
+}
+
+@if (store.readSupportMode() === 'params' && store.readSupportHints()) {
+  <div class="mt-4 grid gap-3 md:grid-cols-2">
+    @for (parameterName of store.readSupportHints()!.requiredParameters; track parameterName) {
+      <div>
+        <label
+          class="block text-xs font-medium"
+          [class.text-light-text-dim]="!store.isDark()"
+          [class.text-dark-text-dim]="store.isDark()"
+          >{{ parameterName }}</label
+        >
+        <input
+          class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
+          [class.border-light-border-bright]="!store.isDark()"
+          [class.bg-light-elevated]="!store.isDark()"
+          [class.text-light-text-bright]="!store.isDark()"
+          [class.border-dark-border-bright]="store.isDark()"
+          [class.bg-dark-elevated]="store.isDark()"
+          [class.text-dark-text-bright]="store.isDark()"
+          placeholder="Required"
+          [ngModel]="store.requiredParams()[parameterName] || ''"
+          (ngModelChange)="store.setRequiredParam(parameterName, $event)"
+        />
+      </div>
+    }
+  </div>
+}
+
+<div class="mt-4">
+  @if (store.readSupportMode() === 'imei') {
+    <button
+      class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+      [class.border-accent]="store.isDark()"
+      [class.text-accent]="store.isDark()"
+      [class.hover:bg-accent/10]="store.isDark()"
+      [class.border-accent]="!store.isDark()"
+      [class.text-accent]="!store.isDark()"
+      [class.hover:bg-accent-subtle]="!store.isDark()"
+      type="button"
+      (click)="store.runReadSupportLookupByImei()"
+    >
+      🔍 Run IMEI lookup
+    </button>
+  }
+  @if (store.readSupportMode() === 'sn') {
+    <button
+      class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+      [class.border-accent]="store.isDark()"
+      [class.text-accent]="store.isDark()"
+      [class.hover:bg-accent/10]="store.isDark()"
+      [class.border-accent]="!store.isDark()"
+      [class.text-accent]="!store.isDark()"
+      [class.hover:bg-accent-subtle]="!store.isDark()"
+      type="button"
+      (click)="store.runReadSupportLookupBySn()"
+    >
+      🔍 Run SN lookup
+    </button>
+  }
+  @if (store.readSupportMode() === 'params') {
+    <button
+      class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+      [class.border-accent]="store.isDark()"
+      [class.text-accent]="store.isDark()"
+      [class.hover:bg-accent/10]="store.isDark()"
+      [class.border-accent]="!store.isDark()"
+      [class.text-accent]="!store.isDark()"
+      [class.hover:bg-accent-subtle]="!store.isDark()"
+      type="button"
+      (click)="store.runReadSupportLookupByParams()"
+    >
+      🔍 Run Params lookup
+    </button>
+  }
+</div>
+
+@if (store.readSupportResult()) {
+  <p
+    class="mt-3 rounded-lg border p-3 font-mono text-xs"
+    [class.border-light-border]="!store.isDark()"
+    [class.bg-light-surface]="!store.isDark()"
+    [class.text-light-text]="!store.isDark()"
+    [class.border-dark-border-bright]="store.isDark()"
+    [class.bg-dark-elevated]="store.isDark()"
+    [class.text-dark-text]="store.isDark()"
+  >
+    code={{ store.readSupportResult()!.code || 'N/A' }}, desc={{
+      store.readSupportResult()!.description || 'N/A'
+    }}
+  </p>
+}

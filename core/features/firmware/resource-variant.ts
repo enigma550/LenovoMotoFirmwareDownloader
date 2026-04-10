@@ -1,4 +1,4 @@
-import type { FirmwareVariant } from '../../shared/types/index.ts';
+import type { FirmwareVariant } from '../../domain/firmware/variant.ts';
 
 export function normalizeRemoteUrl(value: string) {
   return value.startsWith('http') ? value : `https://${value}`;

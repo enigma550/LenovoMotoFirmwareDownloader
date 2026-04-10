@@ -1,24 +1,17 @@
 import { isCommandAvailable, runCommandWithAbort } from '../device-flasher.ts';
+import { disposeFastbootRunnerContext, runFastbootCommand } from './fastboot-command-runner.ts';
 import { qdlCommandDisplayName, resolveQdlCommand } from './qdl-command.ts';
 import {
   resolveUnisocPacCommandArgs,
   resolveUnisocPacToolCandidates,
 } from './rescue-command-policy.ts';
+import type { RescueCommandExecutionContext } from './rescue-command-runner-context.ts';
 import type {
   PreparedEdlFirehoseCommand,
-  PreparedFastbootRescueCommand,
+  PreparedFastbootCommand,
   PreparedRescueCommand,
   PreparedUnisocPacCommand,
 } from './rescue-command-types.ts';
-
-export type RescueCommandExecutionContext = {
-  workDir: string;
-  signal: AbortSignal;
-  onProcess: (process: Bun.Subprocess | null) => void;
-  state: {
-    resolvedUnisocTool?: string;
-  };
-};
 
 type RescueCommandRunnerMap = {
   [Tool in PreparedRescueCommand['tool']]: (
@@ -74,38 +67,47 @@ async function resolveAvailableUnisocPacTool(options: {
   throw createMissingUnisocToolError();
 }
 
-async function runFastbootCommand(
-  command: PreparedFastbootRescueCommand,
-  context: RescueCommandExecutionContext,
-) {
-  await runCommandWithAbort({
-    command: 'fastboot',
-    args: command.args,
-    cwd: context.workDir,
-    timeoutMs: command.timeoutMs,
-    signal: context.signal,
-    onProcess: context.onProcess,
-  });
-}
-
 async function runEdlFirehoseCommand(
   command: PreparedEdlFirehoseCommand,
   context: RescueCommandExecutionContext,
 ) {
   const qdlCommand = await resolveQdlCommand();
-  const args = ['--storage', command.storage, command.programmerPath, command.rawprogramPath];
-  if (command.serial) {
-    args.unshift(command.serial);
-    args.unshift('--serial');
-  }
-  if (command.patchPath) {
-    args.push(command.patchPath);
-  }
+  const buildArgs = (options?: { dryRun?: boolean }) => {
+    const args = ['--storage', command.storage];
+    if (options?.dryRun) {
+      args.push('--dry-run');
+    } else if (command.serial) {
+      args.push('--serial', command.serial);
+    }
+    for (const includePath of command.includePaths || []) {
+      args.push('--include', includePath);
+    }
+    args.push(command.programmerPath, command.rawprogramPath);
+    if (command.patchPath) {
+      args.push(command.patchPath);
+    }
+    return args;
+  };
 
   try {
+    if (command.validateWithDryRun) {
+      context.onConsoleLine?.({
+        message: 'Validating QDL plan with --dry-run before flashing...',
+        tone: 'verbose',
+      });
+      await runCommandWithAbort({
+        command: qdlCommand.command,
+        args: buildArgs({ dryRun: true }),
+        cwd: context.workDir,
+        timeoutMs: Math.min(command.timeoutMs, 2 * 60 * 1000),
+        signal: context.signal,
+        onProcess: context.onProcess,
+      });
+    }
+
     await runCommandWithAbort({
       command: qdlCommand.command,
-      args,
+      args: buildArgs(),
       cwd: context.workDir,
       timeoutMs: command.timeoutMs,
       signal: context.signal,
@@ -175,7 +177,10 @@ async function runUnisocPacCommand(
 }
 
 const rescueCommandRunnerRegistry: RescueCommandRunnerMap = {
-  fastboot: runFastbootCommand,
+  fastboot: runFastbootCommand as (
+    command: PreparedFastbootCommand,
+    context: RescueCommandExecutionContext,
+  ) => Promise<void>,
   'edl-firehose': runEdlFirehoseCommand,
   'unisoc-pac': runUnisocPacCommand,
 };
@@ -190,4 +195,8 @@ export async function runPreparedRescueCommand(
   ) => Promise<void>;
 
   await runner(command, context);
+}
+
+export async function disposeRescueCommandExecutionContext(context: RescueCommandExecutionContext) {
+  await disposeFastbootRunnerContext(context);
 }

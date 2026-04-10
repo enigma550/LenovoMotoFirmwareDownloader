@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { RescueFlashTransport, RescueQdlStorage } from '../../../../core/models/desktop-api';
-import type { DataResetChoice } from '../../../../core/state/workflow/workflow.types';
+import type { DataResetChoice } from '../../../../shared/state/workflow.types';
 import { UiActionButtonComponent } from '../../ui/ui-action-button/ui-action-button.component';
 import { RescueDialogButtonComponent } from '../rescue-dialog-button/rescue-dialog-button.component';
 import { RescueDriverInstallCardComponent } from '../rescue-driver-install-card/rescue-driver-install-card.component';

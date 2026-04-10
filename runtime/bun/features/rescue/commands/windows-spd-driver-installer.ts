@@ -1,4 +1,4 @@
-import type { WindowsSpdDriverInstallResponse } from '../../../../shared/rpc.ts';
+import type { WindowsSpdDriverInstallResponse } from '../../../../shared/desktop-rpc';
 import {
   resolveBundledDriverExePath,
   runBundledDriverExeWithUac,

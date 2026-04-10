@@ -4,9 +4,9 @@ import type { FirmwareVariant } from '../../../../../core/models/desktop-api';
 import {
   findBestLocalFileMatchForVariant,
   isInProgressStatus,
-} from '../../../../../core/state/workflow/download-utils';
-import { WorkflowStore } from '../../../../../core/state/workflow/workflow.store';
-import type { DownloadHistoryEntry } from '../../../../../core/state/workflow/workflow.types';
+} from '../../../../../features/downloads/state/download-utils';
+import type { DownloadHistoryEntry } from '../../../../../shared/state/workflow.types';
+import { DownloadsFacade } from '../../../../downloads/state';
 
 @Component({
   selector: 'app-firmware-variant-card',
@@ -21,7 +21,7 @@ export class FirmwareVariantCardComponent {
   readonly rescueRequested = output<FirmwareVariant>();
   readonly rescueDryRunRequested = output<FirmwareVariant>();
 
-  private readonly store = inject(WorkflowStore);
+  private readonly store = inject(DownloadsFacade);
   protected readonly linkingVariantRecipe = signal(false);
 
   protected onStartDownload() {

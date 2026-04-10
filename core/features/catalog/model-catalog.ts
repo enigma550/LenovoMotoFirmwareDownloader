@@ -1,11 +1,7 @@
+import type { JsonArray, JsonObject, JsonValue } from '../../common/json.ts';
+import type { ModelCatalogEntry } from '../../domain/catalog/model.ts';
 import { requestApi } from '../../infra/lmsa/api.ts';
 import { ensureProjectStorageReady, MODEL_CATALOG_PATH } from '../../infra/storage.ts';
-import type {
-  JsonArray,
-  JsonObject,
-  JsonValue,
-  ModelCatalogEntry,
-} from '../../shared/types/index.ts';
 
 function parseBoolean(value: JsonValue | undefined) {
   if (typeof value === 'boolean') return value;

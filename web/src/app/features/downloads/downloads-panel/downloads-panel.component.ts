@@ -8,14 +8,14 @@ import type {
 import {
   rescueDialogDescription as getRescueDialogDescription,
   rescueDialogTitle as getRescueDialogTitle,
-} from '../../../core/state/workflow/download-utils';
-import { RescueDialogDefaultsService } from '../../../core/state/workflow/rescue-dialog-defaults.service';
-import { WorkflowStore } from '../../../core/state/workflow/workflow.store';
-import type { DataResetChoice } from '../../../core/state/workflow/workflow.types';
+} from '../../../features/downloads/state/download-utils';
+import { RescueDialogDefaultsService } from '../../../features/downloads/state/rescue-dialog-defaults.service';
 import { RescueDryRunPlanDialogComponent } from '../../../shared/components/rescue/rescue-dry-run-plan-dialog/rescue-dry-run-plan-dialog.component';
 import { RescueFlashConsoleComponent } from '../../../shared/components/rescue/rescue-flash-console/rescue-flash-console.component';
 import { RescueOptionsDialogComponent } from '../../../shared/components/rescue/rescue-options-dialog/rescue-options-dialog.component';
 import { UiActionButtonComponent } from '../../../shared/components/ui/ui-action-button/ui-action-button.component';
+import type { DataResetChoice } from '../../../shared/state/workflow.types';
+import { DownloadsFacade } from '../state';
 import { DownloadHistoryEntryCardComponent } from './components/download-history-entry-card/download-history-entry-card.component';
 import { LocalDownloadedFileCardComponent } from './components/local-downloaded-file-card/local-downloaded-file-card.component';
 
@@ -34,7 +34,7 @@ import { LocalDownloadedFileCardComponent } from './components/local-downloaded-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DownloadsPanelComponent implements OnInit {
-  protected readonly store = inject(WorkflowStore);
+  protected readonly store = inject(DownloadsFacade);
   private readonly rescueDialogDefaults = inject(RescueDialogDefaultsService);
   protected rescueDialogOpen = false;
   protected rescueDialogFile: LocalDownloadedFile | null = null;
@@ -165,7 +165,7 @@ export class DownloadsPanelComponent implements OnInit {
   }
 
   private openRescueDialog(file: LocalDownloadedFile, dryRun: boolean) {
-    const defaults = this.rescueDialogDefaults.createDefaults();
+    const defaults = this.rescueDialogDefaults.createDefaults(file);
     this.rescueDialogFile = file;
     this.rescueDialogDryRun = dryRun;
     this.rescueDialogDataReset = defaults.dataReset;

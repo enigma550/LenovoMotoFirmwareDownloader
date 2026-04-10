@@ -25,11 +25,10 @@ export class UiActionButtonComponent {
   readonly clicked = output<void>();
 
   protected readonly className = computed(() => {
-    const sizeClass = this.size() === 'sm' ? 'px-3 py-1 text-sm' : 'px-2 py-1 text-xs';
-    const shapeClass = this.size() === 'sm' ? 'rounded-xl' : 'rounded-lg';
+    const sizeClass = this.size() === 'sm' ? 'px-4 py-2 text-sm' : 'px-3 py-1.5 text-xs';
     const baseClass =
-      `${shapeClass} ${sizeClass} font-semibold transition ` +
-      'disabled:cursor-not-allowed disabled:opacity-60';
+      `rounded-lg border font-medium transition-colors duration-200 ${sizeClass} ` +
+      'disabled:cursor-not-allowed disabled:opacity-50';
 
     const effectiveVariant = this.active() ? this.activeVariant() : this.variant();
     const effectiveAppearance = this.active() ? 'solid' : this.appearance();
@@ -46,45 +45,46 @@ export class UiActionButtonComponent {
   ): string {
     if (appearance === 'solid') {
       if (variant === 'primary') {
-        return 'bg-sky-700 text-white hover:bg-sky-600';
+        return 'border-accent bg-accent text-white hover:bg-accent-hover';
       }
       if (variant === 'success') {
-        return 'bg-emerald-600 text-white hover:bg-emerald-500';
+        return 'border-success bg-success text-white hover:bg-success/90';
       }
       if (variant === 'warning') {
-        return 'bg-amber-600 text-white hover:bg-amber-500';
+        return 'border-warning bg-warning text-white hover:bg-warning/90';
       }
       if (variant === 'danger') {
-        return 'bg-rose-700 text-white hover:bg-rose-600';
+        return 'border-danger bg-danger text-white hover:bg-danger/90';
       }
       return this.isDark()
-        ? 'bg-slate-700 text-slate-100 hover:bg-slate-600'
-        : 'bg-slate-200 text-slate-800 hover:bg-slate-300';
+        ? 'border-dark-border bg-dark-elevated text-dark-text hover:border-accent hover:text-accent'
+        : 'border-light-border bg-light-surface text-light-text hover:border-accent';
     }
 
+    // Outline appearance
     if (variant === 'primary') {
       return this.isDark()
-        ? 'border border-sky-600 text-sky-300 hover:bg-sky-900/30'
-        : 'border border-sky-300 text-sky-700 hover:bg-sky-50';
+        ? 'border-accent/50 text-accent hover:border-accent hover:bg-accent/10'
+        : 'border-accent/50 text-accent hover:border-accent hover:bg-accent-subtle';
     }
     if (variant === 'success') {
       return this.isDark()
-        ? 'border border-emerald-600 text-emerald-300 hover:bg-emerald-900/30'
-        : 'border border-emerald-300 text-emerald-700 hover:bg-emerald-50';
+        ? 'border-success/50 text-success hover:border-success hover:bg-success/10'
+        : 'border-success/50 text-success hover:border-success hover:bg-success-light';
     }
     if (variant === 'warning') {
       return this.isDark()
-        ? 'border border-amber-600 text-amber-300 hover:bg-amber-900/30'
-        : 'border border-amber-300 text-amber-700 hover:bg-amber-50';
+        ? 'border-warning/50 text-warning hover:border-warning hover:bg-warning/10'
+        : 'border-warning/50 text-warning hover:border-warning hover:bg-warning-light';
     }
     if (variant === 'danger') {
       return this.isDark()
-        ? 'border border-rose-600 text-rose-300 hover:bg-rose-900/30'
-        : 'border border-rose-300 text-rose-700 hover:bg-rose-50';
+        ? 'border-danger/50 text-danger hover:border-danger hover:bg-danger/10'
+        : 'border-danger/50 text-danger hover:border-danger hover:bg-danger-light';
     }
 
     return this.isDark()
-      ? 'border border-slate-600 text-slate-200 hover:bg-slate-700'
-      : 'border border-slate-300 text-slate-700 hover:bg-slate-100';
+      ? 'border-dark-border text-dark-text hover:border-accent hover:text-accent'
+      : 'border-light-border text-light-text hover:border-accent hover:text-accent';
   }
 }
