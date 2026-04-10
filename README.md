@@ -14,10 +14,11 @@ The Rescue Lite (experimental) feature in this app performs firmware flashing op
 ## Usage
 
 1. Download and install the app from [Releases](https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases).
-2. Click **Sign in** - your browser will open the Lenovo login page.
-3. After signing in, paste the resulting URL back into the app.
-4. Search for your device model to browse available firmware.
-5. Download firmware packages directly to your computer.
+  1.1 On Windows: Click on "Switch to LMFD" 
+4. Click **Sign in** - your browser will open the Lenovo login page.
+5. After signing in, click on "Open in Lenovo Moto Firmware Downloader".
+6. Search for your device model to browse available firmware.
+7. Download firmware packages directly to your computer.
 
 Rescue Lite *(Optional)* (Not fully functional):
 - Use **Rescue Lite** *(experimental)* to flash firmware onto a device.
@@ -64,8 +65,8 @@ bun run start:clean
 | `bun run check` | Type-check the codebase |
 
 ### Build Hooks
-- `scripts/finalize-app.ts` - Patches app icons and Linux manifests (postBuild).
-- `scripts/finalize-installer.ts` - Patches the Windows Setup icon (postPackage).
+- `tooling/build/finalize-app.ts` - postBuild hook that packages bundled runtime dependencies and applies platform-specific app metadata/assets for Linux, Windows, and macOS.
+- `tooling/build/finalize-installer.ts` - postPackage hook that builds Linux AppImage artifacts and patches/repackages the Windows Setup installer.
 
 ### Storage Paths
 - Dev from repo: `./assets/data/config.json` and `./assets/data/models-catalog.json`
