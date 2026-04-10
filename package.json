@@ -34,7 +34,7 @@
     "biome:ci": "bunx --bun @biomejs/biome ci"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.10",
+    "@biomejs/biome": "^2.4.11",
     "@types/bun": "^1.3.11",
     "rcedit": "^5.0.2"
   },
