@@ -6,7 +6,9 @@ import {
   createDesktopIntegration,
   getAppInfo,
   getDesktopPromptPreference,
+  restoreSoftwareFixProtocolHandler,
   setDesktopPromptPreference,
+  switchSoftwareFixProtocolToLmfd,
 } from '../../../desktop-integration.ts';
 import type { BunRpcRequestHandlers } from '../../../rpc/request-handler-types.ts';
 import { installWindowsMtkDriverManually } from '../../rescue/commands/windows-mtk-driver-installer.ts';
@@ -24,6 +26,8 @@ export function createSystemHandlers(): Pick<
   | 'getDesktopPromptPreference'
   | 'setDesktopPromptPreference'
   | 'getAppInfo'
+  | 'switchSoftwareFixProtocolToLmfd'
+  | 'restoreSoftwareFixProtocolHandler'
   | 'checkFrameworkUpdate'
   | 'downloadFrameworkUpdate'
   | 'applyFrameworkUpdate'
@@ -55,6 +59,12 @@ export function createSystemHandlers(): Pick<
     },
     getAppInfo: async () => {
       return getAppInfo();
+    },
+    switchSoftwareFixProtocolToLmfd: async () => {
+      return switchSoftwareFixProtocolToLmfd();
+    },
+    restoreSoftwareFixProtocolHandler: async () => {
+      return restoreSoftwareFixProtocolHandler();
     },
     checkFrameworkUpdate: async () => {
       return await Updater.checkForUpdate();

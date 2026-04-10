@@ -21,9 +21,7 @@ export class AuthWorkflowService {
     await this.ui.runAction('Opening Lenovo login in browser...', async () => {
       const response = await this.backend.startBrowserAuth();
       if (!response.ok) throw new Error(response.error || 'Could not open Lenovo login.');
-      this.ui.status.set(
-        'Login opened in your browser. Complete sign-in there, then click "Open Lenovo Moto Firmware Downloader" in the softwarefix:// prompt.',
-      );
+      this.ui.status.set('Login opened in your browser. Complete sign-in there to continue.');
     });
     void this.waitForBrowserCallback();
   }

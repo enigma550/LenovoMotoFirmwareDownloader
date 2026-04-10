@@ -108,11 +108,12 @@ export class AboutWorkspaceComponent implements OnInit {
     await this.store.openUrl(this.releasePageUrl());
   }
 
-  async openDefaultAppsSettings() {
-    const result = await this.store.openDefaultAppsSettings();
-    if (!result.ok) {
-      this.ui.showToast(result.error || 'Unable to open Windows Default Apps settings.', 'error');
-    }
+  async switchSoftwareFixProtocolToLmfd() {
+    await this.store.switchSoftwareFixProtocolToLmfd();
+  }
+
+  async restoreSoftwareFixProtocolHandler() {
+    await this.store.restoreSoftwareFixProtocolHandler();
   }
 
   async checkUpdates() {

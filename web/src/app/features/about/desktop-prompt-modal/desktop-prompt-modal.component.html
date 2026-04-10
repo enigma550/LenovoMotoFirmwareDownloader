@@ -1,193 +1,126 @@
 @if (store.showDesktopPrompt()) {
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" (click)="dismiss()"></div>
+    <div class="absolute inset-0 bg-black/60 transition-opacity" (click)="dismiss()"></div>
 
     <div
-      class="relative w-full max-w-xl overflow-hidden rounded-[1.75rem] border p-6 text-left shadow-2xl sm:p-8"
+      class="relative w-full max-w-md overflow-hidden rounded-2xl border p-6 text-left align-middle shadow-xl"
       [class.border-dark-border]="store.isDark()"
       [class.bg-dark-surface]="store.isDark()"
       [class.border-light-border]="!store.isDark()"
       [class.bg-light-surface]="!store.isDark()"
     >
-      <div
-        class="pointer-events-none absolute inset-x-0 top-0 h-40"
-        [class.bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.22),_transparent_60%),radial-gradient(circle_at_top_right,_rgba(249,115,22,0.16),_transparent_46%)]]="isWindowsPrompt()"
-        [class.bg-[radial-gradient(circle_at_top_left,_rgba(34,197,94,0.16),_transparent_56%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.14),_transparent_46%)]]="!isWindowsPrompt()"
-      ></div>
+      <h3
+        class="text-xl font-bold leading-6"
+        [class.text-dark-text-bright]="store.isDark()"
+        [class.text-light-text-bright]="!store.isDark()"
+      >
+        @if (isWindowsPrompt()) {
+          Default App (Windows)
+        } @else {
+          Desktop Shortcut
+        }
+      </h3>
 
-      <div class="relative">
-        <div class="flex items-start gap-4">
-          <div
-            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border"
+      <div class="mt-4">
+        @if (isWindowsPrompt()) {
+          <p
+            class="text-sm"
+            [class.text-dark-text]="store.isDark()"
+            [class.text-light-text]="!store.isDark()"
+          >
+            Windows only allows one handler for <span class="font-mono">softwarefix://</span>.
+            Let LMFD register that protocol for this Windows user if you want Lenovo login callbacks
+            to return here.
+            <br />
+            <br />
+            You can switch it back from the About tab later.
+          </p>
+        } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
+          <p
+            class="text-sm"
+            [class.text-dark-text]="store.isDark()"
+            [class.text-light-text]="!store.isDark()"
+          >
+            An existing desktop shortcut was found, but it has an incorrect window class setting.
+            This can cause the application to not group correctly in your dock and taskbar.
+            <br />
+            <br />
+            Would you like to fix it?
+          </p>
+        } @else {
+          <p
+            class="text-sm"
+            [class.text-dark-text]="store.isDark()"
+            [class.text-light-text]="!store.isDark()"
+          >
+            It looks like you don't have a desktop shortcut configured.
+            <br />
+            <br />
+            Would you like to create one so it appears correctly in your application launcher and
+            dock?
+          </p>
+        }
+      </div>
+
+      <div class="mt-8 flex items-center justify-between">
+        <label
+          class="flex cursor-pointer select-none items-center gap-2 text-sm"
+          [class.text-dark-text-dim]="store.isDark()"
+          [class.text-light-text-dim]="!store.isDark()"
+        >
+          <input
+            type="checkbox"
+            class="h-4 w-4 rounded border-2 accent-accent focus:ring-accent"
             [class.border-dark-border]="store.isDark()"
             [class.bg-dark-elevated]="store.isDark()"
             [class.border-light-border]="!store.isDark()"
-            [class.bg-white/80]="!store.isDark()"
-          >
-            @if (isWindowsPrompt()) {
-              <svg
-                class="h-7 w-7 text-accent"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-            } @else {
-              <span class="text-2xl">🐧</span>
-            }
-          </div>
+            [class.bg-light-surface]="!store.isDark()"
+            [checked]="dontAskAgain()"
+            (change)="toggleDontAsk($event)"
+          />
+          Don't ask again
+        </label>
 
-          <div class="min-w-0">
-            <p
-              class="text-[0.72rem] font-semibold uppercase tracking-[0.28em]"
-              [class.text-dark-text-dim]="store.isDark()"
-              [class.text-light-text-dim]="!store.isDark()"
-            >
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-200"
+            [class.border-dark-border]="store.isDark()"
+            [class.text-dark-text]="store.isDark()"
+            [class.hover:bg-dark-elevated]="store.isDark()"
+            [class.border-light-border]="!store.isDark()"
+            [class.text-light-text]="!store.isDark()"
+            [class.hover:bg-light-bg]="!store.isDark()"
+            (click)="dismiss()"
+            [disabled]="isProcessing()"
+          >
+            Not now
+          </button>
+
+          <button
+            type="button"
+            class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+            (click)="runPrimaryAction()"
+            [disabled]="isProcessing()"
+          >
+            @if (isProcessing()) {
               @if (isWindowsPrompt()) {
-                Windows Setup
-              } @else {
-                Linux Integration
-              }
-            </p>
-            <h3
-              class="mt-2 text-2xl font-black leading-tight tracking-tight"
-              [class.text-dark-text-bright]="store.isDark()"
-              [class.text-light-text-bright]="!store.isDark()"
-            >
-              @if (isWindowsPrompt()) {
-                Open Default Apps and point `softwarefix://` to LMFD
+                Switching...
               } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
-                Repair the existing launcher entry
+                Fixing...
               } @else {
-                Create a launcher shortcut for LMFD
+                Creating...
               }
-            </h3>
-          </div>
-        </div>
-
-        <div class="mt-5 space-y-4">
-          @if (isWindowsPrompt()) {
-            <p
-              class="text-sm leading-6"
-              [class.text-dark-text]="store.isDark()"
-              [class.text-light-text]="!store.isDark()"
-            >
-              Windows only allows one default handler for `softwarefix://`. If you want Lenovo login
-              callbacks to return here, open Default Apps and set the protocol to LMFD.
-            </p>
-
-            <div
-              class="rounded-2xl border px-4 py-4"
-              [class.border-dark-border]="store.isDark()"
-              [class.bg-dark-elevated/60]="store.isDark()"
-              [class.border-light-border]="!store.isDark()"
-              [class.bg-light-bg/80]="!store.isDark()"
-            >
-              <p
-                class="text-sm font-semibold"
-                [class.text-dark-text-bright]="store.isDark()"
-                [class.text-light-text-bright]="!store.isDark()"
-              >
-                Note
-              </p>
-              <p
-                class="mt-2 text-sm leading-6"
-                [class.text-dark-text-dim]="store.isDark()"
-                [class.text-light-text-dim]="!store.isDark()"
-              >
-                You can always reopen this settings page later from the About tab. This only opens
-                Windows Settings, it does not force the change automatically.
-              </p>
-            </div>
-          } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
-            <p
-              class="text-sm leading-6"
-              [class.text-dark-text]="store.isDark()"
-              [class.text-light-text]="!store.isDark()"
-            >
-              An existing desktop shortcut was found, but it has the wrong window class. That can
-              break dock grouping and taskbar behavior. Fixing it updates the launcher entry in
-              place.
-            </p>
-          } @else {
-            <p
-              class="text-sm leading-6"
-              [class.text-dark-text]="store.isDark()"
-              [class.text-light-text]="!store.isDark()"
-            >
-              It looks like no desktop shortcut is configured yet. Creating one makes LMFD appear
-              correctly in your launcher and dock.
-            </p>
-          }
-        </div>
-
-        <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <label
-            class="flex items-center gap-2 text-sm cursor-pointer select-none"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            <input
-              type="checkbox"
-              class="h-4 w-4 rounded border-2 accent-accent focus:ring-accent"
-              [class.border-dark-border]="store.isDark()"
-              [class.bg-dark-elevated]="store.isDark()"
-              [class.border-light-border]="!store.isDark()"
-              [class.bg-light-surface]="!store.isDark()"
-              [checked]="dontAskAgain()"
-              (change)="toggleDontAsk($event)"
-            />
-            Don't ask again
-          </label>
-
-          <div class="flex items-center gap-3">
-            <button
-              type="button"
-              class="rounded-full border px-4 py-2 text-sm font-medium transition-colors duration-200"
-              [class.border-dark-border]="store.isDark()"
-              [class.text-dark-text]="store.isDark()"
-              [class.hover:bg-dark-elevated]="store.isDark()"
-              [class.border-light-border]="!store.isDark()"
-              [class.text-light-text]="!store.isDark()"
-              [class.hover:bg-light-bg]="!store.isDark()"
-              (click)="dismiss()"
-              [disabled]="isProcessing()"
-            >
-              Not now
-            </button>
-
-            <button
-              type="button"
-              class="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
-              (click)="runPrimaryAction()"
-              [disabled]="isProcessing()"
-            >
-              @if (isProcessing()) {
-                @if (isWindowsPrompt()) {
-                  Opening settings...
-                } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
-                  Fixing...
-                } @else {
-                  Creating...
-                }
+            } @else {
+              @if (isWindowsPrompt()) {
+                Switch to LMFD
+              } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
+                ✓ Fix it
               } @else {
-                @if (isWindowsPrompt()) {
-                  Open Settings
-                } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
-                  Fix Shortcut
-                } @else {
-                  Create Shortcut
-                }
+                ✓ Create
               }
-            </button>
-          </div>
+            }
+          </button>
         </div>
       </div>
     </div>

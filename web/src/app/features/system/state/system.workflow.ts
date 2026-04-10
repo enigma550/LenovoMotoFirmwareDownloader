@@ -18,7 +18,7 @@ export class SystemWorkflowService {
   private readonly auth = inject(AuthWorkflowService);
 
   readonly showDesktopPrompt = signal(false);
-  readonly desktopPromptReason = signal<'missing' | 'wrong_wmclass' | 'windows_default_apps'>(
+  readonly desktopPromptReason = signal<'missing' | 'wrong_wmclass' | 'windows_protocol_handler'>(
     'missing',
   );
   readonly appInfo = signal<AppInfo | null>(null);
@@ -87,8 +87,58 @@ export class SystemWorkflowService {
     }
   }
 
-  async openDefaultAppsSettings() {
-    return this.openUrl('ms-settings:defaultapps');
+  async switchSoftwareFixProtocolToLmfd() {
+    try {
+      const response = await this.backend.switchSoftwareFixProtocolToLmfd();
+      if (response.ok) {
+        this.ui.status.set(
+          'LMFD is now registered for softwarefix:// on this Windows user account.',
+        );
+        this.ui.showToast(
+          'LMFD now handles softwarefix:// for this Windows user.',
+          'success',
+          3400,
+        );
+      } else {
+        this.ui.status.set(response.error || 'Could not switch softwarefix:// to LMFD.');
+        this.ui.showToast(
+          response.error || 'Could not switch softwarefix:// to LMFD.',
+          'error',
+          4600,
+        );
+      }
+      return response;
+    } catch (error) {
+      const message = this.ui.getErrorMessage(error);
+      this.ui.status.set(message);
+      this.ui.showToast(message, 'error', 4600);
+      return { ok: false, error: message };
+    }
+  }
+
+  async restoreSoftwareFixProtocolHandler() {
+    try {
+      const response = await this.backend.restoreSoftwareFixProtocolHandler();
+      if (response.ok) {
+        this.ui.status.set('Restored the previous softwarefix:// handler.');
+        this.ui.showToast('Restored the previous softwarefix:// handler.', 'success', 3400);
+      } else {
+        this.ui.status.set(
+          response.error || 'Could not restore the previous softwarefix:// handler.',
+        );
+        this.ui.showToast(
+          response.error || 'Could not restore the previous softwarefix:// handler.',
+          'error',
+          4600,
+        );
+      }
+      return response;
+    } catch (error) {
+      const message = this.ui.getErrorMessage(error);
+      this.ui.status.set(message);
+      this.ui.showToast(message, 'error', 4600);
+      return { ok: false, error: message };
+    }
   }
 
   async checkFrameworkUpdate(): Promise<FrameworkUpdateInfo | null> {
@@ -148,13 +198,13 @@ export class SystemWorkflowService {
       } else {
         const message =
           response.error || response.detail || 'Windows QDLoader driver install failed.';
-        this.ui.status.set('Windows QDLoader driver install failed.');
+        this.ui.status.set(message);
         this.ui.showToast(message, 'error', 4600);
       }
       return response;
     } catch (error) {
       const message = this.ui.getErrorMessage(error);
-      this.ui.status.set('Windows QDLoader driver install failed.');
+      this.ui.status.set(message);
       this.ui.showToast(message, 'error', 4600);
       return {
         ok: false,
@@ -178,13 +228,13 @@ export class SystemWorkflowService {
         );
       } else {
         const message = response.error || response.detail || 'Windows SPD driver install failed.';
-        this.ui.status.set('Windows SPD driver install failed.');
+        this.ui.status.set(message);
         this.ui.showToast(message, 'error', 4600);
       }
       return response;
     } catch (error) {
       const message = this.ui.getErrorMessage(error);
-      this.ui.status.set('Windows SPD driver install failed.');
+      this.ui.status.set(message);
       this.ui.showToast(message, 'error', 4600);
       return {
         ok: false,
@@ -209,13 +259,13 @@ export class SystemWorkflowService {
       } else {
         const message =
           response.error || response.detail || 'Windows MediaTek driver install failed.';
-        this.ui.status.set('Windows MediaTek driver install failed.');
+        this.ui.status.set(message);
         this.ui.showToast(message, 'error', 4600);
       }
       return response;
     } catch (error) {
       const message = this.ui.getErrorMessage(error);
-      this.ui.status.set('Windows MediaTek driver install failed.');
+      this.ui.status.set(message);
       this.ui.showToast(message, 'error', 4600);
       return {
         ok: false,

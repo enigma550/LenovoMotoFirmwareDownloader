@@ -1,122 +1,63 @@
 <section
-  class="relative overflow-hidden rounded-[1.75rem] border p-6 transition-all duration-200 sm:p-8"
+  class="rounded-xl border p-6 transition-all duration-200"
   [class.border-dark-border]="store.isDark()"
   [class.bg-dark-surface]="store.isDark()"
   [class.border-light-border]="!store.isDark()"
   [class.bg-light-surface]="!store.isDark()"
   [class.shadow-sm]="!store.isDark()"
 >
-  <div
-    class="pointer-events-none absolute inset-x-0 top-0 h-36 opacity-80"
-    [class.bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_58%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.12),_transparent_48%)]]="store.isDark()"
-    [class.bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_58%),radial-gradient(circle_at_top_right,_rgba(34,197,94,0.14),_transparent_48%)]]="!store.isDark()"
-  ></div>
+  <h2
+    class="text-2xl font-bold"
+    [class.text-dark-text-bright]="store.isDark()"
+    [class.text-light-text-bright]="!store.isDark()"
+  >
+    About
+  </h2>
 
-  <div class="relative">
-    <div class="flex flex-wrap items-start justify-between gap-6">
-      <div class="max-w-2xl">
-        <p
-          class="text-[0.72rem] font-semibold uppercase tracking-[0.28em]"
+  <div
+    class="mt-6 space-y-3 text-sm"
+    [class.text-dark-text]="store.isDark()"
+    [class.text-light-text]="!store.isDark()"
+  >
+    <p class="flex items-center gap-3">
+      <span
+        class="inline-block w-20 text-xs font-semibold uppercase tracking-wide"
+        [class.text-dark-text-dim]="store.isDark()"
+        [class.text-light-text-dim]="!store.isDark()"
+      >Version</span>
+      <span class="text-accent font-medium">{{ store.appInfo()?.version || 'Unknown' }}</span>
+    </p>
+    <p class="flex items-center gap-3">
+      <span
+        class="inline-block w-20 text-xs font-semibold uppercase tracking-wide"
+        [class.text-dark-text-dim]="store.isDark()"
+        [class.text-light-text-dim]="!store.isDark()"
+      >Platform</span>
+      <span class="capitalize">{{ store.appInfo()?.platform || 'Unknown' }}</span>
+    </p>
+    @if (store.appInfo()?.channel) {
+      <p class="flex items-center gap-3">
+        <span
+          class="inline-block w-20 text-xs font-semibold uppercase tracking-wide"
           [class.text-dark-text-dim]="store.isDark()"
           [class.text-light-text-dim]="!store.isDark()"
-        >
-          Control Deck
-        </p>
-        <h2
-          class="mt-3 text-3xl font-black tracking-tight sm:text-4xl"
-          [class.text-dark-text-bright]="store.isDark()"
-          [class.text-light-text-bright]="!store.isDark()"
-        >
-          Lenovo Moto Firmware Downloader
-        </h2>
-        <p
-          class="mt-3 max-w-xl text-sm leading-6"
-          [class.text-dark-text]="store.isDark()"
-          [class.text-light-text]="!store.isDark()"
-        >
-          Firmware tools, rescue workflows and backup utilities in one desktop runtime. This panel
-          is where protocol handoff, release checks and platform-specific integration live.
-        </p>
-      </div>
-
-      <div
-        class="grid min-w-[18rem] gap-3 sm:grid-cols-2"
-        [class.text-dark-text]="store.isDark()"
-        [class.text-light-text]="!store.isDark()"
-      >
-        <div
-          class="rounded-2xl border px-4 py-3 backdrop-blur"
-          [class.border-dark-border]="store.isDark()"
-          [class.bg-dark-elevated/80]="store.isDark()"
-          [class.border-light-border]="!store.isDark()"
-          [class.bg-white/70]="!store.isDark()"
-        >
-          <p
-            class="text-[0.7rem] font-semibold uppercase tracking-[0.24em]"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            Version
-          </p>
-          <p class="mt-2 text-lg font-bold text-accent">{{ store.appInfo()?.version || 'Unknown' }}</p>
-        </div>
-        <div
-          class="rounded-2xl border px-4 py-3 backdrop-blur"
-          [class.border-dark-border]="store.isDark()"
-          [class.bg-dark-elevated/80]="store.isDark()"
-          [class.border-light-border]="!store.isDark()"
-          [class.bg-white/70]="!store.isDark()"
-        >
-          <p
-            class="text-[0.7rem] font-semibold uppercase tracking-[0.24em]"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            Platform
-          </p>
-          <p class="mt-2 text-lg font-bold capitalize">{{ store.appInfo()?.platform || 'Unknown' }}</p>
-        </div>
-        @if (store.appInfo()?.channel) {
-          <div
-            class="rounded-2xl border px-4 py-3 backdrop-blur"
-            [class.border-dark-border]="store.isDark()"
-            [class.bg-dark-elevated/80]="store.isDark()"
-            [class.border-light-border]="!store.isDark()"
-            [class.bg-white/70]="!store.isDark()"
-          >
-            <p
-              class="text-[0.7rem] font-semibold uppercase tracking-[0.24em]"
-              [class.text-dark-text-dim]="store.isDark()"
-              [class.text-light-text-dim]="!store.isDark()"
-            >
-              Channel
-            </p>
-            <p class="mt-2 text-lg font-bold capitalize">{{ store.appInfo()?.channel }}</p>
-          </div>
-        }
-        <div
-          class="rounded-2xl border px-4 py-3 backdrop-blur"
-          [class.border-dark-border]="store.isDark()"
-          [class.bg-dark-elevated/80]="store.isDark()"
-          [class.border-light-border]="!store.isDark()"
-          [class.bg-white/70]="!store.isDark()"
-        >
-          <p
-            class="text-[0.7rem] font-semibold uppercase tracking-[0.24em]"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            Maintainer
-          </p>
-          <p class="mt-2 text-lg font-bold text-success">enigma550</p>
-        </div>
-      </div>
-    </div>
+        >Channel</span>
+        <span class="capitalize">{{ store.appInfo()?.channel }}</span>
+      </p>
+    }
+    <p class="flex items-center gap-3">
+      <span
+        class="inline-block w-20 text-xs font-semibold uppercase tracking-wide"
+        [class.text-dark-text-dim]="store.isDark()"
+        [class.text-light-text-dim]="!store.isDark()"
+      >Made by</span>
+      <span class="font-semibold text-success">enigma550</span>
+    </p>
   </div>
 
-  <div class="relative mt-8 flex flex-wrap gap-3">
+  <div class="mt-8 flex flex-wrap gap-3">
     <button
-      class="flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-all"
+      class="flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-medium transition-all"
       [class.border-dark-border]="store.isDark()"
       [class.bg-dark-elevated]="store.isDark()"
       [class.text-dark-text]="store.isDark()"
@@ -144,7 +85,7 @@
       Git Repository
     </button>
     <button
-      class="flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-all"
+      class="flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-medium transition-all"
       [class.border-dark-border]="store.isDark()"
       [class.bg-dark-elevated]="store.isDark()"
       [class.text-dark-text]="store.isDark()"
@@ -171,146 +112,57 @@
       </svg>
       Check Updates
     </button>
-    @if (isWindowsPlatform()) {
-      <button
-        class="flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
-        type="button"
-        (click)="openDefaultAppsSettings()"
-      >
-        <svg
-          class="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <rect x="3" y="3" width="7" height="7"></rect>
-          <rect x="14" y="3" width="7" height="7"></rect>
-          <rect x="14" y="14" width="7" height="7"></rect>
-          <rect x="3" y="14" width="7" height="7"></rect>
-        </svg>
-        Open Default Apps Settings
-      </button>
-    }
   </div>
 
   @if (isWindowsPlatform()) {
     <div
-      class="mt-8 overflow-hidden rounded-[1.5rem] border"
+      class="mt-8 border-t pt-6"
       [class.border-dark-border]="store.isDark()"
       [class.border-light-border]="!store.isDark()"
     >
-      <div
-        class="grid gap-0 md:grid-cols-[1.1fr_0.9fr]"
-        [class.bg-dark-elevated/40]="store.isDark()"
-        [class.bg-light-bg/80]="!store.isDark()"
+      <h3 class="flex items-center gap-2 text-sm font-semibold text-warning">
+        <span>⊞</span>
+        <span>Default App (Windows)</span>
+      </h3>
+      <p
+        class="mt-2 text-sm"
+        [class.text-dark-text-dim]="store.isDark()"
+        [class.text-light-text-dim]="!store.isDark()"
       >
-        <div class="p-6 sm:p-7">
-          <p
-            class="text-[0.72rem] font-semibold uppercase tracking-[0.28em]"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            Windows Protocol Handoff
-          </p>
-          <h3
-            class="mt-3 text-2xl font-black tracking-tight"
-            [class.text-dark-text-bright]="store.isDark()"
-            [class.text-light-text-bright]="!store.isDark()"
-          >
-            Set LMFD as the `softwarefix://` target when you need it
-          </h3>
-          <p
-            class="mt-3 max-w-xl text-sm leading-6"
-            [class.text-dark-text]="store.isDark()"
-            [class.text-light-text]="!store.isDark()"
-          >
-            Windows only allows one default handler for this protocol. If you want login callbacks
-            to return to LMFD, open Default Apps and assign the `softwarefix` protocol there. You
-            can always reopen that settings page from this About panel later.
-          </p>
-
-          <div class="mt-5 flex flex-wrap gap-3">
-            <button
-              class="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
-              type="button"
-              (click)="openDefaultAppsSettings()"
-            >
-              Open Default Apps
-            </button>
-            <button
-              class="rounded-full border px-5 py-2.5 text-sm font-medium transition-all"
-              [class.border-dark-border]="store.isDark()"
-              [class.bg-dark-elevated]="store.isDark()"
-              [class.text-dark-text]="store.isDark()"
-              [class.hover:border-dark-border-bright]="store.isDark()"
-              [class.border-light-border]="!store.isDark()"
-              [class.bg-light-surface]="!store.isDark()"
-              [class.text-light-text]="!store.isDark()"
-              [class.hover:border-light-border-bright]="!store.isDark()"
-              type="button"
-              (click)="openRepo()"
-            >
-              Read project docs
-            </button>
-          </div>
-        </div>
-
-        <div
-          class="border-t p-6 md:border-l md:border-t-0 sm:p-7"
-          [class.border-dark-border]="store.isDark()"
-          [class.border-light-border]="!store.isDark()"
+        Windows allows only one handler for the <span class="font-mono">softwarefix://</span>
+        protocol. Use the buttons below to point the handler at LMFD or restore the previously
+        saved Lenovo Software Fix command.
+      </p>
+      <p
+        class="mt-2 text-sm"
+        [class.text-dark-text-dim]="store.isDark()"
+        [class.text-light-text-dim]="!store.isDark()"
+      >
+        LMFD changes this per-user on Windows, so you do not need to hunt through Default Apps.
+      </p>
+      <div class="mt-3 flex flex-wrap gap-3">
+        <button
+          class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+          type="button"
+          (click)="switchSoftwareFixProtocolToLmfd()"
         >
-          <div class="grid gap-3 text-sm">
-            <div
-              class="rounded-2xl border px-4 py-3"
-              [class.border-dark-border]="store.isDark()"
-              [class.bg-dark-surface]="store.isDark()"
-              [class.border-light-border]="!store.isDark()"
-              [class.bg-light-surface]="!store.isDark()"
-            >
-              <p
-                class="font-semibold"
-                [class.text-dark-text-bright]="store.isDark()"
-                [class.text-light-text-bright]="!store.isDark()"
-              >
-                Why this exists
-              </p>
-              <p
-                class="mt-2 leading-6"
-                [class.text-dark-text-dim]="store.isDark()"
-                [class.text-light-text-dim]="!store.isDark()"
-              >
-                Lenovo Software Fix and LMFD cannot both be the active Windows handler for the same
-                protocol at once.
-              </p>
-            </div>
-            <div
-              class="rounded-2xl border px-4 py-3"
-              [class.border-dark-border]="store.isDark()"
-              [class.bg-dark-surface]="store.isDark()"
-              [class.border-light-border]="!store.isDark()"
-              [class.bg-light-surface]="!store.isDark()"
-            >
-              <p
-                class="font-semibold"
-                [class.text-dark-text-bright]="store.isDark()"
-                [class.text-light-text-bright]="!store.isDark()"
-              >
-                Safe fallback
-              </p>
-              <p
-                class="mt-2 leading-6"
-                [class.text-dark-text-dim]="store.isDark()"
-                [class.text-light-text-dim]="!store.isDark()"
-              >
-                If you switch it away later, come back here and reopen Default Apps from About.
-              </p>
-            </div>
-          </div>
-        </div>
+          Switch `softwarefix://` to LMFD
+        </button>
+        <button
+          class="rounded-lg border px-4 py-2 text-sm font-medium transition-all"
+          [class.border-dark-border]="store.isDark()"
+          [class.bg-dark-elevated]="store.isDark()"
+          [class.text-dark-text]="store.isDark()"
+          [class.hover:border-dark-border-bright]="store.isDark()"
+          [class.border-light-border]="!store.isDark()"
+          [class.bg-light-surface]="!store.isDark()"
+          [class.text-light-text]="!store.isDark()"
+          [class.hover:border-light-border-bright]="!store.isDark()"
+          type="button"
+          (click)="restoreSoftwareFixProtocolHandler()"
+        >
+          Restore previous handler
+        </button>
       </div>
     </div>
   }
@@ -321,7 +173,7 @@
       [class.border-dark-border]="store.isDark()"
       [class.border-light-border]="!store.isDark()"
     >
-      <h3 class="flex items-center gap-2 text-sm font-semibold" [class.text-warning]="true">
+      <h3 class="flex items-center gap-2 text-sm font-semibold text-warning">
         <span>🐧</span>
         <span>Desktop Integration (Linux)</span>
       </h3>
@@ -373,7 +225,7 @@
         [class.bg-light-surface]="!store.isDark()"
       >
         <div
-          class="mx-auto flex h-14 w-14 items-center justify-center rounded-full mb-5"
+          class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full"
           [class.bg-accent/10]="store.isDark()"
           [class.text-accent]="true"
           [class.bg-accent-light]="!store.isDark()"
@@ -391,14 +243,14 @@
           </svg>
         </div>
         <h2
-          class="text-xl font-bold text-center"
+          class="text-center text-xl font-bold"
           [class.text-dark-text-bright]="store.isDark()"
           [class.text-light-text-bright]="!store.isDark()"
         >
           Update Available
         </h2>
         <p
-          class="mt-4 mb-4 text-center text-sm"
+          class="mb-4 mt-4 text-center text-sm"
           [class.text-dark-text]="store.isDark()"
           [class.text-light-text]="!store.isDark()"
         >
@@ -457,41 +309,22 @@
                     cy="12"
                     r="10"
                     stroke="currentColor"
-                    stroke-width="3"
+                    stroke-width="4"
                   ></circle>
                   <path
                     class="opacity-75"
-                    stroke="currentColor"
-                    stroke-width="3"
-                    stroke-linecap="round"
-                    d="M12 2a10 10 0 0 0-10 10"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
                   ></path>
                 </svg>
+                Downloading...
+              } @else if (isAutomatedUpdate()) {
+                Download & Apply
               } @else {
-                <svg
-                  class="h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
+                Open Download Page
               }
-              {{ isAutomatedUpdate() ? 'Update' : 'Download' }}
             </button>
           </div>
-          <button
-            class="mx-auto mt-3 text-sm opacity-50 transition-opacity hover:opacity-100"
-            type="button"
-            (click)="showUpdateModal.set(false)"
-            [class.text-dark-text]="store.isDark()"
-            [class.text-light-text]="!store.isDark()"
-          >
-            Maybe later
-          </button>
         </div>
       </div>
     </div>

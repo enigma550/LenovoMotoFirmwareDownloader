@@ -38,8 +38,12 @@ export class AboutFacade {
     return this.system.openUrl(url);
   }
 
-  async openDefaultAppsSettings() {
-    return this.system.openDefaultAppsSettings();
+  async switchSoftwareFixProtocolToLmfd() {
+    return this.system.switchSoftwareFixProtocolToLmfd();
+  }
+
+  async restoreSoftwareFixProtocolHandler() {
+    return this.system.restoreSoftwareFixProtocolHandler();
   }
 
   async checkFrameworkUpdate() {

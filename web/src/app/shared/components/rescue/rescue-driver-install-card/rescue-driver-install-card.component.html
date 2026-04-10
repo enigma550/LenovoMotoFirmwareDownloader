@@ -1,5 +1,5 @@
 <div
-  class="rounded-lg border p-3"
+  class="space-y-3 rounded-lg border p-3"
   [class.border-dark-border]="isDark()"
   [class.bg-dark-elevated]="isDark()"
   [class.border-light-border]="!isDark()"
@@ -12,10 +12,10 @@
   >
     {{ title() }}
   </p>
-  <p class="mt-1 text-xs" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+  <p class="text-xs" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
     {{ description() }}
   </p>
-  <div class="mt-3">
+  <div>
     <app-rescue-dialog-button
       [label]="buttonLabel()"
       [isDark]="isDark()"
@@ -25,7 +25,7 @@
     />
   </div>
   @if (installed() && installedNote()) {
-    <p class="mt-2 text-xs text-success">
+    <p class="text-xs text-success">
       ✓ {{ installedNote() }}
     </p>
   }

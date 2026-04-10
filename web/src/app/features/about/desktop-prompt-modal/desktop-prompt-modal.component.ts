@@ -12,13 +12,17 @@ export class DesktopPromptModalComponent {
   protected dontAskAgain = signal(false);
 
   protected isWindowsPrompt() {
-    return this.store.desktopPromptReason() === 'windows_default_apps';
+    return this.store.desktopPromptReason() === 'windows_protocol_handler';
   }
 
   async runPrimaryAction() {
     this.isProcessing.set(true);
     if (this.isWindowsPrompt()) {
-      await this.store.openDefaultAppsSettings();
+      const result = await this.store.switchSoftwareFixProtocolToLmfd();
+      if (!result.ok) {
+        this.isProcessing.set(false);
+        return;
+      }
     } else {
       await this.store.createDesktopIntegration();
     }

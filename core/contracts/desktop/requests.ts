@@ -294,6 +294,8 @@ export interface DesktopApi {
   ) => Promise<{ ok: boolean; ask: boolean; error?: string }>;
   getAppInfo: () => Promise<AppInfo>;
   openUrl: (url: string) => Promise<{ ok: boolean; error?: string }>;
+  switchSoftwareFixProtocolToLmfd: () => Promise<{ ok: boolean; error?: string }>;
+  restoreSoftwareFixProtocolHandler: () => Promise<{ ok: boolean; error?: string }>;
   checkFrameworkUpdate: () => Promise<FrameworkUpdateInfo>;
   downloadFrameworkUpdate: () => Promise<void>;
   applyFrameworkUpdate: () => Promise<void>;

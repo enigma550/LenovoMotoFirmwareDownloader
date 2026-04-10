@@ -42,7 +42,7 @@ export class App implements OnInit {
     if (info.platform === 'win32') {
       const ask = await this.store.getDesktopPromptPreference();
       if (ask) {
-        this.store.desktopPromptReason.set('windows_default_apps');
+        this.store.desktopPromptReason.set('windows_protocol_handler');
         this.store.showDesktopPrompt.set(true);
       }
       return;

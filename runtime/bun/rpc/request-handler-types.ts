@@ -138,6 +138,8 @@ export interface BunRpcRequestHandlers {
   >;
   getAppInfo: RpcHandler<undefined, RpcResponse<'getAppInfo'>>;
   openUrl: RpcHandler<{ url: string }, { ok: boolean; error?: string }>;
+  switchSoftwareFixProtocolToLmfd: RpcHandler<undefined, { ok: boolean; error?: string }>;
+  restoreSoftwareFixProtocolHandler: RpcHandler<undefined, { ok: boolean; error?: string }>;
   checkFrameworkUpdate: RpcHandler<undefined, RpcResponse<'checkFrameworkUpdate'>>;
   downloadFrameworkUpdate: RpcHandler<undefined, void>;
   applyFrameworkUpdate: RpcHandler<undefined, void>;

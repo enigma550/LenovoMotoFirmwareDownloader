@@ -16,10 +16,18 @@ export interface AppInfo {
   channel: string;
 }
 
+type WindowsSoftwareFixBackup = NonNullable<
+  Awaited<ReturnType<typeof loadConfig>>['windowsSoftwareFixHandlerBackup']
+>;
+
 const APP_IDENTIFIER = 'com.github.enigma550.lenovomotofirmwaredownloader';
 const DESKTOP_DISPLAY_NAME = 'Lenovo Moto Firmware Downloader';
 const WMCLASS = 'LenovoMotoFirmwareDown';
 const SOFTWARE_FIX_SCHEME = 'x-scheme-handler/softwarefix';
+const WINDOWS_SOFTWAREFIX_KEY = 'HKCU\\Software\\Classes\\softwarefix';
+const WINDOWS_SOFTWAREFIX_COMMAND_KEY = `${WINDOWS_SOFTWAREFIX_KEY}\\shell\\open\\command`;
+const WINDOWS_SOFTWAREFIX_MACHINE_KEY = 'HKCR\\softwarefix';
+const WINDOWS_SOFTWAREFIX_MACHINE_COMMAND_KEY = `${WINDOWS_SOFTWAREFIX_MACHINE_KEY}\\shell\\open\\command`;
 const CALLBACK_DROP_PATH = join(tmpdir(), 'lenovo-moto-firmware-downloader-auth-callback.txt');
 const INSTANCE_PID_PATH = join(tmpdir(), 'lenovo-moto-firmware-downloader.pid');
 
@@ -70,6 +78,179 @@ async function runDesktopCommand(command: string, args: string[]) {
     return exitCode === 0;
   } catch {
     return false;
+  }
+}
+
+async function runWindowsRegistryCommand(args: string[]) {
+  const proc = Bun.spawn(['reg', ...args], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+    stdin: 'ignore',
+  });
+
+  const [stdoutText, stderrText, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  return {
+    ok: exitCode === 0,
+    stdoutText,
+    stderrText,
+    exitCode,
+  };
+}
+
+async function queryRegistryDefaultValue(keyPath: string) {
+  const result = await runWindowsRegistryCommand(['query', keyPath, '/ve']);
+  if (!result.ok) {
+    return '';
+  }
+
+  const lines = result.stdoutText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const valueLine = lines.find((line) => /\sREG_\w+\s/.test(line));
+  if (!valueLine) {
+    return '';
+  }
+
+  const match = valueLine.match(/REG_\w+\s+(.*)$/);
+  return match?.[1]?.trim() || '';
+}
+
+async function setRegistryDefaultValue(keyPath: string, value: string) {
+  const result = await runWindowsRegistryCommand(['add', keyPath, '/ve', '/d', value, '/f']);
+  if (!result.ok) {
+    throw new Error(
+      result.stderrText.trim() || result.stdoutText.trim() || 'Registry write failed.',
+    );
+  }
+}
+
+async function setRegistryNamedValue(keyPath: string, name: string, value: string) {
+  const result = await runWindowsRegistryCommand(['add', keyPath, '/v', name, '/d', value, '/f']);
+  if (!result.ok) {
+    throw new Error(
+      result.stderrText.trim() || result.stdoutText.trim() || 'Registry write failed.',
+    );
+  }
+}
+
+async function deleteRegistryKey(keyPath: string) {
+  const result = await runWindowsRegistryCommand(['delete', keyPath, '/f']);
+  if (
+    !result.ok &&
+    !/unable to find/i.test(result.stderrText) &&
+    !/unable to find/i.test(result.stdoutText)
+  ) {
+    throw new Error(
+      result.stderrText.trim() || result.stdoutText.trim() || 'Registry delete failed.',
+    );
+  }
+}
+
+function getLmfdWindowsSoftwareFixCommand() {
+  const execPath = getExpectedExecPath();
+  return `"${execPath}" "%1" "%2"`;
+}
+
+async function detectCurrentSoftwareFixRegistration(): Promise<WindowsSoftwareFixBackup | null> {
+  const userCommand = await queryRegistryDefaultValue(WINDOWS_SOFTWAREFIX_COMMAND_KEY);
+  if (userCommand) {
+    return {
+      command: userCommand,
+      source: 'hkcu',
+      description: (await queryRegistryDefaultValue(WINDOWS_SOFTWAREFIX_KEY)) || undefined,
+    };
+  }
+
+  const machineCommand = await queryRegistryDefaultValue(WINDOWS_SOFTWAREFIX_MACHINE_COMMAND_KEY);
+  if (machineCommand) {
+    return {
+      command: machineCommand,
+      source: 'hkcr',
+      description: (await queryRegistryDefaultValue(WINDOWS_SOFTWAREFIX_MACHINE_KEY)) || undefined,
+    };
+  }
+
+  return null;
+}
+
+export async function switchSoftwareFixProtocolToLmfd() {
+  if (process.platform !== 'win32') {
+    return {
+      ok: false,
+      error: 'This action is only available on Windows.',
+    };
+  }
+
+  const lmfdCommand = getLmfdWindowsSoftwareFixCommand();
+  const currentRegistration = await detectCurrentSoftwareFixRegistration();
+
+  try {
+    const config = await loadConfig();
+    if (currentRegistration && currentRegistration.command !== lmfdCommand) {
+      config.windowsSoftwareFixHandlerBackup = currentRegistration;
+    }
+
+    await setRegistryDefaultValue(
+      WINDOWS_SOFTWAREFIX_KEY,
+      currentRegistration?.description || 'URL:LMFD Custom Protocol',
+    );
+    await setRegistryNamedValue(WINDOWS_SOFTWAREFIX_KEY, 'URL Protocol', '');
+    await setRegistryDefaultValue(WINDOWS_SOFTWAREFIX_COMMAND_KEY, lmfdCommand);
+    await saveConfig(config);
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export async function restoreSoftwareFixProtocolHandler() {
+  if (process.platform !== 'win32') {
+    return {
+      ok: false,
+      error: 'This action is only available on Windows.',
+    };
+  }
+
+  try {
+    const config = await loadConfig();
+    const backup = config.windowsSoftwareFixHandlerBackup;
+    if (!backup) {
+      return {
+        ok: false,
+        error: 'No previous Software Fix handler was saved yet.',
+      };
+    }
+
+    if (backup.source === 'hkcr') {
+      await deleteRegistryKey(WINDOWS_SOFTWAREFIX_KEY);
+    } else {
+      await setRegistryDefaultValue(
+        WINDOWS_SOFTWAREFIX_KEY,
+        backup.description || 'URL:SF Custom Protocol',
+      );
+      await setRegistryNamedValue(WINDOWS_SOFTWAREFIX_KEY, 'URL Protocol', '');
+      await setRegistryDefaultValue(WINDOWS_SOFTWAREFIX_COMMAND_KEY, backup.command);
+    }
+
+    delete config.windowsSoftwareFixHandlerBackup;
+    await saveConfig(config);
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 

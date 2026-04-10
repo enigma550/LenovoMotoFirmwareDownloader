@@ -63,6 +63,20 @@ export class SystemDesktopApiService {
     return mapSimpleOkResponse(response);
   }
 
+  async switchSoftwareFixProtocolToLmfd(): Promise<{ ok: boolean; error?: string }> {
+    const response = await this.bridge.withDesktopApi((desktopApi) =>
+      desktopApi.switchSoftwareFixProtocolToLmfd(),
+    );
+    return mapSimpleOkResponse(response);
+  }
+
+  async restoreSoftwareFixProtocolHandler(): Promise<{ ok: boolean; error?: string }> {
+    const response = await this.bridge.withDesktopApi((desktopApi) =>
+      desktopApi.restoreSoftwareFixProtocolHandler(),
+    );
+    return mapSimpleOkResponse(response);
+  }
+
   async checkFrameworkUpdate(): Promise<FrameworkUpdateInfo> {
     const response = await this.bridge.withDesktopApi((desktopApi) =>
       desktopApi.checkFrameworkUpdate(),

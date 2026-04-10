@@ -122,6 +122,14 @@ export function createDesktopApiFromInvoker(invokeRpc: DesktopRpcInvoker): Deskt
         DesktopApi['restoreBackupSnapshot']
       >,
     openUrl: (url) => invokeRpc('openUrl', { url }) as ReturnType<DesktopApi['openUrl']>,
+    switchSoftwareFixProtocolToLmfd: () =>
+      invokeRpc('switchSoftwareFixProtocolToLmfd') as ReturnType<
+        DesktopApi['switchSoftwareFixProtocolToLmfd']
+      >,
+    restoreSoftwareFixProtocolHandler: () =>
+      invokeRpc('restoreSoftwareFixProtocolHandler') as ReturnType<
+        DesktopApi['restoreSoftwareFixProtocolHandler']
+      >,
     checkFrameworkUpdate: () =>
       invokeRpc('checkFrameworkUpdate') as ReturnType<DesktopApi['checkFrameworkUpdate']>,
     downloadFrameworkUpdate: () => invokeRpc('downloadFrameworkUpdate').then(() => undefined),
