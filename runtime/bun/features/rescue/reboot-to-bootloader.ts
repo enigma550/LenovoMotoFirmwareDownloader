@@ -1,5 +1,6 @@
 import {
   resetConnectedDeviceConnection,
+  waitForConnectedDeviceAvailability,
   withConnectedDeviceConnection,
 } from '../../device/connected-device-facade.ts';
 
@@ -16,34 +17,67 @@ function isExpectedDisconnectAfterReboot(message: string) {
 }
 
 export async function rebootConnectedDeviceToBootloader() {
-  try {
+  const attemptReboot = async (label: string, reuseShared = true) => {
     await withConnectedDeviceConnection(
       async (connection) => {
         await connection.adb.power.reboot('bootloader');
       },
-      { label: 'rescue:reboot-to-bootloader' },
+      { label, reuseShared: reuseShared ? undefined : false },
     );
+  };
 
+  try {
+    await attemptReboot('rescue:reboot-to-bootloader');
     await resetConnectedDeviceConnection().catch(() => {});
 
     return {
       ok: true,
       detail: 'Sent reboot bootloader via Tango ADB.',
     };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+  } catch (firstError) {
+    const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
     await resetConnectedDeviceConnection().catch(() => {});
 
-    if (isExpectedDisconnectAfterReboot(message)) {
+    if (isExpectedDisconnectAfterReboot(firstMessage)) {
       return {
         ok: true,
         detail: 'Sent reboot bootloader via Tango ADB. Device disconnected as expected.',
       };
     }
 
-    return {
-      ok: false,
-      error: message,
-    };
+    try {
+      if (process.platform === 'win32') {
+        await Bun.sleep(1_500);
+      }
+
+      await waitForConnectedDeviceAvailability({
+        timeoutMs: process.platform === 'win32' ? 25_000 : 6_000,
+        label: 'rescue:reboot-to-bootloader:wait-for-device',
+      }).catch(() => {});
+
+      await attemptReboot('rescue:reboot-to-bootloader:retry', false);
+      await resetConnectedDeviceConnection().catch(() => {});
+
+      return {
+        ok: true,
+        detail: 'Sent reboot bootloader via Tango ADB after reconnect retry.',
+      };
+    } catch (secondError) {
+      const secondMessage =
+        secondError instanceof Error ? secondError.message : String(secondError);
+      await resetConnectedDeviceConnection().catch(() => {});
+
+      if (isExpectedDisconnectAfterReboot(secondMessage)) {
+        return {
+          ok: true,
+          detail: 'Sent reboot bootloader via Tango ADB. Device disconnected as expected.',
+        };
+      }
+
+      return {
+        ok: false,
+        error: secondMessage || firstMessage,
+      };
+    }
   }
 }
