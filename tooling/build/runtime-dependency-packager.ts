@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-const NATIVE_RUNTIME_PACKAGE_ROOTS = ['usb'] as const;
+const NATIVE_RUNTIME_PACKAGE_ROOTS = ['usb', 'apie'] as const;
 
 type PackageManifest = {
   dependencies?: Record<string, string>;
@@ -34,11 +34,17 @@ function copyPackageDirectory(sourcePath: string, targetPath: string) {
   });
 }
 
-function collectRuntimeDependencyNames(manifest: PackageManifest) {
-  return [
-    ...Object.keys(manifest.dependencies || {}),
-    ...Object.keys(manifest.optionalDependencies || {}),
-  ];
+function collectRequiredRuntimeDependencyNames(manifest: PackageManifest) {
+  return Object.keys(manifest.dependencies || {});
+}
+
+function collectInstalledOptionalRuntimeDependencyNames(
+  manifest: PackageManifest,
+  nodeModulesRoot: string,
+) {
+  return Object.keys(manifest.optionalDependencies || {}).filter((packageName) =>
+    existsSync(resolvePackagePath(nodeModulesRoot, packageName)),
+  );
 }
 
 function copyRuntimePackageRecursive(options: {
@@ -62,7 +68,19 @@ function copyRuntimePackageRecursive(options: {
   options.copiedPackages.add(options.packageName);
 
   const manifest = readPackageManifest(sourcePath);
-  for (const dependencyName of collectRuntimeDependencyNames(manifest)) {
+  for (const dependencyName of collectRequiredRuntimeDependencyNames(manifest)) {
+    copyRuntimePackageRecursive({
+      packageName: dependencyName,
+      sourceNodeModulesRoot: options.sourceNodeModulesRoot,
+      targetNodeModulesRoot: options.targetNodeModulesRoot,
+      copiedPackages: options.copiedPackages,
+    });
+  }
+
+  for (const dependencyName of collectInstalledOptionalRuntimeDependencyNames(
+    manifest,
+    options.sourceNodeModulesRoot,
+  )) {
     copyRuntimePackageRecursive({
       packageName: dependencyName,
       sourceNodeModulesRoot: options.sourceNodeModulesRoot,

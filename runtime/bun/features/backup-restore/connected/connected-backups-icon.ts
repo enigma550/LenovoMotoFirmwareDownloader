@@ -1,6 +1,7 @@
+import { existsSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
 import { resetConnectedDeviceConnection } from '../../../device/connected-device-facade.ts';
 
-const APIE_PACKAGE_NAME = 'apie';
 const ICON_STREAM_BATCH_SIZE = 32;
 const ICON_BATCH_TIMEOUT_MS = 45_000;
 const ICON_SINGLE_TIMEOUT_MS = 15_000;
@@ -50,6 +51,53 @@ type ApieRuntimeAdapter = {
 
 let apieRuntimeAdapterPromise: Promise<ApieRuntimeAdapter | null> | null = null;
 
+const APIE_DEX_FILE_NAME = 'icon_extractor.dex';
+
+function uniquePaths(paths: string[]) {
+  return [...new Set(paths.map((candidate) => resolve(candidate)))];
+}
+
+function getBundledApieDexCandidates() {
+  const execPath = process.execPath;
+  const argv0 = process.argv[0] || execPath;
+
+  const packagedAppRoots = uniquePaths([
+    join(execPath, '..', '..', 'Resources', 'app'),
+    join(dirname(execPath), '..', 'Resources', 'app'),
+    join(argv0, '..', '..', 'Resources', 'app'),
+    join(dirname(argv0), '..', 'Resources', 'app'),
+  ]);
+
+  const packagedCandidates = packagedAppRoots.map((root) =>
+    join(root, 'node_modules', 'apie', 'on-device', APIE_DEX_FILE_NAME),
+  );
+
+  const developmentCandidates = uniquePaths([
+    join(process.cwd(), 'node_modules', 'apie', 'on-device', APIE_DEX_FILE_NAME),
+    join(process.cwd(), 'build', 'node_modules', 'apie', 'on-device', APIE_DEX_FILE_NAME),
+  ]);
+
+  return uniquePaths([...packagedCandidates, ...developmentCandidates]);
+}
+
+function resolveApieDexPath(localPath: string) {
+  if (existsSync(localPath)) {
+    return localPath;
+  }
+
+  if (basename(localPath) !== APIE_DEX_FILE_NAME) {
+    return localPath;
+  }
+
+  for (const candidate of getBundledApieDexCandidates()) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return localPath;
+}
+
 function createApieService(connection: ConnectedDeviceConnection): ApieService {
   return {
     runShellCommand: async (command: string) => {
@@ -68,11 +116,12 @@ function createApieService(connection: ConnectedDeviceConnection): ApieService {
       }
     },
     pushFile: async (localPath, remotePath) => {
+      const resolvedLocalPath = resolveApieDexPath(localPath);
       const sync = await connection.adb.sync();
       try {
         await sync.write({
           filename: remotePath,
-          file: Bun.file(localPath).stream() as never,
+          file: Bun.file(resolvedLocalPath).stream() as never,
         });
       } finally {
         await sync.dispose().catch(() => {});
@@ -118,7 +167,7 @@ async function getApieRuntimeAdapter(): Promise<ApieRuntimeAdapter | null> {
 
   apieRuntimeAdapterPromise = (async () => {
     try {
-      const apieModule = await import(APIE_PACKAGE_NAME);
+      const apieModule = await import('apie');
       const { withConnectedDeviceConnection } = await import(
         '../../../device/connected-device-facade.ts'
       );
