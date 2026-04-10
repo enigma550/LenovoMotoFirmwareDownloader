@@ -22,12 +22,6 @@ on:
         required: false
         default: ""
         type: string
-  push:
-    branches:
-      - dev
-      - canary
-      - stable
-
 permissions:
   contents: write
 
@@ -49,19 +43,9 @@ jobs:
         id: options
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            buildEnv="${{ inputs.buildEnv }}"
-            publishRelease="${{ inputs.publishRelease }}"
-            releaseTag="${{ inputs.releaseTag }}"
-          else
-            case "${{ github.ref_name }}" in
-              stable) buildEnv="stable" ;;
-              canary) buildEnv="canary" ;;
-              *) buildEnv="dev" ;;
-            esac
-            publishRelease="false"
-            releaseTag=""
-          fi
+          buildEnv="${{ inputs.buildEnv }}"
+          publishRelease="${{ inputs.publishRelease }}"
+          releaseTag="${{ inputs.releaseTag }}"
 
           if [ "$buildEnv" = "dev" ]; then
             # Electrobun dev env does not generate distributable installer artifacts.
@@ -96,9 +80,6 @@ jobs:
       - name: Resolve Version
         id: resolve
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           version=$(bun tooling/release/resolve-version.ts ${{ needs.resolve-build-options.outputs.buildEnv }})
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -135,16 +116,6 @@ jobs:
       - name: Install root dependencies
         shell: bash
         run: bun install
-
-      - name: Patch version in config
-        shell: bash
-        run: |
-          appVersion="${{ needs.resolve-version.outputs.version }}"
-          if [ "${{ needs.resolve-build-options.outputs.buildEnv }}" != "stable" ]; then
-            shortSha=$(git rev-parse --short HEAD)
-            appVersion="${appVersion}-${{ needs.resolve-build-options.outputs.buildEnv }}.${shortSha}"
-          fi
-          bun tooling/build/patch-config.ts "$appVersion" "${{ needs.resolve-build-options.outputs.buildEnv }}"
 
       - name: Install web dependencies
         shell: bash

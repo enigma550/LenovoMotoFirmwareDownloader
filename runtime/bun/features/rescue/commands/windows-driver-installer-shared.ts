@@ -1,13 +1,52 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type {
   WindowsMtkDriverInstallResponse,
   WindowsSpdDriverInstallResponse,
 } from '../../../../shared/desktop-rpc';
 import { runCommandWithAbort } from '../device-flasher.ts';
 
+const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+
 function uniquePaths(paths: string[]) {
   return [...new Set(paths.map((candidate) => resolve(candidate)))];
+}
+
+function inferAppRootsFromModuleDir(moduleDir: string) {
+  const normalizedModuleDir = resolve(moduleDir).replaceAll('/', '\\');
+  const bundledMarker = '\\resources\\app\\';
+  const bundledMarkerIndex = normalizedModuleDir.toLowerCase().lastIndexOf(bundledMarker);
+  if (bundledMarkerIndex >= 0) {
+    return [normalizedModuleDir.slice(0, bundledMarkerIndex + bundledMarker.length - 1)];
+  }
+
+  const sourceMarker = '\\runtime\\bun\\';
+  const sourceMarkerIndex = normalizedModuleDir.toLowerCase().lastIndexOf(sourceMarker);
+  if (sourceMarkerIndex >= 0) {
+    return [normalizedModuleDir.slice(0, sourceMarkerIndex)];
+  }
+
+  return [];
+}
+
+export function getBundledAppRootCandidates() {
+  const execPath = process.execPath;
+  const argv0 = process.argv[0] || execPath;
+  const resourcesPath =
+    typeof (process as { resourcesPath?: unknown }).resourcesPath === 'string'
+      ? ((process as { resourcesPath?: string }).resourcesPath ?? '')
+      : '';
+
+  return uniquePaths([
+    ...inferAppRootsFromModuleDir(MODULE_DIR),
+    resourcesPath ? join(resourcesPath, 'app') : '',
+    resourcesPath,
+    join(execPath, '..', '..', 'Resources', 'app'),
+    join(dirname(execPath), '..', 'Resources', 'app'),
+    join(argv0, '..', '..', 'Resources', 'app'),
+    join(dirname(argv0), '..', 'Resources', 'app'),
+  ]).filter(Boolean);
 }
 
 export function formatError<ErrorValue>(error: ErrorValue) {
@@ -22,16 +61,8 @@ function getBundledDriverExeCandidates(options: {
   installerSubDir: string;
   preferredFileNames: string[];
 }) {
-  const execPath = process.execPath;
-  const argv0 = process.argv[0] || execPath;
   const platformArchKey = `${process.platform}-${process.arch}`;
-
-  const packagedAppRoots = uniquePaths([
-    join(execPath, '..', '..', 'Resources', 'app'),
-    join(dirname(execPath), '..', 'Resources', 'app'),
-    join(argv0, '..', '..', 'Resources', 'app'),
-    join(dirname(argv0), '..', 'Resources', 'app'),
-  ]);
+  const packagedAppRoots = getBundledAppRootCandidates();
 
   const bundledRoots = uniquePaths([
     // Preferred layout

@@ -2,12 +2,6 @@ name: Resolve Version Test
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "tooling/release/resolve-version.ts"
-      - "tooling/release/resolve-version-test.ts"
-      - "electrobun.config.ts"
-      - ".github/workflows/resolve-version-test.yml"
 
 permissions:
   contents: read
@@ -38,7 +32,4 @@ jobs:
 
       - name: Run resolve-version
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: bun tooling/release/resolve-version-test.ts ${{ matrix.channel }}

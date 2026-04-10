@@ -1,11 +1,11 @@
 import { existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import type {
   WindowsQdloaderDriverInstallResponse,
   WindowsQdloaderDriverStatusResponse,
 } from '../../../../shared/desktop-rpc';
 import { runCommandWithAbort } from '../device-flasher.ts';
-import { formatError } from './windows-driver-installer-shared.ts';
+import { formatError, getBundledAppRootCandidates } from './windows-driver-installer-shared.ts';
 
 export type WindowsQdloaderDriverEnsureResult = {
   attempted: boolean;
@@ -27,17 +27,9 @@ function uniquePaths(paths: string[]) {
 }
 
 function getBundledQdloaderInstallScriptCandidates() {
-  const execPath = process.execPath;
-  const argv0 = process.argv[0] || execPath;
   const platformArchKey = `${process.platform}-${process.arch}`;
   const scriptNames = ['Install.bat', 'install.bat'];
-
-  const packagedAppRoots = uniquePaths([
-    join(execPath, '..', '..', 'Resources', 'app'),
-    join(dirname(execPath), '..', 'Resources', 'app'),
-    join(argv0, '..', '..', 'Resources', 'app'),
-    join(dirname(argv0), '..', 'Resources', 'app'),
-  ]);
+  const packagedAppRoots = getBundledAppRootCandidates();
 
   const installerRoots = uniquePaths([
     // Preferred layout

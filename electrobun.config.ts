@@ -5,6 +5,29 @@ const linuxRendererEnv = (
 ).toLowerCase();
 const linuxRenderer: "native" | "cef" =
   linuxRendererEnv === "native" ? "native" : "cef";
+const buildEnvironment = (
+  process.env.ELECTROBUN_BUILD_ENV || "dev"
+).toLowerCase();
+
+function resolveReleaseBaseUrl() {
+  if (buildEnvironment === "stable") {
+    return "https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/latest/download/";
+  }
+
+  if (buildEnvironment === "canary") {
+    return "https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/download/canary/";
+  }
+
+  return "";
+}
+
+function shouldGenerateReleasePatch() {
+  if (buildEnvironment !== "stable" && buildEnvironment !== "canary") {
+    return false;
+  }
+
+  return process.platform !== "linux";
+}
 
 export default {
   app: {
@@ -56,8 +79,7 @@ export default {
   release: {
     // Linux is distributed as DwarFS AppImage + zsync metadata, so Electrobun's
     // delta patch generation is unnecessary there and just adds build overhead.
-    generatePatch: process.platform !== "linux",
-    baseUrl:
-      "https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/latest/download/", // Patched during build
+    generatePatch: shouldGenerateReleasePatch(),
+    baseUrl: resolveReleaseBaseUrl(),
   },
 } satisfies ElectrobunConfig;
