@@ -33,10 +33,12 @@
         </p>
       }
 
-      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">
-        Flash transport
-      </p>
-      <p class="mt-1 text-xs" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">Flash transport</p>
+      <p
+        class="mt-1 text-xs"
+        [class.text-dark-text-dim]="isDark()"
+        [class.text-light-text-dim]="!isDark()"
+      >
         Choose command backend for Rescue Lite execution.
       </p>
 
@@ -67,10 +69,12 @@
         />
       </div>
 
-      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">
-        Data reset
-      </p>
-      <p class="mt-1 text-xs" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">Data reset</p>
+      <p
+        class="mt-1 text-xs"
+        [class.text-dark-text-dim]="isDark()"
+        [class.text-light-text-dim]="!isDark()"
+      >
         @if (dryRun()) {
           Choose whether wipe commands should be included in the dry-run command plan.
         } @else {
@@ -95,9 +99,7 @@
 
       @if (flashTransport() === 'qdl') {
         <div class="mt-4 space-y-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-accent">
-            QDL storage
-          </p>
+          <p class="text-xs font-semibold uppercase tracking-wide text-accent">QDL storage</p>
 
           <div class="flex flex-wrap gap-2">
             <app-ui-action-button
@@ -145,7 +147,7 @@
             <app-rescue-driver-install-card
               [isDark]="isDark()"
               title="Qualcomm driver"
-              description="Windows only: install QDLoader HS-USB 9008 driver before using QDL rescue."
+              description="Install QDLoader HS-USB 9008 driver before using QDL rescue. (Might require reboot)"
               [buttonLabel]="
                 qdloaderDriverInstallBusy()
                   ? 'Installing driver...'
@@ -167,7 +169,7 @@
           <app-rescue-driver-install-card
             [isDark]="isDark()"
             title="Unisoc driver"
-            description="Windows only: install SPD USB driver before using Unisoc PAC rescue."
+            description="Install SPD USB driver before using Unisoc PAC rescue. (Might require reboot)"
             [buttonLabel]="
               spdDriverInstallBusy()
                 ? 'Installing driver...'
@@ -188,7 +190,7 @@
           <app-rescue-driver-install-card
             [isDark]="isDark()"
             title="MediaTek driver"
-            description="Windows only: install MediaTek USB driver before using MediaTek rescue."
+            description="Install MediaTek USB driver before using MediaTek rescue. (Might require reboot)"
             [buttonLabel]="
               mtkDriverInstallBusy()
                 ? 'Installing driver...'
