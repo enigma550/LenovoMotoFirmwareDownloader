@@ -49,6 +49,27 @@ type ApieRuntimeAdapter = {
   ) => Promise<void>;
 };
 
+type ApieSvgResult = {
+  svg: string;
+  sourcePath: string;
+  fidelity: string;
+};
+
+type ApieSvgBatchRenderer = (
+  service: ApieService,
+  packageNames: string[],
+  shape: string,
+  options?: Record<string, never>,
+) => Promise<Map<string, ApieSvgResult>>;
+
+type ApieSvgBatchStreamer = (
+  service: ApieService,
+  packageNames: string[],
+  shape: string,
+  options: Record<string, never>,
+  onResult: (event: { packageName: string; result: ApieSvgResult }) => void | Promise<void>,
+) => Promise<void>;
+
 let apieRuntimeAdapterPromise: Promise<ApieRuntimeAdapter | null> | null = null;
 
 const APIE_DEX_FILE_NAME = 'icon_extractor.dex';
@@ -184,38 +205,11 @@ async function getApieRuntimeAdapter(): Promise<ApieRuntimeAdapter | null> {
               options?: { packageFilters?: string[] },
             ) => Promise<Array<{ packageName: string; label: string }>>)
           | undefined);
-      const renderExactDeviceSvgBatch = apieModule.onDevice?.renderExactDeviceSvgBatch as
-        | ((
-            service: ApieService,
-            packageNames: string[],
-            shape: string,
-            options?: Record<string, never>,
-          ) => Promise<
-            Map<
-              string,
-              {
-                svg: string;
-                sourcePath: string;
-                fidelity: string;
-              }
-            >
-          >)
+      const renderExactDeviceSvgBatch = apieModule.onDevice?.renderExactDeviceSvgBatch as unknown as
+        | ApieSvgBatchRenderer
         | undefined;
-      const streamExactDeviceSvgBatch = apieModule.onDevice?.streamExactDeviceSvgBatch as
-        | ((
-            service: ApieService,
-            packageNames: string[],
-            shape: string,
-            options: Record<string, never>,
-            onResult: (event: {
-              packageName: string;
-              result: {
-                svg: string;
-                sourcePath: string;
-                fidelity: string;
-              };
-            }) => void | Promise<void>,
-          ) => Promise<void>)
+      const streamExactDeviceSvgBatch = apieModule.onDevice?.streamExactDeviceSvgBatch as unknown as
+        | ApieSvgBatchStreamer
         | undefined;
       const maskShapes = apieModule.MaskShape as Record<string, string> | undefined;
       const squareMaskShape = maskShapes?.Square;
@@ -254,13 +248,7 @@ async function getApieRuntimeAdapter(): Promise<ApieRuntimeAdapter | null> {
 
       const buildExtractedIcon = (
         packageName: string,
-        svgResult:
-          | {
-              svg: string;
-              sourcePath: string;
-              fidelity: string;
-            }
-          | undefined,
+        svgResult: ApieSvgResult | undefined,
       ): ExtractedIcon => {
         const appLabel = labelCache.get(packageName);
         if (!svgResult?.svg) {
