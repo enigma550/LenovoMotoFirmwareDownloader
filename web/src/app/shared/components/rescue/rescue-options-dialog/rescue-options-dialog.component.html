@@ -95,25 +95,6 @@
 
       @if (flashTransport() === 'qdl') {
         <div class="mt-4 space-y-3">
-          @if (showWindowsDriverInstall()) {
-            <app-rescue-driver-install-card
-              [isDark]="isDark()"
-              title="Qualcomm driver"
-              description="Windows only: install QDLoader HS-USB 9008 driver before using QDL rescue."
-              [buttonLabel]="
-                qdloaderDriverInstallBusy()
-                  ? 'Installing driver...'
-                  : qdloaderDriverInstalled()
-                    ? 'Driver already installed'
-                    : 'Install QDLoader Driver'
-              "
-              [buttonDisabled]="qdloaderDriverInstallBusy() || qdloaderDriverInstalled()"
-              [installed]="qdloaderDriverInstalled()"
-              installedNote="QDLoader driver package detected as installed."
-              (install)="onInstallWindowsQdloaderDriver()"
-            />
-          }
-
           <p class="text-xs font-semibold uppercase tracking-wide text-accent">
             QDL storage
           </p>
@@ -159,6 +140,25 @@
             [value]="qdlSerial()"
             (input)="onQdlSerialInput($event)"
           />
+
+          @if (showWindowsDriverInstall()) {
+            <app-rescue-driver-install-card
+              [isDark]="isDark()"
+              title="Qualcomm driver"
+              description="Windows only: install QDLoader HS-USB 9008 driver before using QDL rescue."
+              [buttonLabel]="
+                qdloaderDriverInstallBusy()
+                  ? 'Installing driver...'
+                  : qdloaderDriverInstalled()
+                    ? 'Driver already installed'
+                    : 'Install QDLoader Driver'
+              "
+              [buttonDisabled]="qdloaderDriverInstallBusy() || qdloaderDriverInstalled()"
+              [installed]="qdloaderDriverInstalled()"
+              installedNote="QDLoader driver package detected as installed."
+              (install)="onInstallWindowsQdloaderDriver()"
+            />
+          }
         </div>
       }
 

@@ -166,10 +166,6 @@
         <app-auth-panel class="block" />
         }
         <app-source-mode class="block" />
-
-        @if (store.sourceMode() === 'connected' && store.authComplete()) {
-        <app-connected-lookup class="block" />
-        }
       </aside>
 
       <!-- MAIN CONTENT -->
@@ -187,6 +183,8 @@
         >
           Authentication required for Catalog and Connected Device features.
         </div>
+        } @else if (store.sourceMode() === 'connected') {
+        <app-connected-lookup />
         } @else if (store.sourceMode() === 'catalog') {
         <app-catalog-workspace />
         } @else if (store.sourceMode() === 'downloads') {

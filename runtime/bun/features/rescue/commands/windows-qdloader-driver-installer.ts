@@ -26,12 +26,16 @@ function uniquePaths(paths: string[]) {
   return [...new Set(paths.map((candidate) => resolve(candidate)))];
 }
 
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
+}
+
 function getBundledQdloaderInstallScriptCandidates() {
   const platformArchKey = `${process.platform}-${process.arch}`;
   const scriptNames = ['Install.bat', 'install.bat'];
   const packagedAppRoots = getBundledAppRootCandidates();
 
-  const installerRoots = uniquePaths([
+  const installerRoots = uniqueStrings([
     // Preferred layout
     join('tools', 'drivers', platformArchKey, 'qdl', 'QUD_CustomInst_1.00.91.7'),
     join('tools', 'drivers', 'win32-x64', 'qdl', 'QUD_CustomInst_1.00.91.7'),

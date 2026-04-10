@@ -8,9 +8,14 @@ import type {
 import { runCommandWithAbort } from '../device-flasher.ts';
 
 const MODULE_DIR = dirname(fileURLToPath(import.meta.url));
+const APP_IDENTIFIER = 'com.github.enigma550.lenovomotofirmwaredownloader';
 
 function uniquePaths(paths: string[]) {
   return [...new Set(paths.map((candidate) => resolve(candidate)))];
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
 }
 
 function inferAppRootsFromModuleDir(moduleDir: string) {
@@ -37,9 +42,15 @@ export function getBundledAppRootCandidates() {
     typeof (process as { resourcesPath?: unknown }).resourcesPath === 'string'
       ? ((process as { resourcesPath?: string }).resourcesPath ?? '')
       : '';
+  const localAppData = process.env.LOCALAPPDATA || '';
+  const buildEnvironment = (process.env.ELECTROBUN_BUILD_ENV || '').trim();
+  const appDataChannels = [buildEnvironment, 'canary', 'stable', 'dev'].filter(Boolean);
 
   return uniquePaths([
     ...inferAppRootsFromModuleDir(MODULE_DIR),
+    ...appDataChannels.map((channel) =>
+      join(localAppData, APP_IDENTIFIER, channel, 'app', 'Resources', 'app'),
+    ),
     resourcesPath ? join(resourcesPath, 'app') : '',
     resourcesPath,
     join(execPath, '..', '..', 'Resources', 'app'),
@@ -64,7 +75,7 @@ function getBundledDriverExeCandidates(options: {
   const platformArchKey = `${process.platform}-${process.arch}`;
   const packagedAppRoots = getBundledAppRootCandidates();
 
-  const bundledRoots = uniquePaths([
+  const bundledRoots = uniqueStrings([
     // Preferred layout
     join('tools', 'drivers', platformArchKey, options.installerSubDir),
     join('tools', 'drivers', 'win32-x64', options.installerSubDir),
