@@ -314,7 +314,15 @@ async function main() {
   await writeFile(tempZipPath, downloaded.bytes);
 
   if (targetPlatform === 'win32') {
-    const psCommand = `Expand-Archive -Path '${tempZipPath.replace(/'/g, "''")}' -DestinationPath '${tempExtractDir.replace(/'/g, "''")}' -Force`;
+    const escapedZipPath = tempZipPath.replace(/'/g, "''");
+    const escapedExtractDir = tempExtractDir.replace(/'/g, "''");
+    const psCommand = [
+      'Add-Type -AssemblyName System.IO.Compression.FileSystem',
+      `$zipPath = '${escapedZipPath}'`,
+      `$extractDir = '${escapedExtractDir}'`,
+      "if (Test-Path -LiteralPath $extractDir) { Remove-Item -LiteralPath (Join-Path $extractDir '*') -Recurse -Force -ErrorAction SilentlyContinue }",
+      '[System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $extractDir)',
+    ].join('; ');
     runCommand('powershell', ['-NoProfile', '-Command', psCommand]);
   } else {
     runCommand('unzip', ['-o', tempZipPath, '-d', tempExtractDir]);

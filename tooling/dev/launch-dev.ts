@@ -163,6 +163,7 @@ function resolvePackagedAppLauncher(appRootPath: string) {
   const isMacBundle = appRootPath.toLowerCase().endsWith('.app');
   const candidates = [
     isMacBundle ? resolve(appRootPath, 'Contents', 'MacOS', appName) : '',
+    resolve(appRootPath, 'bin', 'launcher.exe'),
     resolve(appRootPath, 'bin', 'launcher'),
     resolve(appRootPath, 'launcher'),
     resolve(appRootPath, 'bin', `${appName}.exe`),

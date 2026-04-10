@@ -6,10 +6,13 @@ import {
   extractRomMatchIdentifier,
   extractRomUrl,
 } from '../../core/features/firmware/extract-rom.ts';
-import { getDeviceInfo } from '../../core/infra/device/info.ts';
 import { requestApi } from '../../core/infra/lmsa/api.ts';
 import type { ConnectedLookupResponse } from '../shared/desktop-rpc';
-import { readConnectedDeviceInfo } from './device/connected-device-facade.ts';
+import {
+  readConnectedDeviceInfo,
+  resetConnectedDeviceConnection,
+  waitForConnectedDeviceAvailability,
+} from './device/connected-device-facade.ts';
 
 type LmsaPayloadValue = object | string | number | boolean | null;
 
@@ -128,17 +131,42 @@ export async function lookupConnectedDeviceFirmwareFromDeviceInfo(
 }
 
 export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupResponse> {
-  try {
-    const connectedDevice = await readConnectedDeviceInfo({
-      label: 'catalog-connected-lookup:read-device-info',
+  const attemptRead = async (attemptLabel: string, reuseShared = true) => {
+    return readConnectedDeviceInfo({
+      label: attemptLabel,
+      reuseShared: reuseShared ? undefined : false,
     });
+  };
+
+  try {
+    // Prefer the existing shared Tango session immediately after preview/backup.
+    const connectedDevice = await attemptRead('catalog-connected-lookup:read-device-info-shared');
     return lookupConnectedDeviceFirmwareFromDeviceInfo(connectedDevice.device, {
       adbAvailable: connectedDevice.adbAvailable,
     });
-  } catch {
-    const device = await getDeviceInfo();
-    return lookupConnectedDeviceFirmwareFromDeviceInfo(device, {
-      adbAvailable: true,
-    });
+  } catch (firstError) {
+    const firstDetail = firstError instanceof Error ? firstError.message : String(firstError);
+
+    await resetConnectedDeviceConnection().catch(() => {});
+    if (process.platform === 'win32') {
+      await Bun.sleep(1_500);
+    }
+    await waitForConnectedDeviceAvailability({
+      timeoutMs: process.platform === 'win32' ? 25_000 : 6_000,
+      label: 'catalog-connected-lookup:wait-for-device',
+    }).catch(() => {});
+
+    try {
+      const connectedDevice = await attemptRead(
+        'catalog-connected-lookup:read-device-info-after-reset',
+        false,
+      );
+      return lookupConnectedDeviceFirmwareFromDeviceInfo(connectedDevice.device, {
+        adbAvailable: connectedDevice.adbAvailable,
+      });
+    } catch (secondError) {
+      const secondDetail = secondError instanceof Error ? secondError.message : String(secondError);
+      throw new Error(secondDetail || firstDetail || 'Connected lookup via Tango ADB failed.');
+    }
   }
 }

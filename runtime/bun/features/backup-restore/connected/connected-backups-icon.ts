@@ -404,7 +404,11 @@ export async function streamIconsForPackages(
       await withTimeout(
         apieRuntimeAdapter.streamPackageIcons(batch, onResult),
         ICON_BATCH_TIMEOUT_MS,
-        () => resetConnectedDeviceConnection(),
+        () => {
+          if (process.platform !== 'win32') {
+            return resetConnectedDeviceConnection();
+          }
+        },
       );
       continue;
     } catch (error) {
@@ -412,7 +416,9 @@ export async function streamIconsForPackages(
       appendLog?.(
         `Apps scan: icon batch ${batchLabel} failed (${message}). Retrying individually.`,
       );
-      await resetConnectedDeviceConnection().catch(() => {});
+      if (process.platform !== 'win32') {
+        await resetConnectedDeviceConnection().catch(() => {});
+      }
     }
 
     for (const packageName of batch) {
@@ -420,13 +426,19 @@ export async function streamIconsForPackages(
         const icon = await withTimeout(
           apieRuntimeAdapter.extractPackageIcon(packageName),
           ICON_SINGLE_TIMEOUT_MS,
-          () => resetConnectedDeviceConnection(),
+          () => {
+            if (process.platform !== 'win32') {
+              return resetConnectedDeviceConnection();
+            }
+          },
         );
         await onResult({ packageName, icon });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         appendLog?.(`Apps scan: icon extraction failed for ${packageName} (${message}).`);
-        await resetConnectedDeviceConnection().catch(() => {});
+        if (process.platform !== 'win32') {
+          await resetConnectedDeviceConnection().catch(() => {});
+        }
       }
     }
   }

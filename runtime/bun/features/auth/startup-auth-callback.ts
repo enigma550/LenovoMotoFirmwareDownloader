@@ -47,15 +47,73 @@ function normalizeCandidate(value: string) {
   return '';
 }
 
+function findEmbeddedAuthCallback(value: string) {
+  const softwareFixMatch = value.match(/softwarefix:\/\/callback[^\s'"`]+/i);
+  if (softwareFixMatch?.[0]) {
+    return normalizeCandidate(softwareFixMatch[0]);
+  }
+
+  const lenovoTipsMatch = value.match(
+    /https?:\/\/lsa\.lenovo\.com\/tips\/lenovoidsuccess\.html[^\s'"`]+/i,
+  );
+  if (lenovoTipsMatch?.[0]) {
+    return normalizeCandidate(lenovoTipsMatch[0]);
+  }
+
+  return '';
+}
+
 function findStartupAuthCallbackArg(argv: string[]) {
   for (const candidate of argv) {
     const normalized = normalizeCandidate(candidate);
     if (normalized) return normalized;
+
+    const embedded = findEmbeddedAuthCallback(candidate);
+    if (embedded) return embedded;
   }
   return '';
 }
 
-const startupAuthCallbackUrl = findStartupAuthCallbackArg(process.argv);
+function findWindowsParentProcessAuthCallback() {
+  if (process.platform !== 'win32' || !process.ppid) {
+    return '';
+  }
+
+  const command = [
+    `$processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = ${process.ppid}"`,
+    'if ($processInfo -and $processInfo.CommandLine) { [Console]::Out.Write($processInfo.CommandLine) }',
+  ].join('; ');
+
+  try {
+    const result = Bun.spawnSync(
+      [
+        'powershell.exe',
+        '-NoProfile',
+        '-NonInteractive',
+        '-WindowStyle',
+        'Hidden',
+        '-Command',
+        command,
+      ],
+      {
+        stdout: 'pipe',
+        stderr: 'ignore',
+      },
+    );
+
+    if (result.exitCode !== 0) {
+      return '';
+    }
+
+    const commandLine = result.stdout.toString().trim();
+    return findEmbeddedAuthCallback(commandLine);
+  } catch {
+    return '';
+  }
+}
+
+const startupAuthCallbackUrl =
+  findStartupAuthCallbackArg(process.argv) || findWindowsParentProcessAuthCallback();
 let queuedStartupAuthCallbackUrl = startupAuthCallbackUrl;
 let queuedRuntimeAuthCallbackUrl = '';
 let consumedStartupAuthCallback = false;
@@ -103,6 +161,10 @@ export function consumeStartupAuthCallbackUrl() {
   }
 
   return consumeDroppedAuthCallbackUrl();
+}
+
+export function peekStartupAuthCallbackUrl() {
+  return queuedStartupAuthCallbackUrl;
 }
 
 export function queueRuntimeAuthCallbackUrl(value: string) {

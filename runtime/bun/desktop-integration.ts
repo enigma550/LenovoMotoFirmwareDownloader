@@ -55,18 +55,6 @@ function isLmfdWindowsSoftwareFixCommand(command: string) {
   );
 }
 
-function getPackagedAppRoots() {
-  const execPath = process.execPath;
-  const argv0 = process.argv[0] || execPath;
-
-  return uniquePaths([
-    join(execPath, '..', '..', 'Resources', 'app'),
-    join(dirname(execPath), '..', 'Resources', 'app'),
-    join(argv0, '..', '..', 'Resources', 'app'),
-    join(dirname(argv0), '..', 'Resources', 'app'),
-  ]);
-}
-
 function resolveWindowsProtocolLauncherPath() {
   const execDir = dirname(process.execPath);
   const candidates = uniquePaths([
@@ -83,27 +71,6 @@ function resolveWindowsProtocolLauncherPath() {
   }
 
   return process.execPath;
-}
-
-function resolveWindowsProtocolHandlerScriptPath() {
-  const packagedCandidates = getPackagedAppRoots().map((root) =>
-    join(root, 'tools', 'windows', 'softwarefix-handler.ps1'),
-  );
-  const developmentCandidate = join(
-    process.cwd(),
-    'assets',
-    'tools',
-    'windows',
-    'softwarefix-handler.ps1',
-  );
-
-  for (const candidate of uniquePaths([...packagedCandidates, developmentCandidate])) {
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
-  return '';
 }
 
 function getExpectedExecPath() {
@@ -225,16 +192,7 @@ async function deleteRegistryKey(keyPath: string) {
 
 function getLmfdWindowsSoftwareFixCommand() {
   const launcherPath = resolveWindowsProtocolLauncherPath();
-  const handlerScriptPath = resolveWindowsProtocolHandlerScriptPath();
-
-  if (!handlerScriptPath) {
-    return `"${launcherPath}" "%1"`;
-  }
-
-  return (
-    `powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass ` +
-    `-File "${handlerScriptPath}" "${launcherPath}" "${CALLBACK_DROP_PATH}" "${INSTANCE_PID_PATH}" "%1"`
-  );
+  return `"${launcherPath}" "%1"`;
 }
 
 async function detectCurrentSoftwareFixRegistration(): Promise<WindowsSoftwareFixBackup | null> {
@@ -308,10 +266,16 @@ export async function restoreSoftwareFixProtocolHandler() {
   try {
     const config = await loadConfig();
     const backup = config.windowsSoftwareFixHandlerBackup;
+    const currentUserCommand = await queryRegistryDefaultValue(WINDOWS_SOFTWAREFIX_COMMAND_KEY);
     if (!backup) {
+      if (currentUserCommand && isLmfdWindowsSoftwareFixCommand(currentUserCommand)) {
+        await deleteRegistryKey(WINDOWS_SOFTWAREFIX_KEY);
+        return { ok: true };
+      }
+
       return {
         ok: false,
-        error: 'No previous Software Fix handler was saved yet.',
+        error: 'No previous Software Fix handler was saved yet, and no LMFD user override exists.',
       };
     }
 

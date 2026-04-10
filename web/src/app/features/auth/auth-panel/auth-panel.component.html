@@ -65,6 +65,17 @@
           <span>Open Lenovo Login</span>
         </span>
       </button>
+
+      @if (isWindowsPlatform()) {
+        <p
+          class="mt-3 text-xs leading-relaxed"
+          [class.text-dark-text-dim]="store.isDark()"
+          [class.text-light-text-dim]="!store.isDark()"
+        >
+          Windows vil sandsynligvis bede browseren om at bekræfte åbning af Lenovo Moto Firmware
+          Downloader. Det er forventet for login-callbacket.
+        </p>
+      }
     </div>
   }
 </section>

@@ -4,6 +4,10 @@ import { extname, join, resolve, sep } from 'node:path';
 import { BrowserView, BrowserWindow, BuildConfig, Updater, Utils } from 'electrobun/bun';
 import type { DesktopRpcSchema, DownloadProgressMessage } from '../shared/desktop-rpc';
 import { cleanupLinuxCefProfileLocks } from './cef-profile.ts';
+import {
+  peekStartupAuthCallbackUrl,
+  queueRuntimeAuthCallbackUrl,
+} from './features/auth/startup-auth-callback.ts';
 import { createRequestHandlers } from './rpc/create-request-handlers.ts';
 
 const DOWNLOAD_RPC_TIMEOUT_MS = 6 * 60 * 60 * 1000;
@@ -19,6 +23,39 @@ type RemovableBrowserView = {
   id: number;
   remove(): void;
 };
+
+function hasLiveExistingInstance(pidValue: string) {
+  const normalizedPid = pidValue.trim();
+  if (!/^\d+$/.test(normalizedPid)) {
+    return false;
+  }
+
+  const parsedPid = Number.parseInt(normalizedPid, 10);
+  if (!Number.isFinite(parsedPid) || parsedPid <= 0 || parsedPid === process.pid) {
+    return false;
+  }
+
+  try {
+    process.kill(parsedPid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function shouldExitAfterForwardingStartupCallback() {
+  const startupCallbackUrl = peekStartupAuthCallbackUrl().trim();
+  if (!startupCallbackUrl || !existsSync(INSTANCE_PID_PATH)) {
+    return false;
+  }
+
+  try {
+    const existingPidValue = readFileSync(INSTANCE_PID_PATH, 'utf8');
+    return hasLiveExistingInstance(existingPidValue);
+  } catch {
+    return false;
+  }
+}
 
 function registerSingleInstancePidFile() {
   const pidValue = String(process.pid);
@@ -42,6 +79,13 @@ function registerSingleInstancePidFile() {
   });
 }
 
+if (shouldExitAfterForwardingStartupCallback()) {
+  console.log(
+    '[AuthCallback] Forwarded startup callback to an existing instance. Exiting helper launch.',
+  );
+  process.exit(0);
+}
+
 registerSingleInstancePidFile();
 
 // Log all updater status changes to the console for easier remote debugging
@@ -50,6 +94,41 @@ Updater.onStatusChange((entry) => {
 });
 
 let mainWindowRef: BrowserWindow | null = null;
+const electrobunRuntime = (await import('electrobun/bun')) as unknown as {
+  default?: {
+    events?: {
+      on(eventName: string, callback: (event?: unknown) => void): void;
+    };
+  };
+};
+
+function handleIncomingOpenUrl(urlValue: string) {
+  const normalizedUrl = urlValue.trim();
+  if (!normalizedUrl) {
+    return;
+  }
+
+  if (!queueRuntimeAuthCallbackUrl(normalizedUrl)) {
+    return;
+  }
+
+  console.log('[AuthCallback] Queued runtime callback URL from open-url event.');
+  mainWindowRef?.maximize?.();
+  mainWindowRef?.focus?.();
+}
+
+electrobunRuntime.default?.events?.on('open-url', (event?: unknown) => {
+  if (!event || typeof event !== 'object') {
+    return;
+  }
+
+  const incomingUrl = (event as { data?: { url?: string } }).data?.url?.trim() || '';
+  if (!incomingUrl) {
+    return;
+  }
+
+  handleIncomingOpenUrl(incomingUrl);
+});
 
 const requestHandlers = createRequestHandlers({
   sendDownloadProgress: (payload) => {
