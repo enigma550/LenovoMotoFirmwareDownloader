@@ -11,6 +11,10 @@ export function getRescueDirectory() {
   return join(getDownloadDirectory(), '.rescue-lite');
 }
 
+export function getAppStoreDownloadDirectory() {
+  return join(getDownloadDirectory(), 'app-store');
+}
+
 export function getRescueExtractDirectoryRoot() {
   return join(getRescueDirectory(), 'extracted');
 }

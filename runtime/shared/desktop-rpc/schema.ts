@@ -29,6 +29,16 @@ import type {
   LookupReadSupportByParamsRequest,
   LookupReadSupportBySnRequest,
   PauseDownloadRequest,
+  PlayStoreAppDetailsRequest,
+  PlayStoreAppDetailsResponse,
+  PlayStoreDownloadRequest,
+  PlayStoreDownloadResponse,
+  PlayStoreDownloadsResponse,
+  PlayStoreInstallRequest,
+  PlayStoreInstallResponse,
+  PlayStoreSearchRequest,
+  PlayStoreSearchResponse,
+  PlayStoreStatusResponse,
   ReadLocalFileContentRequest,
   ReadLocalFileContentResponse,
   ReadSupportHintsRequest,
@@ -99,6 +109,12 @@ export type DesktopRpcSchema = DesktopRpcBaseSchema & {
         RescueLiteFirmwareFromLocalRequest,
         DesktopApiResponse<'rescueLiteFirmwareFromLocal'>
       >;
+      getPlayStoreStatus: RpcRequest<undefined, PlayStoreStatusResponse>;
+      listPlayStoreDownloads: RpcRequest<undefined, PlayStoreDownloadsResponse>;
+      searchPlayStoreApps: RpcRequest<PlayStoreSearchRequest, PlayStoreSearchResponse>;
+      getPlayStoreAppDetails: RpcRequest<PlayStoreAppDetailsRequest, PlayStoreAppDetailsResponse>;
+      downloadPlayStoreApp: RpcRequest<PlayStoreDownloadRequest, PlayStoreDownloadResponse>;
+      installPlayStoreApp: RpcRequest<PlayStoreInstallRequest, PlayStoreInstallResponse>;
       cancelDownload: RpcRequest<CancelDownloadRequest, DesktopApiResponse<'cancelDownload'>>;
       listLocalDownloadedFiles: RpcRequest<undefined, LocalDownloadedFilesResponse>;
       listBackupRestoreSnapshots: RpcRequest<undefined, BackupRestoreSnapshotsResponse>;

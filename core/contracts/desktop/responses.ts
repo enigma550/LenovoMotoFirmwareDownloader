@@ -17,6 +17,10 @@ import type {
   BackupRestoreSnapshot,
   FirmwareTaskStatus,
   LocalDownloadedFile,
+  PlayStoreAppDetails,
+  PlayStoreDownloadedArtifact,
+  PlayStoreDownloadGroup,
+  PlayStoreSearchResult,
   RescueFlashTransport,
   RescueQdlStorage,
 } from './entries';
@@ -125,6 +129,51 @@ export interface RescueLiteFirmwareResponse extends DownloadFirmwareResponse {
 export interface LocalDownloadedFilesResponse {
   ok: boolean;
   files: LocalDownloadedFile[];
+  error?: string;
+}
+
+export interface PlayStoreStatusResponse {
+  ok: boolean;
+  available: boolean;
+  toolPath?: string;
+  toolSource?: 'bundled' | 'system' | 'custom';
+  downloadRoot?: string;
+  error?: string;
+}
+
+export interface PlayStoreSearchResponse {
+  ok: boolean;
+  results: PlayStoreSearchResult[];
+  error?: string;
+}
+
+export interface PlayStoreAppDetailsResponse {
+  ok: boolean;
+  data?: PlayStoreAppDetails;
+  error?: string;
+}
+
+export interface PlayStoreDownloadResponse {
+  ok: boolean;
+  packageName: string;
+  downloadRoot?: string;
+  artifacts: PlayStoreDownloadedArtifact[];
+  error?: string;
+}
+
+export interface PlayStoreDownloadsResponse {
+  ok: boolean;
+  downloadRoot?: string;
+  downloads: PlayStoreDownloadGroup[];
+  error?: string;
+}
+
+export interface PlayStoreInstallResponse {
+  ok: boolean;
+  packageName: string;
+  installedArtifactCount: number;
+  installMode?: 'standard' | 'microg';
+  detail?: string;
   error?: string;
 }
 

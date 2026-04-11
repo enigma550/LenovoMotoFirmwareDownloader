@@ -159,6 +159,10 @@ jobs:
         shell: bash
         run: bun run ffmpeg:prepare
 
+      - name: Prepare bundled gplaydl sidecar
+        shell: bash
+        run: bun run gplaydl:prepare
+
       - name: Prepare runtime views
         shell: bash
         run: bun run prepare:all

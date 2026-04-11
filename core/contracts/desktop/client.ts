@@ -66,6 +66,20 @@ export function createDesktopApiFromInvoker(invokeRpc: DesktopRpcInvoker): Deskt
       invokeRpc('rescueLiteFirmwareFromLocal', payload) as ReturnType<
         DesktopApi['rescueLiteFirmwareFromLocal']
       >,
+    getPlayStoreStatus: () =>
+      invokeRpc('getPlayStoreStatus') as ReturnType<DesktopApi['getPlayStoreStatus']>,
+    listPlayStoreDownloads: () =>
+      invokeRpc('listPlayStoreDownloads') as ReturnType<DesktopApi['listPlayStoreDownloads']>,
+    searchPlayStoreApps: (payload) =>
+      invokeRpc('searchPlayStoreApps', payload) as ReturnType<DesktopApi['searchPlayStoreApps']>,
+    getPlayStoreAppDetails: (payload) =>
+      invokeRpc('getPlayStoreAppDetails', payload) as ReturnType<
+        DesktopApi['getPlayStoreAppDetails']
+      >,
+    downloadPlayStoreApp: (payload) =>
+      invokeRpc('downloadPlayStoreApp', payload) as ReturnType<DesktopApi['downloadPlayStoreApp']>,
+    installPlayStoreApp: (payload) =>
+      invokeRpc('installPlayStoreApp', payload) as ReturnType<DesktopApi['installPlayStoreApp']>,
     extractLocalFirmware: (payload) =>
       invokeRpc('extractLocalFirmware', payload) as ReturnType<DesktopApi['extractLocalFirmware']>,
     readLocalFileContent: (payload) =>

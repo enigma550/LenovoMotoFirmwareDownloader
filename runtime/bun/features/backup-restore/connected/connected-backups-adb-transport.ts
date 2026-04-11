@@ -1,4 +1,4 @@
-import { mkdir, open } from 'node:fs/promises';
+import { mkdir, open, stat } from 'node:fs/promises';
 import { basename, dirname } from 'node:path';
 import {
   resetConnectedDeviceConnection,
@@ -287,8 +287,39 @@ async function installLocalApksViaTango(
   args: string[],
   timeoutMs: number,
 ): Promise<CommandResult> {
-  const installOptions = args.filter((value) => value.startsWith('-'));
-  const localApkPaths = args.filter((value) => !value.startsWith('-'));
+  const optionNamesWithValue = new Set(['-i', '--installer-package-name', '--user', '--abi']);
+  const installOptions: string[] = [];
+  const localApkPaths: string[] = [];
+
+  for (let index = 0; index < args.length; index += 1) {
+    const value = args[index];
+    if (!value) {
+      continue;
+    }
+
+    if (!value.startsWith('-')) {
+      localApkPaths.push(value);
+      continue;
+    }
+
+    installOptions.push(value);
+    if (optionNamesWithValue.has(value)) {
+      const optionValue = args[index + 1];
+      if (!optionValue) {
+        return {
+          exitCode: -1,
+          stdoutText: '',
+          stderrText: '',
+          timedOut: false,
+          error: `ADB ${subcommand} is missing a value for ${value}.`,
+        } satisfies CommandResult;
+      }
+
+      installOptions.push(optionValue);
+      index += 1;
+    }
+  }
+
   if (localApkPaths.length === 0) {
     return {
       exitCode: -1,
@@ -307,23 +338,82 @@ async function installLocalApksViaTango(
 
         const sync = await connection.adb.sync();
         const remoteApkPaths: string[] = [];
+        let sessionId = '';
+        let committed = false;
+
+        const parseSessionId = (output: string) => {
+          const match =
+            output.match(/\[(\d+)\]/) ||
+            output.match(/session\s+(\d+)/i) ||
+            output.match(/\b(\d+)\b/);
+          return match?.[1] || '';
+        };
+
+        const isSuccessOutput = (output: string) => /^\s*Success\b/im.test(output);
         try {
+          let totalSizeBytes = 0;
           for (const [index, localApkPath] of localApkPaths.entries()) {
             const remoteApkPath = `${remoteTempDir}/${Date.now()}-${index + 1}-${basename(localApkPath)}`;
             remoteApkPaths.push(remoteApkPath);
+            const localFileInfo = await stat(localApkPath);
+            totalSizeBytes += localFileInfo.size;
             await sync.write({
               filename: remoteApkPath,
               file: Bun.file(localApkPath).stream() as never,
             });
           }
 
-          return await connection.adb.subprocess.noneProtocol.spawnWaitText([
+          const createOutput = await connection.adb.subprocess.noneProtocol.spawnWaitText([
             'pm',
-            subcommand,
+            'install-create',
             ...installOptions,
-            ...remoteApkPaths,
+            '-S',
+            String(totalSizeBytes),
           ]);
+          if (!isSuccessOutput(createOutput)) {
+            return createOutput;
+          }
+
+          sessionId = parseSessionId(createOutput);
+          if (!sessionId) {
+            return createOutput;
+          }
+
+          for (const [index, localApkPath] of localApkPaths.entries()) {
+            const remoteApkPath = remoteApkPaths[index];
+            if (!remoteApkPath) {
+              continue;
+            }
+
+            const localFileInfo = await stat(localApkPath);
+            const splitName = `${index}-${basename(localApkPath)}`;
+            const writeOutput = await connection.adb.subprocess.noneProtocol.spawnWaitText([
+              'pm',
+              'install-write',
+              '-S',
+              String(localFileInfo.size),
+              sessionId,
+              splitName,
+              remoteApkPath,
+            ]);
+            if (!isSuccessOutput(writeOutput)) {
+              return writeOutput;
+            }
+          }
+
+          const commitOutput = await connection.adb.subprocess.noneProtocol.spawnWaitText([
+            'pm',
+            'install-commit',
+            sessionId,
+          ]);
+          committed = isSuccessOutput(commitOutput);
+          return commitOutput;
         } finally {
+          if (sessionId && !committed) {
+            await connection.adb.subprocess.noneProtocol
+              .spawnWaitText(['pm', 'install-abandon', sessionId])
+              .catch(() => {});
+          }
           await sync.dispose().catch(() => {});
           if (remoteApkPaths.length > 0) {
             await connection.adb.subprocess.noneProtocol

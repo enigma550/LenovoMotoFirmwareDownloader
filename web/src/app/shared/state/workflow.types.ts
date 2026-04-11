@@ -7,7 +7,14 @@ import type {
 
 export type CategoryFilter = 'all' | 'phone' | 'tablet' | 'smart';
 export type ReadSupportFilter = 'all' | 'true' | 'false';
-export type SourceMode = 'connected' | 'catalog' | 'downloads' | 'backup-restore' | 'about' | null;
+export type SourceMode =
+  | 'connected'
+  | 'catalog'
+  | 'downloads'
+  | 'backup-restore'
+  | 'app-store'
+  | 'about'
+  | null;
 export type ReadSupportMode = 'imei' | 'sn' | 'params';
 export type ThemeMode = 'light' | 'dark';
 export type ToastVariant = 'info' | 'success' | 'error';
