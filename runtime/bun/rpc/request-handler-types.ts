@@ -21,6 +21,16 @@ import type {
   LookupReadSupportByImeiRequest,
   LookupReadSupportByParamsRequest,
   LookupReadSupportBySnRequest,
+  PlayStoreAppDetailsRequest,
+  PlayStoreAppDetailsResponse,
+  PlayStoreDownloadRequest,
+  PlayStoreDownloadResponse,
+  PlayStoreDownloadsResponse,
+  PlayStoreInstallRequest,
+  PlayStoreInstallResponse,
+  PlayStoreSearchRequest,
+  PlayStoreSearchResponse,
+  PlayStoreStatusResponse,
   ReadLocalFileContentRequest,
   ReadLocalFileContentResponse,
   ReadSupportHintsRequest,
@@ -104,6 +114,12 @@ export interface BunRpcRequestHandlers {
     RescueLiteFirmwareFromLocalRequest,
     RpcResponse<'rescueLiteFirmwareFromLocal'>
   >;
+  getPlayStoreStatus: RpcHandler<undefined, PlayStoreStatusResponse>;
+  listPlayStoreDownloads: RpcHandler<undefined, PlayStoreDownloadsResponse>;
+  searchPlayStoreApps: RpcHandler<PlayStoreSearchRequest, PlayStoreSearchResponse>;
+  getPlayStoreAppDetails: RpcHandler<PlayStoreAppDetailsRequest, PlayStoreAppDetailsResponse>;
+  downloadPlayStoreApp: RpcHandler<PlayStoreDownloadRequest, PlayStoreDownloadResponse>;
+  installPlayStoreApp: RpcHandler<PlayStoreInstallRequest, PlayStoreInstallResponse>;
   cancelDownload: RpcHandler<CancelDownloadRequest, RpcResponse<'cancelDownload'>>;
   listLocalDownloadedFiles: RpcHandler<undefined, LocalDownloadedFilesResponse>;
   listBackupRestoreSnapshots: RpcHandler<undefined, BackupRestoreSnapshotsResponse>;

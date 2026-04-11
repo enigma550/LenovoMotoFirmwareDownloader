@@ -11,13 +11,14 @@
     "start:instance": "bunx electrobun dev",
     "scan:connected-preview": "bun run tooling/dev/scan-connected-preview.ts",
     "// --- Build & Distribution ---": "",
-    "build:dev": "bun run qdl:prepare && bun run ffmpeg:prepare && bun run prepare:all && bun run tooling/build/run-electrobun-build.ts dev",
-    "build:canary": "bun run qdl:prepare && bun run ffmpeg:prepare && bun run prepare:all && bun run tooling/build/run-electrobun-build.ts canary",
-    "build:stable": "bun run qdl:prepare && bun run ffmpeg:prepare && bun run prepare:all && bun run tooling/build/run-electrobun-build.ts stable",
+    "build:dev": "bun run qdl:prepare && bun run ffmpeg:prepare && bun run gplaydl:prepare && bun run prepare:all && bun run tooling/build/run-electrobun-build.ts dev",
+    "build:canary": "bun run qdl:prepare && bun run ffmpeg:prepare && bun run gplaydl:prepare && bun run prepare:all && bun run tooling/build/run-electrobun-build.ts canary",
+    "build:stable": "bun run qdl:prepare && bun run ffmpeg:prepare && bun run gplaydl:prepare && bun run prepare:all && bun run tooling/build/run-electrobun-build.ts stable",
     "// --- Infrastructure & Utils ---": "",
     "prepare:all": "bun run web:build && bun run tooling/build/sync-frontend.ts && bun run android-helper:build && bun run system-prompt-dex:build",
     "qdl:prepare": "bun run tooling/build/prepare-qdl.ts",
     "ffmpeg:prepare": "bun run tooling/build/prepare-ffmpeg.ts",
+    "gplaydl:prepare": "bun run tooling/build/prepare-gplaydl.ts",
     "android-helper:build": "bun run runtime/bun/features/backup-restore/on-device/restore-helper/build.ts",
     "system-prompt-dex:build": "bun run runtime/bun/features/backup-restore/on-device/system-prompt/build.ts",
     "web:build": "cd web && bun run build:desktop",
@@ -35,7 +36,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
-    "@types/bun": "^1.3.11",
+    "@types/bun": "^1.3.12",
     "rcedit": "^5.0.2"
   },
   "peerDependencies": {

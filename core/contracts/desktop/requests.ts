@@ -9,6 +9,7 @@ import type {
   AppInfo,
   DesktopIntegrationStatus,
   FrameworkUpdateInfo,
+  PlayStoreArch,
   RescueFlashTransport,
   RescueQdlStorage,
 } from './entries';
@@ -31,6 +32,12 @@ import type {
   LocalDownloadedFilesResponse,
   ManualCatalogLookupResponse,
   PendingAuthCallbackResponse,
+  PlayStoreAppDetailsResponse,
+  PlayStoreDownloadResponse,
+  PlayStoreDownloadsResponse,
+  PlayStoreInstallResponse,
+  PlayStoreSearchResponse,
+  PlayStoreStatusResponse,
   ReadLocalFileContentResponse,
   ReadSupportHintsResponse,
   ReadSupportLookupResponse,
@@ -115,6 +122,30 @@ export interface PauseDownloadRequest {
 
 export interface ResumeDownloadRequest {
   downloadId: string;
+}
+
+export interface PlayStoreSearchRequest {
+  query: string;
+  limit?: number;
+  arch?: PlayStoreArch;
+}
+
+export interface PlayStoreAppDetailsRequest {
+  packageName: string;
+  arch?: PlayStoreArch;
+}
+
+export interface PlayStoreDownloadRequest {
+  packageName: string;
+  arch?: PlayStoreArch;
+  includeSplits?: boolean;
+  includeExtras?: boolean;
+}
+
+export interface PlayStoreInstallRequest {
+  packageName: string;
+  artifactPaths: string[];
+  mode?: 'standard' | 'microg';
 }
 
 export interface AuthCompleteRequest {
@@ -255,6 +286,14 @@ export interface DesktopApi {
   rescueLiteFirmwareFromLocal: (
     payload: RescueLiteFirmwareFromLocalRequest,
   ) => Promise<RescueLiteFirmwareResponse>;
+  getPlayStoreStatus: () => Promise<PlayStoreStatusResponse>;
+  listPlayStoreDownloads: () => Promise<PlayStoreDownloadsResponse>;
+  searchPlayStoreApps: (payload: PlayStoreSearchRequest) => Promise<PlayStoreSearchResponse>;
+  getPlayStoreAppDetails: (
+    payload: PlayStoreAppDetailsRequest,
+  ) => Promise<PlayStoreAppDetailsResponse>;
+  downloadPlayStoreApp: (payload: PlayStoreDownloadRequest) => Promise<PlayStoreDownloadResponse>;
+  installPlayStoreApp: (payload: PlayStoreInstallRequest) => Promise<PlayStoreInstallResponse>;
   extractLocalFirmware: (
     payload: ExtractLocalFirmwareRequest,
   ) => Promise<ExtractLocalFirmwareResponse>;

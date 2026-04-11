@@ -1,0 +1,11 @@
+{
+  "source": "pyinstaller",
+  "platform": "linux",
+  "arch": "x64",
+  "binaryName": "gplaydl",
+  "gplaydlVersion": "2.1.5",
+  "pyinstallerVersion": "6.19.0",
+  "pythonExecutable": "python3",
+  "copiedFrom": "/tmp/lmfd-gplaydl-build/linux-x64/dist/gplaydl",
+  "preparedAt": "2026-04-11T06:30:02.672Z"
+}

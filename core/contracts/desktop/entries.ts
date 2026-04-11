@@ -15,6 +15,43 @@ export interface LocalDownloadedFile {
   hasRecipeMetadata?: boolean;
 }
 
+export type PlayStoreArch = 'arm64' | 'armv7';
+
+export interface PlayStoreSearchResult {
+  title: string;
+  packageName: string;
+}
+
+export interface PlayStoreAppDetails {
+  title: string;
+  packageName: string;
+  versionName?: string;
+  versionCode?: string;
+  developer?: string;
+  rating?: string;
+  downloads?: string;
+  playUrl?: string;
+}
+
+export interface PlayStoreDownloadedArtifact {
+  fileName: string;
+  fullPath: string;
+  relativePath?: string;
+  sizeBytes: number;
+  modifiedAt: number;
+}
+
+export interface PlayStoreDownloadGroup {
+  id: string;
+  packageName: string;
+  versionCode?: string;
+  totalSizeBytes: number;
+  modifiedAt: number;
+  apkArtifactCount: number;
+  extraArtifactCount: number;
+  artifacts: PlayStoreDownloadedArtifact[];
+}
+
 export interface BackupRestoreAppEntry {
   id: string;
   appName: string;

@@ -1,3 +1,4 @@
+import { createAppStoreHandlers } from '../features/app-store/rpc/index.ts';
 import { createAuthHandlers } from '../features/auth/rpc/index.ts';
 import { createBackupRestoreHandlers } from '../features/backup-restore/rpc/index.ts';
 import { createCatalogHandlers } from '../features/catalog/rpc/index.ts';
@@ -30,6 +31,7 @@ export function createRequestHandlers(options: {
       getMainWindowUrl: options.getMainWindowUrl,
     }),
   );
+  registry.registerMany(createAppStoreHandlers());
   registry.registerMany(createCatalogHandlers());
   registry.registerMany(createDownloadHandlers(options.sendDownloadProgress));
   registry.registerMany(createDownloadLocalFileHandlers());

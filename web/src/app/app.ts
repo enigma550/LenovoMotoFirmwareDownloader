@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { ensureDesktopBridgeReady } from './core/bridge/electrobun-bridge';
 import { AboutWorkspaceComponent } from './features/about/about-workspace/about-workspace.component';
 import { DesktopPromptModalComponent } from './features/about/desktop-prompt-modal/desktop-prompt-modal.component';
+import { AppStoreWorkspaceComponent } from './features/app-store/app-store-workspace/app-store-workspace.component';
 import { AuthPanelComponent } from './features/auth/auth-panel/auth-panel.component';
 import { BackupRestoreWorkspaceComponent } from './features/backup-restore/backup-restore-workspace/backup-restore-workspace.component';
 import { CatalogWorkspaceComponent } from './features/catalog/catalog-workspace/catalog-workspace.component';
@@ -22,6 +23,7 @@ import { AppFacade } from './state';
     CatalogWorkspaceComponent,
     DownloadsPanelComponent,
     BackupRestoreWorkspaceComponent,
+    AppStoreWorkspaceComponent,
     RescueWorkspaceComponent,
     AboutWorkspaceComponent,
     DesktopPromptModalComponent,
