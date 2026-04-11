@@ -191,6 +191,8 @@
         <app-downloads-panel />
         } @else if (store.sourceMode() === 'backup-restore') {
         <app-backup-restore-workspace />
+        } @else if (store.sourceMode() === 'app-store') {
+        <app-app-store-workspace />
         } @else if (store.sourceMode() === 'about') {
         <app-about-workspace />
         } @else if (store.sourceMode() === null) {
@@ -210,7 +212,7 @@
           </p>
         </div>
         } @if (store.authComplete() && store.sourceMode() !== 'downloads' && store.sourceMode() !==
-        'backup-restore') {
+        'backup-restore' && store.sourceMode() !== 'app-store') {
         <app-rescue-workspace />
         }
       </section>

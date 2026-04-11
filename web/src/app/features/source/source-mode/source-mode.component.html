@@ -32,11 +32,15 @@
         [class.border-dark-border]="store.sourceMode() !== 'connected' && store.isDark()"
         [class.bg-dark-elevated]="store.sourceMode() !== 'connected' && store.isDark()"
         [class.text-dark-text]="store.sourceMode() !== 'connected' && store.isDark()"
-        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.hover:border-dark-border-bright]="
+          store.sourceMode() !== 'connected' && store.isDark()
+        "
         [class.border-light-border]="store.sourceMode() !== 'connected' && !store.isDark()"
         [class.bg-light-surface]="store.sourceMode() !== 'connected' && !store.isDark()"
         [class.text-light-text]="store.sourceMode() !== 'connected' && !store.isDark()"
-        [class.hover:border-light-border-bright]="store.sourceMode() !== 'connected' && !store.isDark()"
+        [class.hover:border-light-border-bright]="
+          store.sourceMode() !== 'connected' && !store.isDark()
+        "
         type="button"
         (click)="store.setSourceMode('connected')"
       >
@@ -56,7 +60,8 @@
             class="block text-xs"
             [class.text-dark-text-dim]="store.isDark()"
             [class.text-light-text-dim]="!store.isDark()"
-          >via ADB</span>
+            >via ADB</span
+          >
         </span>
       </button>
 
@@ -74,7 +79,9 @@
         [class.border-light-border]="store.sourceMode() !== 'catalog' && !store.isDark()"
         [class.bg-light-surface]="store.sourceMode() !== 'catalog' && !store.isDark()"
         [class.text-light-text]="store.sourceMode() !== 'catalog' && !store.isDark()"
-        [class.hover:border-light-border-bright]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        [class.hover:border-light-border-bright]="
+          store.sourceMode() !== 'catalog' && !store.isDark()
+        "
         type="button"
         (click)="store.setSourceMode('catalog')"
       >
@@ -108,7 +115,8 @@
         class="text-xs font-semibold uppercase tracking-wide"
         [class.text-dark-text-dim]="store.isDark()"
         [class.text-light-text-dim]="!store.isDark()"
-      >Workspace</span>
+        >Workspace</span
+      >
     </div>
 
     <div class="mt-4 grid gap-2">
@@ -122,11 +130,15 @@
         [class.border-dark-border]="store.sourceMode() !== 'downloads' && store.isDark()"
         [class.bg-dark-elevated]="store.sourceMode() !== 'downloads' && store.isDark()"
         [class.text-dark-text]="store.sourceMode() !== 'downloads' && store.isDark()"
-        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.hover:border-dark-border-bright]="
+          store.sourceMode() !== 'downloads' && store.isDark()
+        "
         [class.border-light-border]="store.sourceMode() !== 'downloads' && !store.isDark()"
         [class.bg-light-surface]="store.sourceMode() !== 'downloads' && !store.isDark()"
         [class.text-light-text]="store.sourceMode() !== 'downloads' && !store.isDark()"
-        [class.hover:border-light-border-bright]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        [class.hover:border-light-border-bright]="
+          store.sourceMode() !== 'downloads' && !store.isDark()
+        "
         type="button"
         (click)="store.setSourceMode('downloads')"
       >
@@ -153,25 +165,68 @@
         [class.border-dark-border]="store.sourceMode() !== 'backup-restore' && store.isDark()"
         [class.bg-dark-elevated]="store.sourceMode() !== 'backup-restore' && store.isDark()"
         [class.text-dark-text]="store.sourceMode() !== 'backup-restore' && store.isDark()"
-        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.hover:border-dark-border-bright]="
+          store.sourceMode() !== 'backup-restore' && store.isDark()
+        "
         [class.border-light-border]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
         [class.bg-light-surface]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
         [class.text-light-text]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
-        [class.hover:border-light-border-bright]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        [class.hover:border-light-border-bright]="
+          store.sourceMode() !== 'backup-restore' && !store.isDark()
+        "
         type="button"
         (click)="store.setSourceMode('backup-restore')"
       >
         <span
           class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
           [class.border-accent]="store.sourceMode() === 'backup-restore'"
-          [class.border-dark-border-bright]="store.sourceMode() !== 'backup-restore' && store.isDark()"
-          [class.border-light-border-bright]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+          [class.border-dark-border-bright]="
+            store.sourceMode() !== 'backup-restore' && store.isDark()
+          "
+          [class.border-light-border-bright]="
+            store.sourceMode() !== 'backup-restore' && !store.isDark()
+          "
         >
           @if (store.sourceMode() === 'backup-restore') {
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
         <span>Backup/Restore</span>
+      </button>
+
+      <!-- App Store -->
+      <button
+        class="flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all"
+        [class.border-accent]="store.sourceMode() === 'app-store'"
+        [class.bg-accent-subtle]="store.sourceMode() === 'app-store' && !store.isDark()"
+        [class.bg-accent/10]="store.sourceMode() === 'app-store' && store.isDark()"
+        [class.text-accent]="store.sourceMode() === 'app-store'"
+        [class.border-dark-border]="store.sourceMode() !== 'app-store' && store.isDark()"
+        [class.bg-dark-elevated]="store.sourceMode() !== 'app-store' && store.isDark()"
+        [class.text-dark-text]="store.sourceMode() !== 'app-store' && store.isDark()"
+        [class.hover:border-dark-border-bright]="
+          store.sourceMode() !== 'app-store' && store.isDark()
+        "
+        [class.border-light-border]="store.sourceMode() !== 'app-store' && !store.isDark()"
+        [class.bg-light-surface]="store.sourceMode() !== 'app-store' && !store.isDark()"
+        [class.text-light-text]="store.sourceMode() !== 'app-store' && !store.isDark()"
+        [class.hover:border-light-border-bright]="
+          store.sourceMode() !== 'app-store' && !store.isDark()
+        "
+        type="button"
+        (click)="store.setSourceMode('app-store')"
+      >
+        <span
+          class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
+          [class.border-accent]="store.sourceMode() === 'app-store'"
+          [class.border-dark-border-bright]="store.sourceMode() !== 'app-store' && store.isDark()"
+          [class.border-light-border-bright]="store.sourceMode() !== 'app-store' && !store.isDark()"
+        >
+          @if (store.sourceMode() === 'app-store') {
+            <span class="h-2 w-2 rounded-full bg-accent"></span>
+          }
+        </span>
+        <span class="block">App Store</span>
       </button>
 
       <!-- About -->
@@ -193,7 +248,9 @@
           [class.border-light-border]="store.sourceMode() !== 'about' && !store.isDark()"
           [class.bg-light-surface]="store.sourceMode() !== 'about' && !store.isDark()"
           [class.text-light-text]="store.sourceMode() !== 'about' && !store.isDark()"
-          [class.hover:border-light-border-bright]="store.sourceMode() !== 'about' && !store.isDark()"
+          [class.hover:border-light-border-bright]="
+            store.sourceMode() !== 'about' && !store.isDark()
+          "
           type="button"
           (click)="store.setSourceMode('about')"
         >

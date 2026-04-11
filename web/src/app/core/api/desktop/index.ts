@@ -1,3 +1,4 @@
+export { AppStoreDesktopApiService } from './app-store-desktop-api.service';
 export { AuthDesktopApiService } from './auth-desktop-api.service';
 export { BackupRestoreDesktopApiService } from './backup-restore-desktop-api.service';
 export { CatalogDesktopApiService } from './catalog-desktop-api.service';

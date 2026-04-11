@@ -9,6 +9,7 @@ import {
 } from './features/rescue/extractors/archive-format.ts';
 import { extractFirmwareArchive } from './features/rescue/extractors/extract-firmware-archive.ts';
 import {
+  getAppStoreDownloadDirectory,
   getDownloadDirectory,
   getExtractDirForPackagePath,
   getRescueDirectory,
@@ -20,6 +21,7 @@ import {
 } from './firmware-package-paths.ts';
 
 export {
+  getAppStoreDownloadDirectory,
   getDownloadDirectory,
   getExtractDirForPackagePath,
   getFirmwareArchiveExtension,

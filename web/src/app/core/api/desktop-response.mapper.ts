@@ -22,6 +22,12 @@ import type {
   ExtractLocalFirmwareResponse,
   FrameworkUpdateInfo,
   PendingAuthCallbackResponse,
+  PlayStoreAppDetailsResponse,
+  PlayStoreDownloadResponse,
+  PlayStoreDownloadsResponse,
+  PlayStoreInstallResponse,
+  PlayStoreSearchResponse,
+  PlayStoreStatusResponse,
   ReadLocalFileContentResponse,
   RescueLiteFirmwareResponse,
   StoredAuthStateResponse,
@@ -186,6 +192,138 @@ export function mapStoredAuthStateResponse(payload: MapperValue): StoredAuthStat
     hasStoredAuthorizationToken: record
       ? readBoolean(record, 'hasStoredAuthorizationToken', false)
       : false,
+  };
+}
+
+function mapPlayStoreArtifactArray(value: MapperValue): PlayStoreDownloadResponse['artifacts'] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => asRecord(item))
+    .filter((item): item is NonNullable<ReturnType<typeof asRecord>> => Boolean(item))
+    .map((item) => ({
+      fileName: readString(item, 'fileName'),
+      fullPath: readString(item, 'fullPath'),
+      relativePath: readOptionalString(item, 'relativePath'),
+      sizeBytes: readNumber(item, 'sizeBytes', 0),
+      modifiedAt: readNumber(item, 'modifiedAt', 0),
+    }))
+    .filter((item) => item.fileName.length > 0 && item.fullPath.length > 0);
+}
+
+export function mapPlayStoreStatusResponse(payload: MapperValue): PlayStoreStatusResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  return {
+    ...base,
+    available: record ? readBoolean(record, 'available', false) : false,
+    toolPath: record ? readOptionalString(record, 'toolPath') : undefined,
+    toolSource: (() => {
+      const value = record ? readOptionalString(record, 'toolSource') : undefined;
+      return value === 'bundled' || value === 'system' || value === 'custom' ? value : undefined;
+    })(),
+    downloadRoot: record ? readOptionalString(record, 'downloadRoot') : undefined,
+  };
+}
+
+export function mapPlayStoreSearchResponse(payload: MapperValue): PlayStoreSearchResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  const results = Array.isArray(record?.['results'])
+    ? record['results']
+        .map((item) => asRecord(item))
+        .filter((item): item is NonNullable<ReturnType<typeof asRecord>> => Boolean(item))
+        .map((item) => ({
+          title: readString(item, 'title'),
+          packageName: readString(item, 'packageName'),
+        }))
+        .filter((item) => item.packageName.length > 0)
+    : [];
+
+  return {
+    ...base,
+    results,
+  };
+}
+
+export function mapPlayStoreAppDetailsResponse(payload: MapperValue): PlayStoreAppDetailsResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  const data = asRecord(record?.['data']);
+
+  return {
+    ...base,
+    data: data
+      ? {
+          title: readString(data, 'title'),
+          packageName: readString(data, 'packageName'),
+          versionName: readOptionalString(data, 'versionName'),
+          versionCode: readOptionalString(data, 'versionCode'),
+          developer: readOptionalString(data, 'developer'),
+          rating: readOptionalString(data, 'rating'),
+          downloads: readOptionalString(data, 'downloads'),
+          playUrl: readOptionalString(data, 'playUrl'),
+        }
+      : undefined,
+  };
+}
+
+export function mapPlayStoreDownloadResponse(payload: MapperValue): PlayStoreDownloadResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  return {
+    ...base,
+    packageName: record ? readString(record, 'packageName') : '',
+    downloadRoot: record ? readOptionalString(record, 'downloadRoot') : undefined,
+    artifacts: mapPlayStoreArtifactArray(record?.['artifacts']),
+  };
+}
+
+export function mapPlayStoreDownloadsResponse(payload: MapperValue): PlayStoreDownloadsResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  const downloadsValue = Array.isArray(record?.['downloads']) ? record['downloads'] : [];
+  const downloads: PlayStoreDownloadsResponse['downloads'] = [];
+
+  for (const value of downloadsValue) {
+    const group = asRecord(value);
+    if (!group) {
+      continue;
+    }
+
+    downloads.push({
+      id: readString(group, 'id'),
+      packageName: readString(group, 'packageName'),
+      versionCode: readOptionalString(group, 'versionCode'),
+      totalSizeBytes: readNumber(group, 'totalSizeBytes', 0),
+      modifiedAt: readNumber(group, 'modifiedAt', 0),
+      apkArtifactCount: readNumber(group, 'apkArtifactCount', 0),
+      extraArtifactCount: readNumber(group, 'extraArtifactCount', 0),
+      artifacts: mapPlayStoreArtifactArray(group['artifacts']),
+    });
+  }
+
+  return {
+    ...base,
+    downloadRoot: record ? readOptionalString(record, 'downloadRoot') : undefined,
+    downloads,
+  };
+}
+
+export function mapPlayStoreInstallResponse(payload: MapperValue): PlayStoreInstallResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  return {
+    ...base,
+    packageName: record ? readString(record, 'packageName') : '',
+    installedArtifactCount: record ? readNumber(record, 'installedArtifactCount', 0) : 0,
+    installMode: (() => {
+      const value = record ? readOptionalString(record, 'installMode') : undefined;
+      return value === 'standard' || value === 'microg' ? value : undefined;
+    })(),
+    detail: record ? readOptionalString(record, 'detail') : undefined,
   };
 }
 

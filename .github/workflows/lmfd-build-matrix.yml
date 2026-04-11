@@ -159,6 +159,10 @@ jobs:
         shell: bash
         run: bun run ffmpeg:prepare
 
+      - name: Prepare bundled gplaydl sidecar
+        shell: bash
+        run: bun run gplaydl:prepare
+
       - name: Prepare runtime views
         shell: bash
         run: bun run prepare:all
@@ -388,11 +392,12 @@ jobs:
               # Update existing release to preserve the URL (sets it to active if it was stuck as a draft)
               gh release edit canary --title "LMFD Canary (Latest)" --prerelease --draft=false
 
-              # Delete old versioned installers to prevent them from piling up,
-              # but KEEP the .patch files and .tar.zst payloads for the updater!
+              # Delete old rolling-release assets before uploading the latest build.
+              # Patch filenames are content-addressed/randomized, so leaving them in place
+              # makes stale updater patches accumulate across canary builds.
               echo "Cleaning up old installers..."
               for asset in $(gh release view canary --json assets --jq '.assets[].name'); do
-                if [[ "$asset" == *".dmg" || "$asset" == *".zip" || "$asset" == *".AppImage" || "$asset" == *".AppImage.zsync" ]]; then
+                if [[ "$asset" == *".dmg" || "$asset" == *".zip" || "$asset" == *".AppImage" || "$asset" == *".AppImage.zsync" || "$asset" == *".patch" ]]; then
                   gh release delete-asset canary "$asset" -y || true
                 fi
               done
