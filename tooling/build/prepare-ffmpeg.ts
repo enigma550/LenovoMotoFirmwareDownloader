@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { chmod, copyFile, mkdir, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const REPO_ROOT = process.cwd();
 
@@ -45,10 +45,44 @@ async function resolveStaticFfmpegPath() {
     const ffmpegStaticModule = (await import('ffmpeg-static')) as Record<string, unknown>;
     const staticPathCandidate = ffmpegStaticModule.default ?? ffmpegStaticModule;
     const staticPath = typeof staticPathCandidate === 'string' ? staticPathCandidate.trim() : '';
-    if (!staticPath || !existsSync(staticPath)) {
+    if (!staticPath) {
       return '';
     }
-    return resolve(staticPath);
+
+    const resolvedPath = resolve(staticPath);
+    if (existsSync(resolvedPath)) {
+      return resolvedPath;
+    }
+
+    // Some local Windows installs of ffmpeg-static expose an .exe path while
+    // the downloaded binary is present without the extension.
+    if (resolvedPath.endsWith('.exe')) {
+      const extensionlessPath = resolvedPath.slice(0, -4);
+      if (existsSync(extensionlessPath)) {
+        return extensionlessPath;
+      }
+    }
+
+    const exePath = `${resolvedPath}.exe`;
+    if (existsSync(exePath)) {
+      return exePath;
+    }
+
+    const siblingBaseName = ffmpegBinaryNameForPlatform(normalizeTargetPlatform()).replace(
+      /\.exe$/i,
+      '',
+    );
+    const siblingCandidates = [
+      join(dirname(resolvedPath), siblingBaseName),
+      join(dirname(resolvedPath), `${siblingBaseName}.exe`),
+    ];
+    for (const candidate of siblingCandidates) {
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+    }
+
+    return '';
   } catch {
     return '';
   }

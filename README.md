@@ -77,7 +77,7 @@ Electrobun builds for the current host platform.
 So macOS builds must run on macOS, and Windows builds must run on Windows.
 
 This repo includes a GitHub Actions matrix workflow:
-- `.github/workflows/electrobun-build-matrix.yml`
+- `.github/workflows/lmfd-build-matrix.yml`
 
 Run it from **Actions → Build Matrix → Run workflow** and choose:
 - `dev`

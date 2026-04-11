@@ -17,6 +17,14 @@ on:
         required: true
         default: true
         type: boolean
+      preRelease:
+        description: "Mark GitHub Release as a pre-release"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
       releaseTag:
         description: "Release tag (leave empty to auto-generate)"
         required: false
@@ -37,6 +45,7 @@ jobs:
       buildEnv: ${{ steps.options.outputs.buildEnv }}
       electrobunEnv: ${{ steps.options.outputs.electrobunEnv }}
       publishRelease: ${{ steps.options.outputs.publishRelease }}
+      preRelease: ${{ steps.options.outputs.preRelease }}
       releaseTag: ${{ steps.options.outputs.releaseTag }}
     steps:
       - name: Resolve options
@@ -45,6 +54,7 @@ jobs:
         run: |
           buildEnv="${{ inputs.buildEnv }}"
           publishRelease="${{ inputs.publishRelease }}"
+          preRelease="${{ inputs.preRelease }}"
           releaseTag="${{ inputs.releaseTag }}"
 
           if [ "$buildEnv" = "dev" ]; then
@@ -58,6 +68,7 @@ jobs:
           echo "buildEnv=$buildEnv" >> "$GITHUB_OUTPUT"
           echo "electrobunEnv=$electrobunEnv" >> "$GITHUB_OUTPUT"
           echo "publishRelease=$publishRelease" >> "$GITHUB_OUTPUT"
+          echo "preRelease=$preRelease" >> "$GITHUB_OUTPUT"
           echo "releaseTag=$releaseTag" >> "$GITHUB_OUTPUT"
 
   resolve-version:
@@ -344,11 +355,22 @@ jobs:
           tag="${{ steps.meta.outputs.tag }}"
           title="${{ steps.meta.outputs.title }}"
           buildEnv="${{ needs.resolve-build-options.outputs.buildEnv }}"
+          preRelease="${{ needs.resolve-build-options.outputs.preRelease }}"
+
+          prereleaseFlag=""
+          [ "$preRelease" == "true" ] && prereleaseFlag="--prerelease"
 
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            prerelease=""
-            [ "$buildEnv" != "stable" ] && prerelease="--prerelease"
-            gh release create "$tag" --title "$title" --notes "Automated build." $prerelease
+            gh release create "$tag" --title "$title" --notes "Automated build." $prereleaseFlag
+          else
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${{ github.repository }}/releases/tags/$tag" \
+              -F name="$title" \
+              -F draft=false \
+              -F prerelease="$preRelease" \
+              >/dev/null
           fi
 
           gh release upload "$tag" release-assets/* --clobber
