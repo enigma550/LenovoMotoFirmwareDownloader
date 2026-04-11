@@ -175,7 +175,7 @@ jobs:
           attempts=4
           for i in $(seq 1 "$attempts"); do
             echo "Electrobun build attempt $i/$attempts"
-            if bunx electrobun build --env=${{ needs.resolve-build-options.outputs.electrobunEnv }}; then
+            if bun run tooling/build/run-electrobun-build.ts ${{ needs.resolve-build-options.outputs.electrobunEnv }}; then
               exit 0
             fi
             if [ "$i" -lt "$attempts" ]; then
@@ -196,7 +196,7 @@ jobs:
           $attempts = 4
           for ($i = 1; $i -le $attempts; $i++) {
             Write-Host "Electrobun build attempt $i/$attempts"
-            bunx electrobun build --env=${{ needs.resolve-build-options.outputs.electrobunEnv }}
+            bun run tooling/build/run-electrobun-build.ts ${{ needs.resolve-build-options.outputs.electrobunEnv }}
             if ($LASTEXITCODE -eq 0) {
               exit 0
             }

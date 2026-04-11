@@ -14,6 +14,10 @@ for (const [key, value] of Object.entries(process.env)) {
   }
 }
 
+// Electrobun loads electrobun.config.ts before it parses --env=..., so the
+// build environment has to exist in the process environment up front.
+childEnv.ELECTROBUN_BUILD_ENV = buildEnv;
+
 if (process.platform === 'win32') {
   // PowerShell module autoload for Compress-Archive can fail when Bun forwards
   // the current PSModulePath into Electrobun's child PowerShell process.
