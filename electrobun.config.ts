@@ -33,7 +33,7 @@ export default {
   app: {
     name: "LMFD",
     identifier: "com.github.enigma550.lenovomotofirmwaredownloader",
-    version: "0.0.2",
+    version: "0.0.3",
   },
   runtime: {
     exitOnLastWindowClosed: true,
