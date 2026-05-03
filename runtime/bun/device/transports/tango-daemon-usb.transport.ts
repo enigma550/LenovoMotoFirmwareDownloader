@@ -1,3 +1,4 @@
+import { runBufferedCommand } from '../../process/index.ts';
 import type {
   ConnectedDeviceConnection,
   ConnectedDeviceTransport,
@@ -191,23 +192,22 @@ async function waitForFirstDevice(
 }
 
 async function runLocalCommand(command: string[]) {
-  try {
-    const proc = Bun.spawn(command, {
-      stdout: 'pipe',
-      stderr: 'pipe',
-    });
-    const [stdout, stderr, exitCode] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ]);
-    if (exitCode !== 0 && !stdout.trim()) {
-      return null;
-    }
-    return (stdout || stderr).trim() || null;
-  } catch {
+  const [executable, ...args] = command;
+  if (!executable) {
     return null;
   }
+
+  const result = await runBufferedCommand({
+    args,
+    command: executable,
+    envMode: 'sidecar',
+  });
+
+  if (result.exitCode !== 0 && !result.stdoutText.trim()) {
+    return null;
+  }
+
+  return (result.stdoutText || result.stderrText).trim() || null;
 }
 
 async function findUsbLockOwner(device: unknown) {

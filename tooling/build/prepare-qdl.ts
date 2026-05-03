@@ -2,6 +2,9 @@ import { existsSync } from 'node:fs';
 import { chmod, cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import type { BuildArch, BuildPlatform } from './lib/build-env.ts';
+import { resolveBuildTarget } from './lib/build-env.ts';
+import { runCommand } from './lib/process.ts';
 
 const REPO_ROOT = process.cwd();
 const QDL_REPO_WEB = 'https://github.com/linux-msm/qdl';
@@ -17,24 +20,7 @@ if (SKIP_PREPARE) {
   process.exit(0);
 }
 
-function normalizeTargetPlatform() {
-  const rawOs = (Bun.env.ELECTROBUN_OS || process.env.ELECTROBUN_OS || process.platform).trim();
-  if (rawOs === 'mac' || rawOs === 'darwin') return 'darwin';
-  if (rawOs === 'win' || rawOs === 'windows' || rawOs === 'win32') return 'win32';
-  if (rawOs === 'linux') return 'linux';
-  throw new Error(`[QDL] Unsupported target OS: ${rawOs}`);
-}
-
-function normalizeTargetArch() {
-  const rawArch = (Bun.env.ELECTROBUN_ARCH || process.env.ELECTROBUN_ARCH || process.arch)
-    .trim()
-    .toLowerCase();
-  if (rawArch === 'x64' || rawArch === 'amd64') return 'x64';
-  if (rawArch === 'arm64' || rawArch === 'aarch64') return 'arm64';
-  throw new Error(`[QDL] Unsupported target arch: ${rawArch}`);
-}
-
-function resolveAssetName(targetPlatform: string, targetArch: string) {
+function resolveAssetName(targetPlatform: BuildPlatform, targetArch: BuildArch) {
   if (targetPlatform === 'darwin') {
     return targetArch === 'arm64' ? 'qdl-binary-macos-arm64.zip' : 'qdl-binary-macos-intel.zip';
   }
@@ -48,21 +34,6 @@ function resolveAssetName(targetPlatform: string, targetArch: string) {
   }
 
   throw new Error(`[QDL] Unsupported platform for asset resolution: ${targetPlatform}`);
-}
-
-function runCommand(command: string, args: string[]) {
-  const result = Bun.spawnSync([command, ...args], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-
-  if (result.exitCode !== 0) {
-    const stderrText = result.stderr.toString().trim();
-    const stdoutText = result.stdout.toString().trim();
-    throw new Error(
-      `[QDL] Command failed: ${command} ${args.join(' ')}\n${stderrText || stdoutText || 'Unknown error'}`,
-    );
-  }
 }
 
 function shouldRetryStatus(status: number) {
@@ -287,9 +258,10 @@ async function downloadQdlAsset(selection: QdlReleaseSelection) {
 }
 
 async function main() {
-  const targetPlatform = normalizeTargetPlatform();
-  const targetArch = normalizeTargetArch();
-  const platformArchKey = `${targetPlatform}-${targetArch}`;
+  const target = resolveBuildTarget({ label: 'QDL' });
+  const targetPlatform = target.platform;
+  const targetArch = target.arch;
+  const platformArchKey = target.key;
   const targetAssetName = resolveAssetName(targetPlatform, targetArch);
   const executableName = targetPlatform === 'win32' ? 'qdl.exe' : 'qdl';
 
@@ -323,9 +295,21 @@ async function main() {
       "if (Test-Path -LiteralPath $extractDir) { Remove-Item -LiteralPath (Join-Path $extractDir '*') -Recurse -Force -ErrorAction SilentlyContinue }",
       '[System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $extractDir)',
     ].join('; ');
-    runCommand('powershell', ['-NoProfile', '-Command', psCommand]);
+    runCommand({
+      args: ['-NoProfile', '-Command', psCommand],
+      command: 'powershell',
+      label: 'QDL',
+      stderr: 'pipe',
+      stdout: 'pipe',
+    });
   } else {
-    runCommand('unzip', ['-o', tempZipPath, '-d', tempExtractDir]);
+    runCommand({
+      args: ['-o', tempZipPath, '-d', tempExtractDir],
+      command: 'unzip',
+      label: 'QDL',
+      stderr: 'pipe',
+      stdout: 'pipe',
+    });
   }
 
   const discoveredExecutable = await findFileRecursive(tempExtractDir, executableName);

@@ -15,6 +15,7 @@ import type {
   PlayStoreStatusResponse,
 } from '../../../shared/desktop-rpc';
 import { getAppStoreDownloadDirectory } from '../../firmware-package-utils.ts';
+import { runBufferedCommand } from '../../process/index.ts';
 import {
   checkAdbConnected,
   runCommand,
@@ -164,63 +165,24 @@ async function runGplaydl(args: string[]) {
     } satisfies CommandResult;
   }
 
-  let childProcess: Bun.Subprocess;
-  let timedOut = false;
-  try {
-    childProcess = Bun.spawn([resolved.executablePath, ...args], {
-      cwd: process.cwd(),
-      stdout: 'pipe',
-      stderr: 'pipe',
-      env: {
-        ...process.env,
-        ['NO_COLOR']: '1',
-        ['CLICOLOR']: '0',
-        ['TERM']: 'dumb',
-      },
-    });
-  } catch (error) {
-    return {
-      exitCode: -1,
-      stdoutText: '',
-      stderrText: '',
-      error: error instanceof Error ? error.message : String(error),
-    } satisfies CommandResult;
-  }
+  const result = await runBufferedCommand({
+    args,
+    command: resolved.executablePath,
+    envMode: 'sidecar',
+    envOverrides: {
+      ['CLICOLOR']: '0',
+      ['NO_COLOR']: '1',
+      ['TERM']: 'dumb',
+    },
+    timeoutMs: TOOL_TIMEOUT_MS,
+  });
 
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    try {
-      childProcess.kill();
-    } catch {
-      // Ignore kill races.
-    }
-  }, TOOL_TIMEOUT_MS);
-
-  try {
-    const stdoutStream = typeof childProcess.stdout === 'number' ? null : childProcess.stdout;
-    const stderrStream = typeof childProcess.stderr === 'number' ? null : childProcess.stderr;
-    const [stdoutText, stderrText, exitCode] = await Promise.all([
-      stdoutStream ? new Response(stdoutStream).text() : Promise.resolve(''),
-      stderrStream ? new Response(stderrStream).text() : Promise.resolve(''),
-      childProcess.exited,
-    ]);
-
-    return {
-      exitCode,
-      stdoutText,
-      stderrText,
-      error: timedOut ? 'gplaydl command timed out.' : undefined,
-    } satisfies CommandResult;
-  } catch (error) {
-    return {
-      exitCode: -1,
-      stdoutText: '',
-      stderrText: '',
-      error: error instanceof Error ? error.message : String(error),
-    } satisfies CommandResult;
-  } finally {
-    clearTimeout(timeout);
-  }
+  return {
+    error: result.timedOut ? 'gplaydl command timed out.' : result.error,
+    exitCode: result.exitCode,
+    stderrText: result.stderrText,
+    stdoutText: result.stdoutText,
+  } satisfies CommandResult;
 }
 
 function stripAnsi(text: string) {

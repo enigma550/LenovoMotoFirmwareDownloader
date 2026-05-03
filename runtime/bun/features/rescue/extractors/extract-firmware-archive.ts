@@ -1,4 +1,5 @@
 import { basename } from 'node:path';
+import { createRuntimeProcessEnv } from '../../../process/index.ts';
 import {
   getFirmwareArchiveExtension,
   SUPPORTED_FIRMWARE_ARCHIVE_EXTENSIONS,
@@ -89,12 +90,9 @@ async function runExtractionStrategy(
   try {
     processRef = Bun.spawn(options.command, {
       cwd: options.context.workingDirectory,
+      env: createRuntimeProcessEnv({ mode: 'external-command' }),
       stdout: 'pipe',
       stderr: 'pipe',
-      env: {
-        ...process.env,
-        ['LD_PRELOAD']: '',
-      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
