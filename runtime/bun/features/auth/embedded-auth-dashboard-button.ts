@@ -1,6 +1,6 @@
 export const DASHBOARD_NAVIGATION_URL = 'lmfd-auth://dashboard';
 
-const DASHBOARD_BUTTON_LABEL = '\u2190 Dashboard';
+const DASHBOARD_BUTTON_LABEL = 'Back to Dashboard';
 
 export function buildDashboardButtonScript() {
   const dashboardUrl = JSON.stringify(DASHBOARD_NAVIGATION_URL);
