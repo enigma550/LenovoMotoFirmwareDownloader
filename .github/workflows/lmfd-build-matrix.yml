@@ -134,6 +134,11 @@ jobs:
           cd web
           bun install
 
+      - name: Install Linux packaging tools
+        if: runner.os == 'Linux'
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y file fuse libfuse2 podman zsync
+
       - name: Prepare bundled QDL binary
         shell: bash
         env:
@@ -159,18 +164,13 @@ jobs:
         shell: bash
         run: bun run ffmpeg:prepare
 
-      - name: Prepare bundled gplaydl sidecar
+      - name: Prepare legacy USB addon
         shell: bash
-        run: bun run gplaydl:prepare
+        run: bun run usb:prepare
 
       - name: Prepare runtime views
         shell: bash
         run: bun run prepare:all
-
-      - name: Install zsync tools (Linux)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: sudo apt-get update && sudo apt-get install -y zsync
 
       - name: Build Electrobun app (Unix)
         if: runner.os != 'Windows'
