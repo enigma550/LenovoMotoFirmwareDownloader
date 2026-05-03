@@ -195,11 +195,11 @@ async function buildLinuxAppImage(): Promise<void> {
   const appImageArch: string = isArm ? 'aarch64' : 'x86_64';
   const fileArch: string = isArm ? 'arm64' : 'x64';
   const nameBase: string = 'LMFD';
-  const appImageOutName: string = `${channel}-linux-${fileArch}-v${cleanVersion}-${shortSha}-${nameBase}.AppImage`;
+  const appImageOutName: string = `${channel}-anylinux-${fileArch}-v${cleanVersion}-${shortSha}-${nameBase}.AppImage`;
   const finalAppImagePath: string = join(ARTIFACT_DIR, appImageOutName);
   const tempAppImageOutName: string = `${appImageOutName}.tmp`;
   const tempAppImagePath: string = join(ARTIFACT_DIR, tempAppImageOutName);
-  const zsyncPattern: string = `${channel}-linux-${fileArch}-v*-*-${nameBase}.AppImage.zsync`;
+  const zsyncPattern: string = `${channel}-anylinux-${fileArch}-v*-*-${nameBase}.AppImage.zsync`;
 
   let updateInfo: string = '';
   if (channel === 'stable') {
