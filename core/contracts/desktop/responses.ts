@@ -165,6 +165,13 @@ export interface PlayStoreDownloadResponse {
   error?: string;
 }
 
+export interface PlayStoreDeleteDownloadResponse {
+  ok: boolean;
+  packageName: string;
+  deletedArtifactCount: number;
+  error?: string;
+}
+
 export interface PlayStoreDownloadsResponse {
   ok: boolean;
   downloadRoot?: string;

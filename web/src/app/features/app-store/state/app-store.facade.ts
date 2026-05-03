@@ -22,6 +22,10 @@ export class AppStoreFacade {
   readonly selectedDownloads = this.appStore.selectedDownloads;
   readonly selectedDownloadCount = this.appStore.selectedDownloadCount;
   readonly lastInstall = this.appStore.lastInstall;
+  readonly activeDownloads = this.appStore.activeDownloads;
+  readonly searchInProgress = this.appStore.searchInProgress;
+  readonly installInProgress = this.appStore.installInProgress;
+  readonly selectedAppIsDownloading = this.appStore.selectedAppIsDownloading;
 
   async initialize() {
     await this.appStore.initialize();
@@ -47,12 +51,20 @@ export class AppStoreFacade {
     await this.appStore.downloadSelectedApp();
   }
 
+  async deleteDownload(download: PlayStoreDownloadGroup) {
+    await this.appStore.deleteDownload(download);
+  }
+
   isDownloadExpanded(downloadId: string) {
     return this.appStore.isDownloadExpanded(downloadId);
   }
 
   isDownloadSelected(downloadId: string) {
     return this.appStore.isDownloadSelected(downloadId);
+  }
+
+  isDownloadDeleteInProgress(downloadId: string) {
+    return this.appStore.isDownloadDeleteInProgress(downloadId);
   }
 
   async toggleDownloadSelection(download: PlayStoreDownloadGroup) {

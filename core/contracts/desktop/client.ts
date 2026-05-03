@@ -78,6 +78,10 @@ export function createDesktopApiFromInvoker(invokeRpc: DesktopRpcInvoker): Deskt
       >,
     downloadPlayStoreApp: (payload) =>
       invokeRpc('downloadPlayStoreApp', payload) as ReturnType<DesktopApi['downloadPlayStoreApp']>,
+    deletePlayStoreDownload: (payload) =>
+      invokeRpc('deletePlayStoreDownload', payload) as ReturnType<
+        DesktopApi['deletePlayStoreDownload']
+      >,
     installPlayStoreApp: (payload) =>
       invokeRpc('installPlayStoreApp', payload) as ReturnType<DesktopApi['installPlayStoreApp']>,
     extractLocalFirmware: (payload) =>

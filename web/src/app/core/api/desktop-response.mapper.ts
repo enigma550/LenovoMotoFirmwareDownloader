@@ -23,6 +23,7 @@ import type {
   FrameworkUpdateInfo,
   PendingAuthCallbackResponse,
   PlayStoreAppDetailsResponse,
+  PlayStoreDeleteDownloadResponse,
   PlayStoreDownloadResponse,
   PlayStoreDownloadsResponse,
   PlayStoreInstallResponse,
@@ -292,6 +293,18 @@ export function mapPlayStoreDownloadResponse(payload: MapperValue): PlayStoreDow
   };
 }
 
+export function mapPlayStoreDeleteDownloadResponse(
+  payload: MapperValue,
+): PlayStoreDeleteDownloadResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  return {
+    ...base,
+    packageName: record ? readString(record, 'packageName') : '',
+    deletedArtifactCount: record ? readNumber(record, 'deletedArtifactCount', 0) : 0,
+  };
+}
+
 export function mapPlayStoreDownloadsResponse(payload: MapperValue): PlayStoreDownloadsResponse {
   const base = mapSimpleOkResponse(payload);
   const record = asRecord(payload);
@@ -307,6 +320,8 @@ export function mapPlayStoreDownloadsResponse(payload: MapperValue): PlayStoreDo
     downloads.push({
       id: readString(group, 'id'),
       packageName: readString(group, 'packageName'),
+      title: readOptionalString(group, 'title'),
+      iconDataUrl: readOptionalString(group, 'iconDataUrl'),
       versionCode: readOptionalString(group, 'versionCode'),
       totalSizeBytes: readNumber(group, 'totalSizeBytes', 0),
       modifiedAt: readNumber(group, 'modifiedAt', 0),

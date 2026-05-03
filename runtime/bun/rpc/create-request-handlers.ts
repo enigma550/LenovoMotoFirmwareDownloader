@@ -31,7 +31,11 @@ export function createRequestHandlers(options: {
       getMainWindowUrl: options.getMainWindowUrl,
     }),
   );
-  registry.registerMany(createAppStoreHandlers());
+  registry.registerMany(
+    createAppStoreHandlers({
+      sendDownloadProgress: options.sendDownloadProgress,
+    }),
+  );
   registry.registerMany(createCatalogHandlers());
   registry.registerMany(createDownloadHandlers(options.sendDownloadProgress));
   registry.registerMany(createDownloadLocalFileHandlers());

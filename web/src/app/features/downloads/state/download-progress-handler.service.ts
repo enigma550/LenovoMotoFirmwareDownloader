@@ -45,6 +45,7 @@ export class DownloadProgressHandlerService {
     const customEvent = event as CustomEvent<DesktopBridgePayload>;
     const payload = mapDownloadProgressMessage(customEvent.detail);
     if (!payload) return;
+    if (payload.commandSource === 'app-store') return;
 
     if (accessor.isDismissed(payload.downloadId)) {
       if (

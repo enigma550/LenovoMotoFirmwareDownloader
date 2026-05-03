@@ -45,6 +45,8 @@ export interface PlayStoreDownloadedArtifact {
 export interface PlayStoreDownloadGroup {
   id: string;
   packageName: string;
+  title?: string;
+  iconDataUrl?: string;
   versionCode?: string;
   totalSizeBytes: number;
   modifiedAt: number;

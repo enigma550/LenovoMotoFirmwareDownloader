@@ -55,6 +55,8 @@ export type {
   PlayStoreAppDetailsRequest,
   PlayStoreAppDetailsResponse,
   PlayStoreArch,
+  PlayStoreDeleteDownloadRequest,
+  PlayStoreDeleteDownloadResponse,
   PlayStoreDownloadedArtifact,
   PlayStoreDownloadGroup,
   PlayStoreDownloadRequest,

@@ -33,6 +33,7 @@ import type {
   ManualCatalogLookupResponse,
   PendingAuthCallbackResponse,
   PlayStoreAppDetailsResponse,
+  PlayStoreDeleteDownloadResponse,
   PlayStoreDownloadResponse,
   PlayStoreDownloadsResponse,
   PlayStoreInstallResponse,
@@ -137,6 +138,8 @@ export interface PlayStoreAppDetailsRequest {
 
 export interface PlayStoreDownloadRequest {
   packageName: string;
+  title?: string;
+  iconUrl?: string;
   arch?: PlayStoreArch;
   includeSplits?: boolean;
   includeExtras?: boolean;
@@ -146,6 +149,11 @@ export interface PlayStoreInstallRequest {
   packageName: string;
   artifactPaths: string[];
   mode?: 'standard' | 'microg';
+}
+
+export interface PlayStoreDeleteDownloadRequest {
+  packageName: string;
+  artifactPaths: string[];
 }
 
 export interface AuthCompleteRequest {
@@ -293,6 +301,9 @@ export interface DesktopApi {
     payload: PlayStoreAppDetailsRequest,
   ) => Promise<PlayStoreAppDetailsResponse>;
   downloadPlayStoreApp: (payload: PlayStoreDownloadRequest) => Promise<PlayStoreDownloadResponse>;
+  deletePlayStoreDownload: (
+    payload: PlayStoreDeleteDownloadRequest,
+  ) => Promise<PlayStoreDeleteDownloadResponse>;
   installPlayStoreApp: (payload: PlayStoreInstallRequest) => Promise<PlayStoreInstallResponse>;
   extractLocalFirmware: (
     payload: ExtractLocalFirmwareRequest,
