@@ -48,6 +48,8 @@ artifacts
 assets/data/config.json
 assets/data/models-catalog.json
 lmfd_restore_helper.apk
+aurora-accounts.txt
+*.aurora-accounts.txt
 
 # qdl tooling artifacts: ignore by default, keep platform folders and tracked Linux binaries
 assets/tools/qdl/**
