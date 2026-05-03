@@ -9,6 +9,7 @@ export class AuthWorkflowService {
   private waitingForBrowserCallback = false;
 
   readonly authComplete = signal(false);
+  readonly showInAppAuthOption = signal(false);
   readonly hasStoredAuthorizationToken = signal(false);
   readonly hasCheckedStoredAuthorizationToken = signal(false);
 
@@ -20,8 +21,30 @@ export class AuthWorkflowService {
   async openLoginBrowser() {
     await this.ui.runAction('Opening Lenovo login in browser...', async () => {
       const response = await this.backend.startBrowserAuth();
-      if (!response.ok) throw new Error(response.error || 'Could not open Lenovo login.');
-      this.ui.status.set('Login opened in your browser. Complete sign-in there to continue.');
+      if (!response.ok) {
+        throw new Error(response.error || 'Could not prepare Lenovo login.');
+      }
+
+      this.showInAppAuthOption.set(true);
+      if (response.openedInExternalBrowser) {
+        this.ui.status.set('Login opened in your browser. Complete sign-in there to continue.');
+        return;
+      }
+
+      this.ui.status.set('The browser opener did not report success. Try in-app login instead.');
+    });
+    void this.waitForBrowserCallback();
+  }
+
+  async openInAppLogin() {
+    await this.ui.runAction('Opening Lenovo login inside LMFD...', async () => {
+      const response = await this.backend.startInAppAuth();
+      if (!response.ok) {
+        throw new Error(response.error || 'Could not open in-app Lenovo login.');
+      }
+
+      this.showInAppAuthOption.set(true);
+      this.ui.status.set('Lenovo login opened inside LMFD. Use Dashboard to return.');
     });
     void this.waitForBrowserCallback();
   }
@@ -39,8 +62,7 @@ export class AuthWorkflowService {
         throw new Error(response.error || 'Stored token authentication failed.');
       }
 
-      this.authComplete.set(true);
-      this.ui.status.set('Authenticated with stored token. Choose lookup source below.');
+      this.markAuthenticated('Authenticated with stored token. Choose lookup source below.');
     });
   }
 
@@ -71,16 +93,14 @@ export class AuthWorkflowService {
       const callbackUrlOrToken = pending.callbackUrlOrToken?.trim() || '';
       if (!pending.ok || !callbackUrlOrToken) return false;
 
-      await this.ui.runAction('Finalizing in-app login callback...', async () => {
-        const response = await this.backend.completeAuth(callbackUrlOrToken);
-        if (!response.ok) throw new Error(response.error || 'Authentication failed.');
-        this.authComplete.set(true);
-        this.hasStoredAuthorizationToken.set(true);
-        this.ui.status.set('Authenticated from in-app callback. Choose lookup source below.');
-      });
+      await this.completeAuthInput(
+        callbackUrlOrToken,
+        'Finalizing browser login callback...',
+        'Authenticated from browser callback. Choose lookup source below.',
+      );
       return true;
     } catch {
-      // Ignore startup callback errors and let manual login remain available.
+      // Ignore startup callback errors and let the normal browser login remain available.
       return false;
     }
   }
@@ -98,5 +118,24 @@ export class AuthWorkflowService {
     } finally {
       this.waitingForBrowserCallback = false;
     }
+  }
+
+  private async completeAuthInput(
+    callbackUrlOrToken: string,
+    actionStatus: string,
+    successStatus: string,
+  ) {
+    await this.ui.runAction(actionStatus, async () => {
+      const response = await this.backend.completeAuth(callbackUrlOrToken);
+      if (!response.ok) throw new Error(response.error || 'Authentication failed.');
+      this.markAuthenticated(successStatus);
+    });
+  }
+
+  private markAuthenticated(status: string) {
+    this.authComplete.set(true);
+    this.hasStoredAuthorizationToken.set(true);
+    this.showInAppAuthOption.set(false);
+    this.ui.status.set(status);
   }
 }

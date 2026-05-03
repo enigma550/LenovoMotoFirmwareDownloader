@@ -255,6 +255,7 @@ export interface CancelDownloadRequest {
 export interface DesktopApi {
   isDesktop: true;
   startAuth: () => Promise<AuthStartResponse>;
+  startInAppAuth: () => Promise<AuthStartResponse>;
   completeAuth: (
     callbackUrlOrToken: AuthCompleteRequest['callbackUrlOrToken'],
   ) => Promise<AuthCompleteResponse>;

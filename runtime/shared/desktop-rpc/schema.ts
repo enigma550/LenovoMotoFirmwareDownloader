@@ -61,6 +61,7 @@ export type DesktopRpcSchema = DesktopRpcBaseSchema & {
   bun: RPCSchema<{
     requests: {
       authStart: RpcRequest<undefined, DesktopApiResponse<'startAuth'>>;
+      authStartInApp: RpcRequest<undefined, DesktopApiResponse<'startInAppAuth'>>;
       authComplete: RpcRequest<AuthCompleteRequest, DesktopApiResponse<'completeAuth'>>;
       consumePendingAuthCallback: RpcRequest<
         undefined,

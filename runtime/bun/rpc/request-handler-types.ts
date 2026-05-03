@@ -78,6 +78,7 @@ type UnknownRpcHandler = {
 export interface BunRpcRequestHandlers {
   [method: string]: UnknownRpcHandler | undefined;
   authStart: RpcHandler<undefined, RpcResponse<'startAuth'>>;
+  authStartInApp: RpcHandler<undefined, RpcResponse<'startInAppAuth'>>;
   authComplete: RpcHandler<AuthCompleteRequest, RpcResponse<'completeAuth'>>;
   consumePendingAuthCallback: RpcHandler<undefined, RpcResponse<'consumePendingAuthCallback'>>;
   getStoredAuthState: RpcHandler<undefined, RpcResponse<'getStoredAuthState'>>;

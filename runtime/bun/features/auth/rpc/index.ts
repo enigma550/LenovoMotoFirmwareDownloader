@@ -1,13 +1,14 @@
 import {
   authenticateWithAuthToken,
+  createLoginUrl,
   extractAuthToken,
-  openLoginBrowser,
 } from '../../../../../core/features/auth/login.ts';
 import { loadConfig } from '../../../../../core/infra/config.ts';
 import { bootstrapSessionCookie } from '../../../../../core/infra/lmsa/api.ts';
 import { openExternalUrl } from '../../../browser.ts';
 import type { BunRpcRequestHandlers } from '../../../rpc/request-handler-types.ts';
 import { toErrorMessage } from '../../../rpc/request-handler-types.ts';
+import { openAuthLoginWindow } from '../embedded-auth-window.ts';
 import { consumeStartupAuthCallbackUrl } from '../startup-auth-callback.ts';
 
 export interface AuthHandlerOptions {
@@ -29,6 +30,7 @@ export function createAuthHandlers(
   BunRpcRequestHandlers,
   | 'openUrl'
   | 'authStart'
+  | 'authStartInApp'
   | 'authComplete'
   | 'consumePendingAuthCallback'
   | 'getStoredAuthState'
@@ -54,10 +56,28 @@ export function createAuthHandlers(
     authStart: async () => {
       try {
         await bootstrapSessionCookie();
-        const loginUrl = await openLoginBrowser(async (url) => {
-          await openExternalUrl(url);
-        });
-        return { ok: true, loginUrl, openedInExternalBrowser: true };
+        const loginUrl = await createLoginUrl();
+        try {
+          await openExternalUrl(loginUrl);
+          return { ok: true, loginUrl, openedInExternalBrowser: true };
+        } catch (error) {
+          return {
+            ok: true,
+            loginUrl,
+            openedInExternalBrowser: false,
+            error: toErrorMessage(error),
+          };
+        }
+      } catch (error) {
+        return { ok: false, error: toErrorMessage(error) };
+      }
+    },
+    authStartInApp: async () => {
+      try {
+        await bootstrapSessionCookie();
+        const loginUrl = await createLoginUrl();
+        openAuthLoginWindow(loginUrl, options.getMainWindow?.() ?? undefined);
+        return { ok: true, loginUrl, openedInExternalBrowser: false };
       } catch (error) {
         return { ok: false, error: toErrorMessage(error) };
       }
@@ -66,7 +86,7 @@ export function createAuthHandlers(
       try {
         const authorizationToken = await extractAuthToken(callbackUrlOrToken || '');
         if (!authorizationToken) {
-          return { ok: false, error: 'Missing callback URL or authorization token.' };
+          return { ok: false, error: 'Missing browser login callback.' };
         }
 
         const config = await loadConfig();

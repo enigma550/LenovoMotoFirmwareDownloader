@@ -32,6 +32,11 @@ export class AuthDesktopApiService {
     return mapAuthStartResponse(response);
   }
 
+  async startInAppAuth(): Promise<AuthStartResponse> {
+    const response = await this.bridge.withDesktopApi((desktopApi) => desktopApi.startInAppAuth());
+    return mapAuthStartResponse(response);
+  }
+
   async completeAuth(
     callbackUrlOrToken: AuthCompleteRequest['callbackUrlOrToken'],
   ): Promise<AuthCompleteResponse> {
