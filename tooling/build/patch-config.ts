@@ -28,7 +28,7 @@ if (BUILD_ENV === 'stable') {
     'https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/latest/download/';
 } else if (BUILD_ENV === 'canary') {
   targetBaseUrl =
-    'https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/download/canary/';
+    'https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/latest/download/';
 } else {
   generatePatchValue = 'false';
   targetBaseUrl = '';

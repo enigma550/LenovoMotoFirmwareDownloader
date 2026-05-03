@@ -143,8 +143,8 @@ export class AboutWorkspaceComponent implements OnInit {
           if (res.ok) {
             const releases = parseGitHubReleases(await res.json());
             const targetRelease = releases.find((r) => {
-              if (channel === 'stable') return !r.prerelease;
-              if (channel === 'canary') return r.prerelease;
+              if (channel === 'stable') return !r.prerelease && r.tagName !== 'canary';
+              if (channel === 'canary') return !r.prerelease && r.tagName === 'canary';
               return false;
             });
             if (targetRelease) {
@@ -170,8 +170,8 @@ export class AboutWorkspaceComponent implements OnInit {
         const releases = parseGitHubReleases(await res.json());
 
         const targetRelease = releases.find((r) => {
-          if (channel === 'stable') return !r.prerelease;
-          if (channel === 'canary') return r.prerelease;
+          if (channel === 'stable') return !r.prerelease && r.tagName !== 'canary';
+          if (channel === 'canary') return !r.prerelease && r.tagName === 'canary';
           return false;
         });
 

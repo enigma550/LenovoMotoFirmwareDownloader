@@ -65,6 +65,10 @@ jobs:
             electrobunEnv="$buildEnv"
           fi
 
+          if [ "$buildEnv" = "canary" ]; then
+            preRelease="false"
+          fi
+
           echo "buildEnv=$buildEnv" >> "$GITHUB_OUTPUT"
           echo "electrobunEnv=$electrobunEnv" >> "$GITHUB_OUTPUT"
           echo "publishRelease=$publishRelease" >> "$GITHUB_OUTPUT"
@@ -258,6 +262,8 @@ jobs:
             shopt -u nullglob
           fi
 
+          find artifacts -maxdepth 1 -type f -iname appinfo -delete
+
           echo "Final artifact listing:"
           ls -la artifacts || true
 
@@ -356,6 +362,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
+          find release-assets -maxdepth 1 -type f -iname appinfo -delete
+
           tag="${{ steps.meta.outputs.tag }}"
           title="${{ steps.meta.outputs.title }}"
           buildEnv="${{ needs.resolve-build-options.outputs.buildEnv }}"
@@ -379,6 +387,18 @@ jobs:
 
           gh release upload "$tag" release-assets/* --clobber
 
+          if [ "$buildEnv" == "canary" ]; then
+            release_id=$(gh api "repos/${{ github.repository }}/releases/tags/$tag" --jq '.id')
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${{ github.repository }}/releases/$release_id" \
+              -F draft=false \
+              -F prerelease=false \
+              -f make_latest=true \
+              >/dev/null
+          fi
+
           # Mirror to a floating canary release if this is a canary build
           if [ "$buildEnv" == "canary" ]; then
             echo "Updating rolling canary release..."
@@ -390,21 +410,31 @@ jobs:
             # Check if the canary release already exists
             if gh release view canary >/dev/null 2>&1; then
               # Update existing release to preserve the URL (sets it to active if it was stuck as a draft)
-              gh release edit canary --title "LMFD Canary (Latest)" --prerelease --draft=false
+              gh release edit canary --title "LMFD Canary (Latest)" --draft=false
 
               # Delete old rolling-release assets before uploading the latest build.
               # Patch filenames are content-addressed/randomized, so leaving them in place
               # makes stale updater patches accumulate across canary builds.
               echo "Cleaning up old installers..."
               for asset in $(gh release view canary --json assets --jq '.assets[].name'); do
-                if [[ "$asset" == *".dmg" || "$asset" == *".zip" || "$asset" == *".AppImage" || "$asset" == *".AppImage.zsync" || "$asset" == *".patch" ]]; then
+                if [[ "$asset" == "appinfo" || "$asset" == *".dmg" || "$asset" == *".zip" || "$asset" == *".AppImage" || "$asset" == *".AppImage.zsync" || "$asset" == *".patch" ]]; then
                   gh release delete-asset canary "$asset" -y || true
                 fi
               done
             else
               # Create the release if it is the very first time
-              gh release create canary --title "LMFD Canary (Latest)" --notes "This rolling release always points to the latest canary build." --prerelease
+              gh release create canary --title "LMFD Canary (Latest)" --notes "This rolling release always points to the latest canary build."
             fi
+
+            canary_release_id=$(gh api "repos/${{ github.repository }}/releases/tags/canary" --jq '.id')
+            gh api \
+              --method PATCH \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${{ github.repository }}/releases/$canary_release_id" \
+              -F draft=false \
+              -F prerelease=false \
+              -f make_latest=true \
+              >/dev/null
 
             # Overwrite all files in the release with the new ones
             gh release upload canary release-assets/* --clobber

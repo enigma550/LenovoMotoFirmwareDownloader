@@ -15,7 +15,7 @@ function resolveReleaseBaseUrl() {
   }
 
   if (buildEnvironment === "canary") {
-    return "https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/download/canary/";
+    return "https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases/latest/download/";
   }
 
   return "";

@@ -205,7 +205,7 @@ async function buildLinuxAppImage(): Promise<void> {
   if (channel === 'stable') {
     updateInfo = `gh-releases-zsync|enigma550|LenovoMotoFirmwareDownloader|latest|${zsyncPattern}`;
   } else if (channel === 'canary') {
-    updateInfo = `gh-releases-zsync|enigma550|LenovoMotoFirmwareDownloader|latest-pre|${zsyncPattern}`;
+    updateInfo = `gh-releases-zsync|enigma550|LenovoMotoFirmwareDownloader|latest|${zsyncPattern}`;
   }
 
   console.log(`FinalizeInstaller: Building AnyLinux AppImage ${appImageOutName}...`);
