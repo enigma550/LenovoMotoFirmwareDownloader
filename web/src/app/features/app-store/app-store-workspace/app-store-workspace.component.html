@@ -140,21 +140,43 @@
             (click)="store.selectResult(result)"
           >
             <div class="flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <p
-                  class="truncate text-sm font-semibold"
-                  [class.text-dark-text-bright]="store.isDark()"
-                  [class.text-light-text-bright]="!store.isDark()"
-                >
-                  {{ result.title }}
-                </p>
-                <p
-                  class="mt-1 truncate font-mono text-xs"
-                  [class.text-dark-text-dim]="store.isDark()"
-                  [class.text-light-text-dim]="!store.isDark()"
-                >
-                  {{ result.packageName }}
-                </p>
+              <div class="flex min-w-0 items-center gap-3">
+                @if (result.iconUrl) {
+                  <img
+                    class="h-11 w-11 flex-none rounded-xl object-cover shadow-sm"
+                    [src]="result.iconUrl"
+                    [alt]="result.title + ' icon'"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                  />
+                } @else {
+                  <div
+                    class="flex h-11 w-11 flex-none items-center justify-center rounded-xl text-sm font-bold"
+                    [class.bg-dark-surface]="store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                    [class.bg-light-surface]="!store.isDark()"
+                    [class.text-light-text-dim]="!store.isDark()"
+                  >
+                    {{ result.title.slice(0, 1) }}
+                  </div>
+                }
+
+                <div class="min-w-0">
+                  <p
+                    class="truncate text-sm font-semibold"
+                    [class.text-dark-text-bright]="store.isDark()"
+                    [class.text-light-text-bright]="!store.isDark()"
+                  >
+                    {{ result.title }}
+                  </p>
+                  <p
+                    class="mt-1 truncate font-mono text-xs"
+                    [class.text-dark-text-dim]="store.isDark()"
+                    [class.text-light-text-dim]="!store.isDark()"
+                  >
+                    {{ result.packageName }}
+                  </p>
+                </div>
               </div>
 
               @if (store.selectedResult()?.packageName === result.packageName) {
@@ -182,28 +204,40 @@
       [class.bg-light-surface]="!store.isDark()"
     >
       <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p
-            class="text-xs font-semibold uppercase tracking-[0.2em]"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            Selected App
-          </p>
-          <h3
-            class="mt-2 text-xl font-semibold"
-            [class.text-dark-text-bright]="store.isDark()"
-            [class.text-light-text-bright]="!store.isDark()"
-          >
-            {{ store.selectedDetails()?.title || 'Choose a result' }}
-          </h3>
-          <p
-            class="mt-2 text-sm"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            {{ store.selectedDetails()?.packageName || 'Pick a search result to download it.' }}
-          </p>
+        <div class="flex min-w-0 items-start gap-4">
+          @if (store.selectedResult()?.iconUrl) {
+            <img
+              class="mt-1 h-16 w-16 flex-none rounded-2xl object-cover shadow-sm"
+              [src]="store.selectedResult()?.iconUrl"
+              [alt]="(store.selectedDetails()?.title || store.selectedResult()?.title || 'Selected app') + ' icon'"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+          }
+
+          <div class="min-w-0">
+            <p
+              class="text-xs font-semibold uppercase tracking-[0.2em]"
+              [class.text-dark-text-dim]="store.isDark()"
+              [class.text-light-text-dim]="!store.isDark()"
+            >
+              Selected App
+            </p>
+            <h3
+              class="mt-2 truncate text-xl font-semibold"
+              [class.text-dark-text-bright]="store.isDark()"
+              [class.text-light-text-bright]="!store.isDark()"
+            >
+              {{ store.selectedDetails()?.title || 'Choose a result' }}
+            </h3>
+            <p
+              class="mt-2 truncate text-sm"
+              [class.text-dark-text-dim]="store.isDark()"
+              [class.text-light-text-dim]="!store.isDark()"
+            >
+              {{ store.selectedDetails()?.packageName || 'Pick a search result to download it.' }}
+            </p>
+          </div>
         </div>
 
         @if (store.selectedDetails(); as details) {

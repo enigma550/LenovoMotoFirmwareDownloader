@@ -140,8 +140,6 @@ function pruneLinuxBundle(appFolder: string): void {
   removeIfExists(join(toolsRoot, 'qdl', 'win32-x64'));
   removeIfExists(join(toolsRoot, 'qdl', 'darwin-arm64'));
   removeIfExists(join(toolsRoot, 'qdl', 'darwin-x64'));
-  removeIfExists(join(toolsRoot, 'gplaydl', 'win32'));
-  removeIfExists(join(toolsRoot, 'gplaydl', 'darwin'));
 
   if (existsSync(usbPrebuildsPath)) {
     for (const entry of readdirSync(usbPrebuildsPath, { withFileTypes: true })) {

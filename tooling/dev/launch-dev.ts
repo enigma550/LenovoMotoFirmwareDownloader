@@ -455,7 +455,7 @@ function runWithRetries(command: string, attempts: number, sleepMs: number) {
 
 console.log('\n[DevLauncher] Starting development flow...\n');
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 7;
 
 // 1. Release ADB lock
 // If ADB is running from the build/ folder, it will lock the directory.
@@ -489,17 +489,9 @@ if (!FFMPEG_PREPARE_RESULT.ok) {
   );
 }
 
-console.log(`[5/${TOTAL_STEPS}] Preparing bundled gplaydl sidecar for local platform...`);
-const GPLAYDL_PREPARE_RESULT = runWithRetries('bun run gplaydl:prepare', 2, 2000);
-if (!GPLAYDL_PREPARE_RESULT.ok) {
-  console.warn(
-    '[DevLauncher] gplaydl prepare failed after retries. Continuing (App Store will require a local binary or PATH install).',
-  );
-}
-
 // 1. Build Angular frontend (Always prepare the views)
 // This catches syntax errors and updates the /runtime/views folder.
-console.log(`[6/${TOTAL_STEPS}] Preparing application views...`);
+console.log(`[5/${TOTAL_STEPS}] Preparing application views...`);
 try {
   execSync('bun run prepare:all', { stdio: 'inherit' });
 } catch (e) {
@@ -508,7 +500,7 @@ try {
   process.exit(getExitCode(TYPED_ERROR));
 }
 
-console.log(`[7/${TOTAL_STEPS}] Building desktop wrapper...`);
+console.log(`[6/${TOTAL_STEPS}] Building desktop wrapper...`);
 try {
   execSync('bunx electrobun build --env=dev', {
     stdio: 'inherit',
@@ -538,7 +530,7 @@ try {
   process.exit(1);
 }
 
-console.log(`[8/${TOTAL_STEPS}] Launching application (${INSTANCE_SUFFIX})...`);
+console.log(`[7/${TOTAL_STEPS}] Launching application (${INSTANCE_SUFFIX})...`);
 console.log(`[DevLauncher] Using dev identifier: ${instanceIdentifier}\n`);
 
 try {

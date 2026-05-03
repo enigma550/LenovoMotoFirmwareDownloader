@@ -20,6 +20,7 @@ export type PlayStoreArch = 'arm64' | 'armv7';
 export interface PlayStoreSearchResult {
   title: string;
   packageName: string;
+  iconUrl?: string;
 }
 
 export interface PlayStoreAppDetails {

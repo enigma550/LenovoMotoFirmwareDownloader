@@ -6,7 +6,7 @@ import {
   installPlayStoreApp,
   listPlayStoreDownloads,
   searchPlayStoreApps,
-} from '../gplaydl.ts';
+} from '../play-store.ts';
 
 export function createAppStoreHandlers(): Pick<
   BunRpcRequestHandlers,

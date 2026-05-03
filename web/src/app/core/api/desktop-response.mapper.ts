@@ -219,6 +219,16 @@ export function mapPlayStoreStatusResponse(payload: MapperValue): PlayStoreStatu
   return {
     ...base,
     available: record ? readBoolean(record, 'available', false) : false,
+    backend: (() => {
+      const value = record ? readOptionalString(record, 'backend') : undefined;
+      return value === 'aurora-dispenser' ? value : undefined;
+    })(),
+    authProfileSource: (() => {
+      const value = record ? readOptionalString(record, 'authProfileSource') : undefined;
+      return value === 'env' || value === 'file' || value === 'dispenser' ? value : undefined;
+    })(),
+    authProfilePath: record ? readOptionalString(record, 'authProfilePath') : undefined,
+    authProfileCount: record ? readNumber(record, 'authProfileCount', 0) : 0,
     toolPath: record ? readOptionalString(record, 'toolPath') : undefined,
     toolSource: (() => {
       const value = record ? readOptionalString(record, 'toolSource') : undefined;
@@ -238,6 +248,7 @@ export function mapPlayStoreSearchResponse(payload: MapperValue): PlayStoreSearc
         .map((item) => ({
           title: readString(item, 'title'),
           packageName: readString(item, 'packageName'),
+          iconUrl: readOptionalString(item, 'iconUrl'),
         }))
         .filter((item) => item.packageName.length > 0)
     : [];

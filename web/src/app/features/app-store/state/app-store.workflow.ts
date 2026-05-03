@@ -21,6 +21,7 @@ export class AppStoreWorkflowService {
   private readonly backend = inject(AppStoreDesktopApiService);
   private readonly ui = inject(WorkflowUiService);
   private initialized = false;
+  private detailsRequestId = 0;
 
   readonly toolStatus = signal<PlayStoreStatusResponse | null>(null);
   readonly searchQuery = signal('');
@@ -154,7 +155,7 @@ export class AppStoreWorkflowService {
     await this.ui.runAction('Searching Play Store...', async () => {
       const status = await this.refreshToolStatus();
       if (!status.available) {
-        throw new Error(status.error || 'gplaydl is unavailable.');
+        throw new Error(status.error || 'Aurora token dispenser is unavailable.');
       }
 
       const response = await this.backend.searchPlayStoreApps({
@@ -174,13 +175,17 @@ export class AppStoreWorkflowService {
         return;
       }
 
-      await this.selectResult(response.results[0] as PlayStoreSearchResult);
       this.ui.status.set(`Found ${response.results.length} Play Store app result(s).`);
+      await this.selectResult(response.results[0] as PlayStoreSearchResult);
     });
   }
 
   async selectResult(result: PlayStoreSearchResult) {
     this.selectedResult.set(result);
+    this.selectedDetails.set({
+      title: result.title,
+      packageName: result.packageName,
+    });
     await this.loadSelectedDetails(result);
   }
 
@@ -285,10 +290,18 @@ export class AppStoreWorkflowService {
   }
 
   private async loadSelectedDetails(result: PlayStoreSearchResult) {
+    const requestId = ++this.detailsRequestId;
     const response = await this.backend.getPlayStoreAppDetails({
       packageName: result.packageName,
       arch: this.selectedArch(),
     });
+
+    if (
+      requestId !== this.detailsRequestId ||
+      this.selectedResult()?.packageName !== result.packageName
+    ) {
+      return;
+    }
 
     if (!response.ok || !response.data) {
       this.selectedDetails.set({

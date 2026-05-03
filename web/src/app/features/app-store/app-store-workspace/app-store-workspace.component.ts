@@ -46,20 +46,16 @@ export class AppStoreWorkspaceComponent implements OnInit {
   }
 
   protected shouldShowToolStatus() {
-    return this.store.toolStatus()?.toolSource !== 'bundled';
+    return !this.store.toolStatus()?.available;
   }
 
   protected toolStatusMessage() {
-    const source = this.store.toolStatus()?.toolSource;
     const status = this.store.toolStatus();
     if (!status) return '';
-    if (!status.available) return 'gplaydl mangler.';
-    if (source === 'custom') {
-      return 'Bruger custom gplaydl.';
+    if (!status.available) return 'Aurora token dispenser is unavailable.';
+    if (status.authProfileSource === 'dispenser') {
+      return `${status.authProfileCount || 0} Aurora token dispenser(s) ready.`;
     }
-    if (source === 'system') {
-      return 'Bruger system gplaydl.';
-    }
-    return '';
+    return `${status.authProfileCount || 0} Aurora auth profile(s) ready.`;
   }
 }
