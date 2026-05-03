@@ -5,7 +5,47 @@ type RuntimeProcessEnvOptions = {
   overrides?: Record<string, string | undefined>;
 };
 
-const LINUX_LOADER_ENV_KEYS = ['LD_PRELOAD'] as const;
+const HOST_APP_ENV_KEYS = [
+  'APPDIR',
+  'APPIMAGE',
+  'APPIMAGE_SILENT_INSTALL',
+  'ARGV0',
+  'ELECTROBUN_BUILD_ENV',
+  'LE_MOTO_AUTH_RENDERER',
+  'LE_MOTO_RENDERER_LINUX',
+] as const;
+const DYNAMIC_LINKER_ENV_KEYS = [
+  'DYLD_FALLBACK_FRAMEWORK_PATH',
+  'DYLD_FALLBACK_LIBRARY_PATH',
+  'DYLD_FRAMEWORK_PATH',
+  'DYLD_INSERT_LIBRARIES',
+  'DYLD_LIBRARY_PATH',
+  'LD_AUDIT',
+  'LD_DEBUG',
+  'LD_LIBRARY_PATH',
+  'LD_ORIGIN_PATH',
+  'LD_PRELOAD',
+] as const;
+const DESKTOP_TOOLKIT_ENV_KEYS = [
+  'GDK_PIXBUF_MODULE_FILE',
+  'GDK_PIXBUF_MODULEDIR',
+  'GIO_EXTRA_MODULES',
+  'GIO_MODULE_DIR',
+  'GI_TYPELIB_PATH',
+  'GTK_DATA_PREFIX',
+  'GTK_EXE_PREFIX',
+  'GTK_PATH',
+  'QML2_IMPORT_PATH',
+  'QT_PLUGIN_PATH',
+  'QT_QPA_PLATFORM_PLUGIN_PATH',
+] as const;
+const PYTHON_ENV_KEYS = ['PYTHONHOME', 'PYTHONPATH'] as const;
+const EXTERNAL_COMMAND_ENV_KEYS = [
+  ...HOST_APP_ENV_KEYS,
+  ...DYNAMIC_LINKER_ENV_KEYS,
+  ...DESKTOP_TOOLKIT_ENV_KEYS,
+  ...PYTHON_ENV_KEYS,
+] as const;
 const SIDECAR_ENV_KEYS = ['LD_PRELOAD', 'LD_LIBRARY_PATH', 'PYTHONHOME', 'PYTHONPATH'] as const;
 
 function copyProcessEnv(): Record<string, string> {
@@ -31,7 +71,7 @@ export function createRuntimeProcessEnv(
   const mode = options.mode ?? 'inherit';
 
   if (mode === 'external-command') {
-    removeKeys(env, LINUX_LOADER_ENV_KEYS);
+    removeKeys(env, EXTERNAL_COMMAND_ENV_KEYS);
   }
 
   if (mode === 'sidecar') {

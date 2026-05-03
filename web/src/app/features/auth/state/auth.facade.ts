@@ -9,6 +9,7 @@ export class AuthFacade {
 
   readonly isDark = this.ui.isDark;
   readonly authComplete = this.auth.authComplete;
+  readonly showInAppAuthOption = this.auth.showInAppAuthOption;
   readonly hasStoredAuthorizationToken = this.auth.hasStoredAuthorizationToken;
   readonly hasCheckedStoredAuthorizationToken = this.auth.hasCheckedStoredAuthorizationToken;
 
@@ -18,5 +19,9 @@ export class AuthFacade {
 
   async authenticateWithStoredToken() {
     await this.auth.authenticateWithStoredToken();
+  }
+
+  async openInAppLogin() {
+    await this.auth.openInAppLogin();
   }
 }

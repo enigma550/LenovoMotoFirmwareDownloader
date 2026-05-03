@@ -471,14 +471,14 @@ export async function extractAuthToken(urlOrToken: string): Promise<string> {
 
       if (isOauthStateNotFound(callbackResult.protocolUrl, callbackResult.responseText)) {
         throw new Error(
-          'OAuth state was not found. Click "Open Lenovo Login" again and use the new callback URL.',
+          'OAuth state was not found. Click "Open Lenovo Login" again and complete the new browser login.',
         );
       }
       if (
         isOauthTokenError(initialCallbackResult.protocolUrl, initialCallbackResult.responseText)
       ) {
         throw new Error(
-          'OAuth code is already consumed or invalid. Paste the final softwareFix://callback URL (or Authorization token) instead of the https://lsa.lenovo.com/Tips/... URL, then try again with a fresh login.',
+          'OAuth code is already consumed or invalid. Click "Open Lenovo Login" again and complete a fresh browser login.',
         );
       }
       throw new Error(`Token not found in response. Server said: ${callbackResult.responseText}`);
@@ -514,10 +514,9 @@ async function fetchLoginUrl() {
   return withLenovoLang(loginUrl);
 }
 
-export async function openLoginBrowser(urlOpener: (url: string) => Promise<void>) {
+export async function createLoginUrl() {
   const loginUrl = await fetchLoginUrl();
   await rememberOauthContext(loginUrl);
-  await urlOpener(loginUrl);
   return loginUrl;
 }
 

@@ -1,10 +1,16 @@
 import { BrowserWindow } from 'electrobun/bun';
+import {
+  buildDashboardButtonScript,
+  DASHBOARD_NAVIGATION_URL,
+} from './embedded-auth-dashboard-button.ts';
 import { queueRuntimeAuthCallbackUrl } from './startup-auth-callback.ts';
 
 const SOFTWARE_FIX_CALLBACK_PREFIX = /^softwarefix:\/\/callback/i;
 
 type MainWindowHost = {
   renderer?: 'native' | 'cef';
+  focus?: () => unknown;
+  maximize?: () => unknown;
 };
 
 type AuthWindowHost = {
@@ -15,10 +21,12 @@ type AuthWindowHost = {
   webview?: {
     on: (eventName: string, callback: (event?: unknown) => void) => void;
     loadURL?: (url: string) => void;
+    executeJavascript?: (js: string) => void;
   };
 };
 
 let authWindow: AuthWindowHost | null = null;
+let authMainWindow: MainWindowHost | null = null;
 let authNavigationActive = false;
 
 function readNavigationUrl(event: unknown) {
@@ -35,6 +43,7 @@ function readNavigationUrl(event: unknown) {
       detail?: unknown;
     };
     detail?: unknown;
+    url?: unknown;
   };
   const dataDetail = eventRecord.data?.detail;
   if (typeof dataDetail === 'string') {
@@ -56,6 +65,9 @@ function readNavigationUrl(event: unknown) {
     typeof (eventRecord.detail as { url?: unknown }).url === 'string'
   ) {
     return (eventRecord.detail as { url: string }).url.trim();
+  }
+  if (typeof eventRecord.url === 'string') {
+    return eventRecord.url.trim();
   }
 
   return '';
@@ -79,13 +91,71 @@ function isAuthCompletionUrl(urlValue: string) {
   return SOFTWARE_FIX_CALLBACK_PREFIX.test(urlValue) || isLenovoTipsSuccessUrl(urlValue);
 }
 
+function isDashboardNavigationUrl(urlValue: string) {
+  return urlValue.trim().toLowerCase() === DASHBOARD_NAVIGATION_URL;
+}
+
+function closeAuthWindow(reason: string, focusDashboard: boolean) {
+  const activeWindow = authWindow;
+  const mainWindow = authMainWindow;
+  authWindow = null;
+  authMainWindow = null;
+  authNavigationActive = false;
+
+  if (activeWindow?.close) {
+    try {
+      activeWindow.close();
+    } catch (error) {
+      console.warn(`[AuthWindow] Failed to close auth window (${reason}).`, error);
+    }
+  }
+
+  if (focusDashboard) {
+    try {
+      mainWindow?.maximize?.();
+      mainWindow?.focus?.();
+    } catch (error) {
+      console.warn('[AuthWindow] Failed to focus dashboard window.', error);
+    }
+  }
+}
+
+function injectDashboardButton() {
+  if (!authNavigationActive || !authWindow?.webview?.executeJavascript) {
+    return;
+  }
+
+  try {
+    authWindow.webview.executeJavascript(buildDashboardButtonScript());
+  } catch (error) {
+    console.warn('[AuthWindow] Failed to inject dashboard button.', error);
+  }
+}
+
+function scheduleDashboardButtonInjection() {
+  injectDashboardButton();
+  setTimeout(injectDashboardButton, 300);
+  setTimeout(injectDashboardButton, 1000);
+}
+
 function handleNavigationEvent(event?: unknown) {
   if (!authNavigationActive || !authWindow?.webview) {
     return;
   }
 
   const navigatedUrl = readNavigationUrl(event);
-  if (!navigatedUrl || !isAuthCompletionUrl(navigatedUrl)) {
+  if (!navigatedUrl) {
+    scheduleDashboardButtonInjection();
+    return;
+  }
+
+  if (isDashboardNavigationUrl(navigatedUrl)) {
+    closeAuthWindow('dashboard', true);
+    return;
+  }
+
+  if (!isAuthCompletionUrl(navigatedUrl)) {
+    scheduleDashboardButtonInjection();
     return;
   }
 
@@ -93,16 +163,7 @@ function handleNavigationEvent(event?: unknown) {
     return;
   }
 
-  authNavigationActive = false;
-  const activeWindow = authWindow;
-  authWindow = null;
-  if (activeWindow?.close) {
-    try {
-      activeWindow.close();
-    } catch (error) {
-      console.warn('[AuthWindow] Failed to close auth window after callback.', error);
-    }
-  }
+  closeAuthWindow('callback', true);
 }
 
 function isTrustedAuthPopupUrl(urlValue: string) {
@@ -126,9 +187,16 @@ function handleNewWindowOpenEvent(event?: unknown) {
   }
 
   const popupUrl = readNavigationUrl(event);
-  if (!popupUrl || !isTrustedAuthPopupUrl(popupUrl)) {
+  if (!popupUrl) {
     return;
   }
+
+  if (isDashboardNavigationUrl(popupUrl)) {
+    closeAuthWindow('dashboard-popup', true);
+    return;
+  }
+
+  if (!isTrustedAuthPopupUrl(popupUrl)) return;
 
   // Lenovo login may open continuation URLs in a new window/tab. Keep the flow in-window.
   authWindow.webview.loadURL(popupUrl);
@@ -142,30 +210,21 @@ function attachAuthNavigationListeners(windowHost: AuthWindowHost) {
   windowHost.webview.on('will-navigate', handleNavigationEvent);
   windowHost.webview.on('did-commit-navigation', handleNavigationEvent);
   windowHost.webview.on('did-navigate', handleNavigationEvent);
+  windowHost.webview.on('dom-ready', () => scheduleDashboardButtonInjection());
   windowHost.webview.on('new-window-open', handleNewWindowOpenEvent);
 }
 
 function closeExistingAuthWindow(reason: string) {
-  const closeWindow = authWindow?.close;
-  if (!closeWindow) {
+  if (!authWindow?.close) {
     return;
   }
 
-  authWindow = null;
-  authNavigationActive = false;
-  try {
-    closeWindow();
-  } catch (error) {
-    console.warn(`[AuthWindow] Failed to close existing auth window (${reason}).`, error);
-  }
+  closeAuthWindow(reason, false);
 }
 
-export function openAuthLoginWindow(
-  loginUrl: string,
-  mainWindow?: MainWindowHost,
-  _restoreUrl = 'views://mainview/browser/index.html',
-) {
+export function openAuthLoginWindow(loginUrl: string, mainWindow?: MainWindowHost) {
   closeExistingAuthWindow('reopen');
+  authMainWindow = mainWindow ?? null;
 
   const defaultRenderer = mainWindow?.renderer === 'native' ? 'native' : 'cef';
   const requestedAuthRenderer = (Bun.env.LE_MOTO_AUTH_RENDERER || '').toLowerCase();
@@ -216,6 +275,7 @@ export function openAuthLoginWindow(
     createdWindow.on('close', () => {
       if (authWindow === createdWindow) {
         authWindow = null;
+        authMainWindow = null;
         authNavigationActive = false;
       }
     });
@@ -224,4 +284,5 @@ export function openAuthLoginWindow(
     createdWindow.maximize();
   }
   createdWindow.focus?.();
+  scheduleDashboardButtonInjection();
 }

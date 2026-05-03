@@ -11,6 +11,7 @@ export function createDesktopApiFromInvoker(invokeRpc: DesktopRpcInvoker): Deskt
   return {
     isDesktop: true,
     startAuth: () => invokeRpc('authStart') as ReturnType<DesktopApi['startAuth']>,
+    startInAppAuth: () => invokeRpc('authStartInApp') as ReturnType<DesktopApi['startInAppAuth']>,
     completeAuth: (callbackUrlOrToken) =>
       invokeRpc('authComplete', { callbackUrlOrToken }) as ReturnType<DesktopApi['completeAuth']>,
     consumePendingAuthCallback: () =>
