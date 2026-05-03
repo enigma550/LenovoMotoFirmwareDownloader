@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-const NATIVE_RUNTIME_PACKAGE_ROOTS = ['usb', 'apie'] as const;
+const RUNTIME_PACKAGE_ROOTS = ['usb', 'apie', 'google-play-proto'] as const;
 
 type PackageManifest = {
   dependencies?: Record<string, string>;
@@ -100,7 +100,7 @@ export function packageBundledRuntimeDependencies(appFolder: string) {
   mkdirSync(targetNodeModulesRoot, { recursive: true });
 
   const copiedPackages = new Set<string>();
-  for (const packageName of NATIVE_RUNTIME_PACKAGE_ROOTS) {
+  for (const packageName of RUNTIME_PACKAGE_ROOTS) {
     copyRuntimePackageRecursive({
       packageName,
       sourceNodeModulesRoot,

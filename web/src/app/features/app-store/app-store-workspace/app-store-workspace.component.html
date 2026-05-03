@@ -70,7 +70,7 @@
         <button
           class="inline-flex min-w-[120px] items-center justify-center rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           type="button"
-          [disabled]="store.isBusy() || !store.toolStatus()?.available"
+          [disabled]="store.searchInProgress() || !store.toolStatus()?.available"
           (click)="store.search()"
         >
           Search
@@ -140,21 +140,43 @@
             (click)="store.selectResult(result)"
           >
             <div class="flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <p
-                  class="truncate text-sm font-semibold"
-                  [class.text-dark-text-bright]="store.isDark()"
-                  [class.text-light-text-bright]="!store.isDark()"
-                >
-                  {{ result.title }}
-                </p>
-                <p
-                  class="mt-1 truncate font-mono text-xs"
-                  [class.text-dark-text-dim]="store.isDark()"
-                  [class.text-light-text-dim]="!store.isDark()"
-                >
-                  {{ result.packageName }}
-                </p>
+              <div class="flex min-w-0 items-center gap-3">
+                @if (result.iconUrl) {
+                  <img
+                    class="h-11 w-11 flex-none rounded-xl object-cover shadow-sm"
+                    [src]="result.iconUrl"
+                    [alt]="result.title + ' icon'"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                  />
+                } @else {
+                  <div
+                    class="flex h-11 w-11 flex-none items-center justify-center rounded-xl text-sm font-bold"
+                    [class.bg-dark-surface]="store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                    [class.bg-light-surface]="!store.isDark()"
+                    [class.text-light-text-dim]="!store.isDark()"
+                  >
+                    {{ result.title.slice(0, 1) }}
+                  </div>
+                }
+
+                <div class="min-w-0">
+                  <p
+                    class="truncate text-sm font-semibold"
+                    [class.text-dark-text-bright]="store.isDark()"
+                    [class.text-light-text-bright]="!store.isDark()"
+                  >
+                    {{ result.title }}
+                  </p>
+                  <p
+                    class="mt-1 truncate font-mono text-xs"
+                    [class.text-dark-text-dim]="store.isDark()"
+                    [class.text-light-text-dim]="!store.isDark()"
+                  >
+                    {{ result.packageName }}
+                  </p>
+                </div>
               </div>
 
               @if (store.selectedResult()?.packageName === result.packageName) {
@@ -182,28 +204,40 @@
       [class.bg-light-surface]="!store.isDark()"
     >
       <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p
-            class="text-xs font-semibold uppercase tracking-[0.2em]"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            Selected App
-          </p>
-          <h3
-            class="mt-2 text-xl font-semibold"
-            [class.text-dark-text-bright]="store.isDark()"
-            [class.text-light-text-bright]="!store.isDark()"
-          >
-            {{ store.selectedDetails()?.title || 'Choose a result' }}
-          </h3>
-          <p
-            class="mt-2 text-sm"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-          >
-            {{ store.selectedDetails()?.packageName || 'Pick a search result to download it.' }}
-          </p>
+        <div class="flex min-w-0 items-start gap-4">
+          @if (store.selectedResult()?.iconUrl) {
+            <img
+              class="mt-1 h-16 w-16 flex-none rounded-2xl object-cover shadow-sm"
+              [src]="store.selectedResult()?.iconUrl"
+              [alt]="(store.selectedDetails()?.title || store.selectedResult()?.title || 'Selected app') + ' icon'"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+          }
+
+          <div class="min-w-0">
+            <p
+              class="text-xs font-semibold uppercase tracking-[0.2em]"
+              [class.text-dark-text-dim]="store.isDark()"
+              [class.text-light-text-dim]="!store.isDark()"
+            >
+              Selected App
+            </p>
+            <h3
+              class="mt-2 truncate text-xl font-semibold"
+              [class.text-dark-text-bright]="store.isDark()"
+              [class.text-light-text-bright]="!store.isDark()"
+            >
+              {{ store.selectedDetails()?.title || 'Choose a result' }}
+            </h3>
+            <p
+              class="mt-2 truncate text-sm"
+              [class.text-dark-text-dim]="store.isDark()"
+              [class.text-light-text-dim]="!store.isDark()"
+            >
+              {{ store.selectedDetails()?.packageName || 'Pick a search result to download it.' }}
+            </p>
+          </div>
         </div>
 
         @if (store.selectedDetails(); as details) {
@@ -239,10 +273,12 @@
           <button
             class="inline-flex items-center justify-center rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             type="button"
-            [disabled]="store.isBusy() || !store.selectedResult() || !store.toolStatus()?.available"
+            [disabled]="
+              !store.selectedResult() || !store.toolStatus()?.available || store.selectedAppIsDownloading()
+            "
             (click)="store.downloadSelectedApp()"
           >
-            Download
+            {{ store.selectedAppIsDownloading() ? 'Downloading' : 'Download' }}
           </button>
 
           <button
@@ -254,7 +290,7 @@
             [class.bg-light-surface]="!store.isDark()"
             [class.text-light-text]="!store.isDark()"
             type="button"
-            [disabled]="store.isBusy() || store.selectedDownloadCount() === 0"
+            [disabled]="store.installInProgress() || store.selectedDownloadCount() === 0"
             (click)="store.installSelectedDownloads()"
           >
             Install Selected via ADB
@@ -269,7 +305,7 @@
             [class.bg-light-surface]="!store.isDark()"
             [class.text-light-text]="!store.isDark()"
             type="button"
-            [disabled]="store.isBusy() || store.selectedDownloadCount() === 0"
+            [disabled]="store.installInProgress() || store.selectedDownloadCount() === 0"
             (click)="store.installSelectedDownloads('microg')"
           >
             Install Selected via microG
@@ -348,6 +384,89 @@
         </p>
       }
 
+      @if (store.activeDownloads().length > 0) {
+        <div class="mt-4 grid gap-2">
+          @for (activeDownload of store.activeDownloads(); track activeDownload.downloadId) {
+            <div
+              class="overflow-hidden rounded-2xl border px-4 py-3"
+              [class.border-accent]="true"
+              [class.bg-accent/10]="store.isDark()"
+              [class.bg-accent-subtle]="!store.isDark()"
+            >
+              <div class="flex min-w-0 items-center gap-3">
+                @if (activeDownload.iconUrl) {
+                  <img
+                    class="h-10 w-10 flex-none rounded-xl object-cover shadow-sm"
+                    [src]="activeDownload.iconUrl"
+                    [alt]="activeDownload.title + ' icon'"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                  />
+                } @else {
+                  <div
+                    class="flex h-10 w-10 flex-none items-center justify-center rounded-xl text-sm font-bold"
+                    [class.bg-dark-surface]="store.isDark()"
+                    [class.text-dark-text-dim]="store.isDark()"
+                    [class.bg-light-surface]="!store.isDark()"
+                    [class.text-light-text-dim]="!store.isDark()"
+                  >
+                    {{ activeDownload.title.slice(0, 1) }}
+                  </div>
+                }
+
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="min-w-0">
+                      <p
+                        class="truncate text-sm font-semibold"
+                        [class.text-dark-text-bright]="store.isDark()"
+                        [class.text-light-text-bright]="!store.isDark()"
+                      >
+                        Downloading {{ activeDownload.title }}
+                      </p>
+                      <p
+                        class="mt-1 truncate font-mono text-xs"
+                        [class.text-dark-text-dim]="store.isDark()"
+                        [class.text-light-text-dim]="!store.isDark()"
+                      >
+                        {{ activeDownload.packageName }} · {{ activeDownload.arch }}
+                      </p>
+                    </div>
+                    <span class="text-xs font-semibold uppercase tracking-wide text-accent">
+                      {{ formatPercent(downloadPercent(activeDownload)) }}%
+                    </span>
+                  </div>
+
+                  <div
+                    class="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px]"
+                    [class.text-dark-text-dim]="store.isDark()"
+                    [class.text-light-text-dim]="!store.isDark()"
+                  >
+                    <span>{{ formatBytes(activeDownload.downloadedBytes) }}</span>
+                    @if (activeDownload.totalBytes) {
+                      <span>{{ formatBytes(activeDownload.totalBytes) }}</span>
+                    } @else {
+                      <span>Preparing download size</span>
+                    }
+                  </div>
+
+                  <div
+                    class="mt-2 h-1.5 w-full overflow-hidden rounded-full"
+                    [class.bg-dark-surface]="store.isDark()"
+                    [class.bg-light-border]="!store.isDark()"
+                  >
+                    <div
+                      class="h-full rounded-full bg-accent transition-[width] duration-200 ease-out"
+                      [style.width.%]="downloadPercent(activeDownload)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
       @if (store.downloads().length > 0) {
         <div class="mt-4 grid gap-2">
           @for (download of store.downloads(); track download.id) {
@@ -374,33 +493,80 @@
                   type="button"
                   (click)="onDownloadRowClick(download)"
                 >
-                  <div class="min-w-0">
-                    <p
-                      class="truncate text-sm font-semibold"
-                      [class.text-dark-text]="store.isDark()"
-                      [class.text-light-text]="!store.isDark()"
-                    >
-                      {{ download.packageName }}
-                    </p>
-                    <p
-                      class="mt-1 truncate text-xs"
-                      [class.text-dark-text-dim]="store.isDark()"
-                      [class.text-light-text-dim]="!store.isDark()"
-                    >
-                      @if (download.versionCode) {
-                        v{{ download.versionCode }}
-                      } @else {
-                        Unknown version
-                      }
-                      · {{ download.apkArtifactCount }} APK
-                      @if (download.apkArtifactCount !== 1) {
-                        s
-                      }
-                      @if (download.extraArtifactCount > 0) {
-                        · {{ download.extraArtifactCount }} extra
-                      }
-                      · {{ formatBytes(download.totalSizeBytes) }}
-                    </p>
+                  <div class="flex min-w-0 items-center gap-3">
+                    @if (download.iconDataUrl) {
+                      <img
+                        class="h-10 w-10 flex-none rounded-xl object-cover shadow-sm"
+                        [src]="download.iconDataUrl"
+                        [alt]="(download.title || download.packageName) + ' icon'"
+                        loading="lazy"
+                      />
+                    } @else {
+                      <div
+                        class="flex h-10 w-10 flex-none items-center justify-center rounded-xl text-sm font-bold"
+                        [class.bg-dark-surface]="store.isDark()"
+                        [class.text-dark-text-dim]="store.isDark()"
+                        [class.bg-light-surface]="!store.isDark()"
+                        [class.text-light-text-dim]="!store.isDark()"
+                      >
+                        {{ (download.title || download.packageName).slice(0, 1) }}
+                      </div>
+                    }
+
+                    <div class="min-w-0">
+                      <p
+                        class="truncate text-sm font-semibold"
+                        [class.text-dark-text]="store.isDark()"
+                        [class.text-light-text]="!store.isDark()"
+                      >
+                        {{ download.title || download.packageName }}
+                      </p>
+                      <p
+                        class="mt-0.5 truncate font-mono text-[10px]"
+                        [class.text-dark-text-dim]="store.isDark()"
+                        [class.text-light-text-dim]="!store.isDark()"
+                      >
+                        {{ download.packageName }}
+                      </p>
+                      <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <span
+                          class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                          [class.bg-dark-surface]="store.isDark()"
+                          [class.text-dark-text-dim]="store.isDark()"
+                          [class.bg-light-surface]="!store.isDark()"
+                          [class.text-light-text-dim]="!store.isDark()"
+                        >
+                          {{ downloadedVersionLabel(download) }}
+                        </span>
+                        <span
+                          class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                          [class.bg-dark-surface]="store.isDark()"
+                          [class.text-dark-text-dim]="store.isDark()"
+                          [class.bg-light-surface]="!store.isDark()"
+                          [class.text-light-text-dim]="!store.isDark()"
+                        >
+                          {{ downloadedApkCountLabel(download) }}
+                        </span>
+                        @if (download.extraArtifactCount > 0) {
+                          <span
+                            class="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                            [class.bg-dark-surface]="store.isDark()"
+                            [class.text-dark-text-dim]="store.isDark()"
+                            [class.bg-light-surface]="!store.isDark()"
+                            [class.text-light-text-dim]="!store.isDark()"
+                          >
+                            {{ download.extraArtifactCount }} extra
+                          </span>
+                        }
+                        <span
+                          class="rounded-full px-2 py-0.5 text-[10px] font-semibold text-accent"
+                          [class.bg-accent/10]="store.isDark()"
+                          [class.bg-accent-subtle]="!store.isDark()"
+                        >
+                          {{ formatBytes(download.totalSizeBytes) }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   <div
@@ -417,6 +583,15 @@
                     }}
                   </div>
                 </button>
+
+                <app-ui-action-button
+                  label="Delete"
+                  variant="danger"
+                  appearance="outline"
+                  [isDark]="store.isDark()"
+                  [disabled]="store.isDownloadDeleteInProgress(download.id)"
+                  (clicked)="onDeleteDownloadClick(download)"
+                />
               </div>
 
               @if (store.isDownloadExpanded(download.id)) {

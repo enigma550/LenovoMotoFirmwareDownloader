@@ -1,46 +1,21 @@
 import { existsSync } from 'node:fs';
 import { chmod, copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import type { BuildPlatform } from './lib/build-env.ts';
+import { resolveBuildTarget } from './lib/build-env.ts';
+import { commandExists } from './lib/process.ts';
 
 const REPO_ROOT = process.cwd();
 
-function normalizeTargetPlatform() {
-  const rawOs = (Bun.env.ELECTROBUN_OS || process.env.ELECTROBUN_OS || process.platform).trim();
-  if (rawOs === 'mac' || rawOs === 'darwin') return 'darwin';
-  if (rawOs === 'win' || rawOs === 'windows' || rawOs === 'win32') {
-    return 'win32';
-  }
-  if (rawOs === 'linux') return 'linux';
-  throw new Error(`[FFMPEG] Unsupported target OS: ${rawOs}`);
-}
-
-function normalizeTargetArch() {
-  const rawArch = (Bun.env.ELECTROBUN_ARCH || process.env.ELECTROBUN_ARCH || process.arch)
-    .trim()
-    .toLowerCase();
-  if (rawArch === 'x64' || rawArch === 'amd64') return 'x64';
-  if (rawArch === 'arm64' || rawArch === 'aarch64') return 'arm64';
-  if (rawArch === 'x86' || rawArch === 'ia32') return 'ia32';
-  throw new Error(`[FFMPEG] Unsupported target arch: ${rawArch}`);
-}
-
-function ffmpegBinaryNameForPlatform(targetPlatform: string) {
+function ffmpegBinaryNameForPlatform(targetPlatform: BuildPlatform) {
   return targetPlatform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
 }
 
 function hasSystemFfmpegInPath() {
-  try {
-    const result = Bun.spawnSync(['ffmpeg', '-version'], {
-      stdout: 'ignore',
-      stderr: 'ignore',
-    });
-    return result.exitCode === 0;
-  } catch {
-    return false;
-  }
+  return commandExists('ffmpeg', REPO_ROOT);
 }
 
-async function resolveStaticFfmpegPath() {
+async function resolveStaticFfmpegPath(targetPlatform: BuildPlatform) {
   try {
     const ffmpegStaticModule = (await import('ffmpeg-static')) as Record<string, unknown>;
     const staticPathCandidate = ffmpegStaticModule.default ?? ffmpegStaticModule;
@@ -68,10 +43,7 @@ async function resolveStaticFfmpegPath() {
       return exePath;
     }
 
-    const siblingBaseName = ffmpegBinaryNameForPlatform(normalizeTargetPlatform()).replace(
-      /\.exe$/i,
-      '',
-    );
+    const siblingBaseName = ffmpegBinaryNameForPlatform(targetPlatform).replace(/\.exe$/i, '');
     const siblingCandidates = [
       join(dirname(resolvedPath), siblingBaseName),
       join(dirname(resolvedPath), `${siblingBaseName}.exe`),
@@ -101,14 +73,14 @@ async function ensureExecutableBitIfNeeded(targetPlatform: string, filePath: str
 }
 
 async function main() {
-  const targetPlatform = normalizeTargetPlatform();
-  const targetArch = normalizeTargetArch();
-  const platformArchKey = `${targetPlatform}-${targetArch}`;
+  const target = resolveBuildTarget({ allowIa32: true, label: 'FFMPEG' });
+  const targetPlatform = target.platform;
+  const platformArchKey = target.key;
   const binaryName = ffmpegBinaryNameForPlatform(targetPlatform);
 
   console.log(`[FFMPEG] Preparing fallback binary for ${platformArchKey} (${binaryName})...`);
 
-  const staticFfmpegPath = await resolveStaticFfmpegPath();
+  const staticFfmpegPath = await resolveStaticFfmpegPath(targetPlatform);
   if (!staticFfmpegPath) {
     if (hasSystemFfmpegInPath()) {
       console.warn(
@@ -132,7 +104,7 @@ async function main() {
       {
         source: 'ffmpeg-static',
         platform: targetPlatform,
-        arch: targetArch,
+        arch: target.arch,
         binaryName,
         copiedFrom: staticFfmpegPath,
         copiedAt: new Date().toISOString(),

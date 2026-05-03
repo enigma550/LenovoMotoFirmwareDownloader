@@ -1,20 +1,27 @@
-import type { BunRpcRequestHandlers } from '../../../rpc/request-handler-types.ts';
+import type {
+  BunRpcRequestHandlers,
+  DownloadProgressDispatch,
+} from '../../../rpc/request-handler-types.ts';
 import {
+  deletePlayStoreDownload,
   downloadPlayStoreApp,
   getPlayStoreAppDetails,
   getPlayStoreStatus,
   installPlayStoreApp,
   listPlayStoreDownloads,
   searchPlayStoreApps,
-} from '../gplaydl.ts';
+} from '../play-store.ts';
 
-export function createAppStoreHandlers(): Pick<
+export function createAppStoreHandlers(options: {
+  sendDownloadProgress: DownloadProgressDispatch;
+}): Pick<
   BunRpcRequestHandlers,
   | 'getPlayStoreStatus'
   | 'listPlayStoreDownloads'
   | 'searchPlayStoreApps'
   | 'getPlayStoreAppDetails'
   | 'downloadPlayStoreApp'
+  | 'deletePlayStoreDownload'
   | 'installPlayStoreApp'
 > {
   return {
@@ -31,7 +38,10 @@ export function createAppStoreHandlers(): Pick<
       return getPlayStoreAppDetails(payload);
     },
     downloadPlayStoreApp: async (payload) => {
-      return downloadPlayStoreApp(payload);
+      return downloadPlayStoreApp(payload, options.sendDownloadProgress);
+    },
+    deletePlayStoreDownload: async (payload) => {
+      return deletePlayStoreDownload(payload);
     },
     installPlayStoreApp: async (payload) => {
       return installPlayStoreApp(payload);

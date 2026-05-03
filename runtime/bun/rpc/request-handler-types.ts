@@ -23,6 +23,8 @@ import type {
   LookupReadSupportBySnRequest,
   PlayStoreAppDetailsRequest,
   PlayStoreAppDetailsResponse,
+  PlayStoreDeleteDownloadRequest,
+  PlayStoreDeleteDownloadResponse,
   PlayStoreDownloadRequest,
   PlayStoreDownloadResponse,
   PlayStoreDownloadsResponse,
@@ -119,6 +121,10 @@ export interface BunRpcRequestHandlers {
   searchPlayStoreApps: RpcHandler<PlayStoreSearchRequest, PlayStoreSearchResponse>;
   getPlayStoreAppDetails: RpcHandler<PlayStoreAppDetailsRequest, PlayStoreAppDetailsResponse>;
   downloadPlayStoreApp: RpcHandler<PlayStoreDownloadRequest, PlayStoreDownloadResponse>;
+  deletePlayStoreDownload: RpcHandler<
+    PlayStoreDeleteDownloadRequest,
+    PlayStoreDeleteDownloadResponse
+  >;
   installPlayStoreApp: RpcHandler<PlayStoreInstallRequest, PlayStoreInstallResponse>;
   cancelDownload: RpcHandler<CancelDownloadRequest, RpcResponse<'cancelDownload'>>;
   listLocalDownloadedFiles: RpcHandler<undefined, LocalDownloadedFilesResponse>;

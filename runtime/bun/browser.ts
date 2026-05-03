@@ -1,3 +1,5 @@
+import { spawnDetachedCommand } from './process/index.ts';
+
 export async function openExternalUrl(url: string) {
   const command =
     process.platform === 'win32'
@@ -6,11 +8,9 @@ export async function openExternalUrl(url: string) {
         ? { cmd: 'open', args: [url] }
         : { cmd: 'xdg-open', args: [url] };
 
-  const proc = Bun.spawn([command.cmd, ...command.args], {
-    stdout: 'ignore',
-    stderr: 'ignore',
-    stdin: 'ignore',
+  await spawnDetachedCommand({
+    args: command.args,
+    command: command.cmd,
+    envMode: 'external-command',
   });
-  proc.unref();
-  await proc.exited;
 }

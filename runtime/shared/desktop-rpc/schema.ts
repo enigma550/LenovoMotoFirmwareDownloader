@@ -31,6 +31,8 @@ import type {
   PauseDownloadRequest,
   PlayStoreAppDetailsRequest,
   PlayStoreAppDetailsResponse,
+  PlayStoreDeleteDownloadRequest,
+  PlayStoreDeleteDownloadResponse,
   PlayStoreDownloadRequest,
   PlayStoreDownloadResponse,
   PlayStoreDownloadsResponse,
@@ -114,6 +116,10 @@ export type DesktopRpcSchema = DesktopRpcBaseSchema & {
       searchPlayStoreApps: RpcRequest<PlayStoreSearchRequest, PlayStoreSearchResponse>;
       getPlayStoreAppDetails: RpcRequest<PlayStoreAppDetailsRequest, PlayStoreAppDetailsResponse>;
       downloadPlayStoreApp: RpcRequest<PlayStoreDownloadRequest, PlayStoreDownloadResponse>;
+      deletePlayStoreDownload: RpcRequest<
+        PlayStoreDeleteDownloadRequest,
+        PlayStoreDeleteDownloadResponse
+      >;
       installPlayStoreApp: RpcRequest<PlayStoreInstallRequest, PlayStoreInstallResponse>;
       cancelDownload: RpcRequest<CancelDownloadRequest, DesktopApiResponse<'cancelDownload'>>;
       listLocalDownloadedFiles: RpcRequest<undefined, LocalDownloadedFilesResponse>;

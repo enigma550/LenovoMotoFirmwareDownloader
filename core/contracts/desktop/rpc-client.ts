@@ -116,6 +116,7 @@ export function createDesktopRpcClient(options: {
     return method === 'downloadFirmware' ||
       method === 'rescueLiteFirmware' ||
       method === 'rescueLiteFirmwareFromLocal' ||
+      method === 'downloadPlayStoreApp' ||
       method === 'extractLocalFirmware' ||
       method === 'scanConnectedBackupPreview' ||
       method === 'backupConnectedDevice' ||

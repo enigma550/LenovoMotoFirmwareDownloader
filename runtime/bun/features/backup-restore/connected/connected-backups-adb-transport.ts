@@ -4,6 +4,7 @@ import {
   resetConnectedDeviceConnection,
   withConnectedDeviceConnection,
 } from '../../../device/connected-device-facade.ts';
+import { runBufferedCommand } from '../../../process/index.ts';
 import { resolveCliAdbExecutable } from './connected-backups-adb-cli.ts';
 import { ADB_COMMAND_TIMEOUT_MS, type CommandResult } from './connected-backups-shared.ts';
 
@@ -30,68 +31,12 @@ async function runProcessCommand(
   args: string[],
   timeoutMs = ADB_COMMAND_TIMEOUT_MS,
 ) {
-  let timedOut = false;
-  let childProcess: Bun.Subprocess;
-  try {
-    childProcess = Bun.spawn([command, ...args], {
-      cwd: process.cwd(),
-      stdout: 'pipe',
-      stderr: 'pipe',
-      env: {
-        ...process.env,
-        ['LD_PRELOAD']: '',
-      },
-    });
-  } catch (error) {
-    return {
-      exitCode: -1,
-      stdoutText: '',
-      stderrText: '',
-      timedOut,
-      error: error instanceof Error ? error.message : String(error),
-    } satisfies CommandResult;
-  }
-
-  const timeout =
-    timeoutMs > 0
-      ? setTimeout(() => {
-          timedOut = true;
-          try {
-            childProcess.kill();
-          } catch {
-            // Ignore kill races.
-          }
-        }, timeoutMs)
-      : null;
-
-  try {
-    const stdoutStream = typeof childProcess.stdout === 'number' ? null : childProcess.stdout;
-    const stderrStream = typeof childProcess.stderr === 'number' ? null : childProcess.stderr;
-    const [stdoutText, stderrText, exitCode] = await Promise.all([
-      stdoutStream ? new Response(stdoutStream).text() : Promise.resolve(''),
-      stderrStream ? new Response(stderrStream).text() : Promise.resolve(''),
-      childProcess.exited,
-    ]);
-
-    return {
-      exitCode,
-      stdoutText,
-      stderrText,
-      timedOut,
-    } satisfies CommandResult;
-  } catch (error) {
-    return {
-      exitCode: -1,
-      stdoutText: '',
-      stderrText: '',
-      timedOut,
-      error: error instanceof Error ? error.message : String(error),
-    } satisfies CommandResult;
-  } finally {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-  }
+  return runBufferedCommand({
+    args,
+    command,
+    envMode: 'external-command',
+    timeoutMs,
+  });
 }
 
 async function withTimeout<T>(

@@ -1,3 +1,5 @@
+import { runCheckedBufferedCommand } from '../../process/index.ts';
+
 export async function runCommandWithAbort(options: {
   command: string;
   args: string[];
@@ -6,74 +8,15 @@ export async function runCommandWithAbort(options: {
   signal: AbortSignal;
   onProcess: (process: Bun.Subprocess | null) => void;
 }) {
-  const proc = Bun.spawn([options.command, ...options.args], {
+  return runCheckedBufferedCommand({
+    args: options.args,
+    command: options.command,
     cwd: options.cwd,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: {
-      ...process.env,
-      ['LD_PRELOAD']: '',
-    },
+    envMode: 'external-command',
+    onProcess: options.onProcess,
+    signal: options.signal,
+    timeoutMs: options.timeoutMs,
   });
-  options.onProcess(proc);
-  const hasTimeout = typeof options.timeoutMs === 'number' && options.timeoutMs > 0;
-  const effectiveTimeoutMs = hasTimeout ? options.timeoutMs : null;
-  let timedOut = false;
-  const timeoutTimer =
-    effectiveTimeoutMs === null
-      ? null
-      : setTimeout(() => {
-          timedOut = true;
-          try {
-            proc.kill();
-          } catch {
-            // Ignore kill race conditions.
-          }
-        }, effectiveTimeoutMs);
-
-  const abortListener = () => {
-    try {
-      proc.kill();
-    } catch {
-      // Ignore kill race conditions.
-    }
-  };
-  options.signal.addEventListener('abort', abortListener, { once: true });
-
-  try {
-    const [stdoutText, stderrText, exitCode] = await Promise.all([
-      new Response(proc.stdout).text(),
-      new Response(proc.stderr).text(),
-      proc.exited,
-    ]);
-
-    if (options.signal.aborted) {
-      const abortError = new Error('Operation aborted.');
-      abortError.name = 'AbortError';
-      throw abortError;
-    }
-    if (timedOut && effectiveTimeoutMs !== null) {
-      const timeoutError = new Error(`${options.command} timed out after ${effectiveTimeoutMs}ms.`);
-      timeoutError.name = 'TimeoutError';
-      throw timeoutError;
-    }
-
-    if (exitCode !== 0) {
-      const errorOutput = [stderrText.trim(), stdoutText.trim()].filter(Boolean).join('\n');
-      throw new Error(errorOutput || `${options.command} exited with code ${exitCode}.`);
-    }
-
-    return {
-      stdoutText,
-      stderrText,
-    };
-  } finally {
-    options.signal.removeEventListener('abort', abortListener);
-    if (timeoutTimer !== null) {
-      clearTimeout(timeoutTimer);
-    }
-    options.onProcess(null);
-  }
 }
 
 function isCommandNotFoundError<ErrorValue>(error: ErrorValue) {

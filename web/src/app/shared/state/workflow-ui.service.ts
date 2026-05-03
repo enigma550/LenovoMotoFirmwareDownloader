@@ -1,18 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, Injectable, signal } from '@angular/core';
+import { readInitialThemeMode, writeThemeMode } from './theme-mode.storage';
 import type { ThemeMode, ToastMessage, ToastVariant } from './workflow.types';
-
-function getInitialTheme(): ThemeMode {
-  try {
-    const storedTheme = globalThis.localStorage?.getItem('theme_mode');
-    if (storedTheme === 'light' || storedTheme === 'dark') {
-      return storedTheme;
-    }
-  } catch {
-    // Ignore storage access errors and fallback to dark mode.
-  }
-  return 'dark';
-}
 
 @Injectable({ providedIn: 'root' })
 export class WorkflowUiService {
@@ -21,7 +10,7 @@ export class WorkflowUiService {
 
   readonly status = signal('Idle');
   readonly errorMessage = signal('');
-  readonly themeMode = signal<ThemeMode>(getInitialTheme());
+  readonly themeMode = signal<ThemeMode>(readInitialThemeMode());
   readonly toasts = signal<ToastMessage[]>([]);
 
   readonly isBusy = computed(() => this.activeActionCount() > 0);
@@ -30,11 +19,7 @@ export class WorkflowUiService {
   toggleTheme() {
     const nextTheme: ThemeMode = this.themeMode() === 'dark' ? 'light' : 'dark';
     this.themeMode.set(nextTheme);
-    try {
-      globalThis.localStorage?.setItem('theme_mode', nextTheme);
-    } catch {
-      // Ignore storage access errors.
-    }
+    writeThemeMode(nextTheme);
     this.showToast(`Switched to ${nextTheme} mode.`, 'info', 2000);
   }
 

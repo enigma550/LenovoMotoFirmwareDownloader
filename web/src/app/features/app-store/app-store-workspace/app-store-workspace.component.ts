@@ -35,6 +35,10 @@ export class AppStoreWorkspaceComponent implements OnInit {
     await this.store.toggleDownloadExpanded(download);
   }
 
+  protected async onDeleteDownloadClick(download: PlayStoreDownloadGroup) {
+    await this.store.deleteDownload(download);
+  }
+
   protected visibleArtifacts(download: PlayStoreDownloadGroup) {
     return this.store.isDownloadExpanded(download.id)
       ? download.artifacts
@@ -45,21 +49,36 @@ export class AppStoreWorkspaceComponent implements OnInit {
     return Math.max(0, download.artifacts.length - this.visibleArtifacts(download).length);
   }
 
+  protected downloadedVersionLabel(download: PlayStoreDownloadGroup) {
+    return download.versionCode ? `v${download.versionCode}` : 'Unknown version';
+  }
+
+  protected downloadedApkCountLabel(download: PlayStoreDownloadGroup) {
+    return `${download.apkArtifactCount} APK${download.apkArtifactCount === 1 ? '' : 's'}`;
+  }
+
+  protected formatPercent(percent: number) {
+    return Math.round(percent);
+  }
+
+  protected downloadPercent(download: { downloadedBytes: number; totalBytes?: number }) {
+    if (!download.totalBytes) {
+      return 0;
+    }
+    return Math.max(0, Math.min(100, (download.downloadedBytes / download.totalBytes) * 100));
+  }
+
   protected shouldShowToolStatus() {
-    return this.store.toolStatus()?.toolSource !== 'bundled';
+    return !this.store.toolStatus()?.available;
   }
 
   protected toolStatusMessage() {
-    const source = this.store.toolStatus()?.toolSource;
     const status = this.store.toolStatus();
     if (!status) return '';
-    if (!status.available) return 'gplaydl mangler.';
-    if (source === 'custom') {
-      return 'Bruger custom gplaydl.';
+    if (!status.available) return 'Aurora token dispenser is unavailable.';
+    if (status.authProfileSource === 'dispenser') {
+      return `${status.authProfileCount || 0} Aurora token dispenser(s) ready.`;
     }
-    if (source === 'system') {
-      return 'Bruger system gplaydl.';
-    }
-    return '';
+    return `${status.authProfileCount || 0} Aurora auth profile(s) ready.`;
   }
 }

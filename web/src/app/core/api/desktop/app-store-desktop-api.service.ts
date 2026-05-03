@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import type {
   PlayStoreAppDetailsRequest,
   PlayStoreAppDetailsResponse,
+  PlayStoreDeleteDownloadRequest,
+  PlayStoreDeleteDownloadResponse,
   PlayStoreDownloadRequest,
   PlayStoreDownloadResponse,
   PlayStoreDownloadsResponse,
@@ -13,6 +15,7 @@ import type {
 } from '../../models/desktop-api';
 import {
   mapPlayStoreAppDetailsResponse,
+  mapPlayStoreDeleteDownloadResponse,
   mapPlayStoreDownloadResponse,
   mapPlayStoreDownloadsResponse,
   mapPlayStoreInstallResponse,
@@ -62,6 +65,15 @@ export class AppStoreDesktopApiService {
       desktopApi.downloadPlayStoreApp(payload),
     );
     return mapPlayStoreDownloadResponse(response);
+  }
+
+  async deletePlayStoreDownload(
+    payload: PlayStoreDeleteDownloadRequest,
+  ): Promise<PlayStoreDeleteDownloadResponse> {
+    const response = await this.bridge.withDesktopApi((desktopApi) =>
+      desktopApi.deletePlayStoreDownload(payload),
+    );
+    return mapPlayStoreDeleteDownloadResponse(response);
   }
 
   async installPlayStoreApp(payload: PlayStoreInstallRequest): Promise<PlayStoreInstallResponse> {

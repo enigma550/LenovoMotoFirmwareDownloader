@@ -5,7 +5,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
-  unlinkSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
@@ -14,12 +14,18 @@ import { packageBundledRuntimeDependencies } from './runtime-dependency-packager
 const BUILD_DIR: string | undefined = process.env.ELECTROBUN_BUILD_DIR;
 const TARGET_OS: string | undefined = process.env.ELECTROBUN_OS;
 const ENV_APP_NAME: string | undefined = process.env.ELECTROBUN_APP_NAME;
-const IDENTIFIER: string =
-  process.env.ELECTROBUN_APP_IDENTIFIER || 'com.github.enigma550.lenovomotofirmwaredownloader';
 const DESKTOP_DISPLAY_NAME: string = 'Lenovo Moto Firmware Downloader';
-
 const WM_CLASS: string = 'LenovoMotoFirmwareDown';
 const ORIGINAL_WM_CLASS: string = 'ElectrobunKitchenSink-dev';
+const TARGET_ARCH: string = process.env.ELECTROBUN_ARCH || process.arch;
+const LEGACY_USB_ADDON_PATH: string = join(
+  process.cwd(),
+  'assets',
+  'tools',
+  'usb',
+  'linux-x64',
+  'node.napi.glibc.node',
+);
 
 type RcEditOptions = {
   icon: string;
@@ -59,6 +65,130 @@ function resolveRcEdit(moduleValue: ModuleLikeValue): RcEditFn {
 
 if (!BUILD_DIR) {
   process.exit(0);
+}
+
+function removeIfExists(path: string): void {
+  if (existsSync(path)) {
+    rmSync(path, { recursive: true, force: true });
+  }
+}
+
+function pruneRuntimeNodeModules(nodeModulesRoot: string): void {
+  const pruneRecursive = (root: string): void => {
+    if (!existsSync(root)) return;
+
+    for (const entry of readdirSync(root, { withFileTypes: true })) {
+      const entryPath = join(root, entry.name);
+      if (entry.isDirectory()) {
+        if (
+          entry.name === '.git' ||
+          entry.name === '.github' ||
+          entry.name === '.settings' ||
+          entry.name === '.vscode' ||
+          entry.name === 'doc' ||
+          entry.name === 'docs' ||
+          entry.name === 'example' ||
+          entry.name === 'examples' ||
+          entry.name === 'test' ||
+          entry.name === 'tests'
+        ) {
+          removeIfExists(entryPath);
+          continue;
+        }
+        pruneRecursive(entryPath);
+        continue;
+      }
+
+      if (
+        entry.name === '.bun-tag' ||
+        entry.name === '.classpath' ||
+        entry.name === '.gitignore' ||
+        entry.name === '.project' ||
+        entry.name === 'bun.lock' ||
+        entry.name === 'tsconfig.json' ||
+        entry.name.endsWith('.build.tsbuildinfo') ||
+        entry.name.endsWith('.d.ts') ||
+        entry.name.endsWith('.d.ts.map') ||
+        entry.name.endsWith('.js.map') ||
+        entry.name.endsWith('.md')
+      ) {
+        removeIfExists(entryPath);
+      }
+    }
+  };
+
+  removeIfExists(join(nodeModulesRoot, '@types'));
+  removeIfExists(join(nodeModulesRoot, 'usb', 'libusb'));
+  removeIfExists(join(nodeModulesRoot, 'usb', 'src'));
+  removeIfExists(join(nodeModulesRoot, 'usb', 'test'));
+  pruneRecursive(nodeModulesRoot);
+}
+
+function pruneLinuxBundle(appFolder: string): void {
+  const resourcesAppPath: string = join(appFolder, 'Resources', 'app');
+  const toolsRoot: string = join(resourcesAppPath, 'tools');
+  const nodeModulesRoot: string = join(resourcesAppPath, 'node_modules');
+  const usbPrebuildsPath: string = join(nodeModulesRoot, 'usb', 'prebuilds');
+  const keepUsbPrebuild: string = TARGET_ARCH === 'arm64' ? 'linux-arm64' : 'linux-x64';
+
+  removeIfExists(join(appFolder, 'Info.plist'));
+  removeIfExists(join(appFolder, 'bin', 'zig-zstd'));
+  removeIfExists(join(appFolder, 'bin', 'bspatch'));
+  removeIfExists(join(appFolder, 'bin', 'bsdiff'));
+
+  removeIfExists(join(toolsRoot, 'drivers'));
+  removeIfExists(join(toolsRoot, 'qdl', 'win32-x64'));
+  removeIfExists(join(toolsRoot, 'qdl', 'darwin-arm64'));
+  removeIfExists(join(toolsRoot, 'qdl', 'darwin-x64'));
+
+  if (existsSync(usbPrebuildsPath)) {
+    for (const entry of readdirSync(usbPrebuildsPath, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name !== keepUsbPrebuild) {
+        removeIfExists(join(usbPrebuildsPath, entry.name));
+      }
+    }
+  }
+
+  if (TARGET_ARCH !== 'arm64') {
+    removeIfExists(join(nodeModulesRoot, '@img', 'sharp-libvips-linuxmusl-x64'));
+    removeIfExists(join(nodeModulesRoot, '@img', 'sharp-linuxmusl-x64'));
+  }
+
+  pruneRuntimeNodeModules(nodeModulesRoot);
+}
+
+function applyLegacyLinuxUsbAddon(appFolder: string): void {
+  if (TARGET_ARCH !== 'x64') {
+    return;
+  }
+
+  if (!existsSync(LEGACY_USB_ADDON_PATH)) {
+    console.warn(`Skipping legacy usb addon override: no file at ${LEGACY_USB_ADDON_PATH}.`);
+    return;
+  }
+
+  const usbModuleRoot = join(appFolder, 'Resources', 'app', 'node_modules', 'usb');
+  const bundledAddonPath = join(usbModuleRoot, 'prebuilds', 'linux-x64', 'node.napi.glibc.node');
+  const buildReleaseDir = join(usbModuleRoot, 'build', 'Release');
+  const buildReleaseAddonPath = join(buildReleaseDir, 'usb_bindings.node');
+  const muslAddonPath = join(usbModuleRoot, 'prebuilds', 'linux-x64', 'node.napi.musl.node');
+
+  if (!existsSync(bundledAddonPath)) {
+    console.warn(`Skipping legacy usb addon override: no bundled addon at ${bundledAddonPath}.`);
+    return;
+  }
+
+  mkdirSync(buildReleaseDir, { recursive: true });
+  copyFileSync(LEGACY_USB_ADDON_PATH, buildReleaseAddonPath);
+  copyFileSync(LEGACY_USB_ADDON_PATH, bundledAddonPath);
+
+  if (existsSync(muslAddonPath)) {
+    removeIfExists(muslAddonPath);
+  }
+
+  console.log(`Installed legacy usb addon at ${buildReleaseAddonPath}`);
+  console.log(`Replaced bundled usb linux-x64 addon with legacy build -> ${bundledAddonPath}`);
 }
 
 const PICK_APP_FOLDER = (): { appFolder: string; appName: string } | null => {
@@ -147,52 +277,6 @@ const PATCH_LINUX_WRAPPER = (appFolder: string): void => {
   console.log(`Patched WMClass in ${wrapperPath} -> ${patchedName}`);
 };
 
-const PATCH_DESKTOP_ENTRY = (appFolder: string): void => {
-  const desktopFiles: string[] = readdirSync(appFolder).filter((f: string) =>
-    f.endsWith('.desktop'),
-  );
-  const targetDesktopName: string = `${IDENTIFIER}.desktop`;
-
-  if (desktopFiles.length === 0) {
-    console.warn(
-      `Skipping desktop entry patch: no .desktop file found in ${appFolder}. Creating one.`,
-    );
-  }
-
-  for (const desktopFile of desktopFiles) {
-    if (desktopFile !== targetDesktopName) {
-      unlinkSync(join(appFolder, desktopFile));
-      console.log(`Removed old desktop file: ${desktopFile}`);
-    }
-  }
-
-  const desktopFileContent: string = `[Desktop Entry]
-Version=1.0
-Type=Application
-Name=${DESKTOP_DISPLAY_NAME}
-Comment=${DESKTOP_DISPLAY_NAME} application
-Exec=AppRun
-Icon=${IDENTIFIER}
-Terminal=false
-StartupWMClass=${WM_CLASS}
-Categories=Utility;Application;
-`;
-
-  writeFileSync(join(appFolder, targetDesktopName), desktopFileContent);
-  console.log(`Patched desktop entry for AppImage: ${targetDesktopName}`);
-};
-
-const WRITE_LINUX_SCRIPTS = (appFolder: string): void => {
-  const iconSource: string = join(appFolder, 'Resources', 'app', 'icon.png');
-  if (existsSync(iconSource)) {
-    copyFileSync(iconSource, join(appFolder, '.DirIcon'));
-    copyFileSync(iconSource, join(appFolder, `${IDENTIFIER}.png`));
-    console.log('Copied icons to AppDir root for AppImage generation.');
-  } else {
-    console.warn(`Icon source not found at ${iconSource}`);
-  }
-};
-
 const APP: { appFolder: string; appName: string } | null = PICK_APP_FOLDER();
 if (!APP) {
   throw new Error(
@@ -204,9 +288,9 @@ console.log(`FinalizeApp: Processing ${TARGET_OS}...`);
 packageBundledRuntimeDependencies(APP.appFolder);
 
 if (TARGET_OS === 'linux') {
+  applyLegacyLinuxUsbAddon(APP.appFolder);
+  pruneLinuxBundle(APP.appFolder);
   PATCH_LINUX_WRAPPER(APP.appFolder);
-  PATCH_DESKTOP_ENTRY(APP.appFolder);
-  WRITE_LINUX_SCRIPTS(APP.appFolder);
 } else if (TARGET_OS === 'win') {
   const ICON_PATH: string = join(process.cwd(), 'assets/icons/windows-icon.ico');
 

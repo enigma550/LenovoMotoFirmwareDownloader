@@ -23,6 +23,7 @@ import type {
   FrameworkUpdateInfo,
   PendingAuthCallbackResponse,
   PlayStoreAppDetailsResponse,
+  PlayStoreDeleteDownloadResponse,
   PlayStoreDownloadResponse,
   PlayStoreDownloadsResponse,
   PlayStoreInstallResponse,
@@ -219,6 +220,16 @@ export function mapPlayStoreStatusResponse(payload: MapperValue): PlayStoreStatu
   return {
     ...base,
     available: record ? readBoolean(record, 'available', false) : false,
+    backend: (() => {
+      const value = record ? readOptionalString(record, 'backend') : undefined;
+      return value === 'aurora-dispenser' ? value : undefined;
+    })(),
+    authProfileSource: (() => {
+      const value = record ? readOptionalString(record, 'authProfileSource') : undefined;
+      return value === 'env' || value === 'file' || value === 'dispenser' ? value : undefined;
+    })(),
+    authProfilePath: record ? readOptionalString(record, 'authProfilePath') : undefined,
+    authProfileCount: record ? readNumber(record, 'authProfileCount', 0) : 0,
     toolPath: record ? readOptionalString(record, 'toolPath') : undefined,
     toolSource: (() => {
       const value = record ? readOptionalString(record, 'toolSource') : undefined;
@@ -238,6 +249,7 @@ export function mapPlayStoreSearchResponse(payload: MapperValue): PlayStoreSearc
         .map((item) => ({
           title: readString(item, 'title'),
           packageName: readString(item, 'packageName'),
+          iconUrl: readOptionalString(item, 'iconUrl'),
         }))
         .filter((item) => item.packageName.length > 0)
     : [];
@@ -281,6 +293,18 @@ export function mapPlayStoreDownloadResponse(payload: MapperValue): PlayStoreDow
   };
 }
 
+export function mapPlayStoreDeleteDownloadResponse(
+  payload: MapperValue,
+): PlayStoreDeleteDownloadResponse {
+  const base = mapSimpleOkResponse(payload);
+  const record = asRecord(payload);
+  return {
+    ...base,
+    packageName: record ? readString(record, 'packageName') : '',
+    deletedArtifactCount: record ? readNumber(record, 'deletedArtifactCount', 0) : 0,
+  };
+}
+
 export function mapPlayStoreDownloadsResponse(payload: MapperValue): PlayStoreDownloadsResponse {
   const base = mapSimpleOkResponse(payload);
   const record = asRecord(payload);
@@ -296,6 +320,8 @@ export function mapPlayStoreDownloadsResponse(payload: MapperValue): PlayStoreDo
     downloads.push({
       id: readString(group, 'id'),
       packageName: readString(group, 'packageName'),
+      title: readOptionalString(group, 'title'),
+      iconDataUrl: readOptionalString(group, 'iconDataUrl'),
       versionCode: readOptionalString(group, 'versionCode'),
       totalSizeBytes: readNumber(group, 'totalSizeBytes', 0),
       modifiedAt: readNumber(group, 'modifiedAt', 0),

@@ -3,6 +3,7 @@ import { copyFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { loadConfig, saveConfig } from '../../core/infra/config.ts';
+import { runBufferedCommand, spawnDetachedCommand } from './process/index.ts';
 
 export interface DesktopIntegrationStatus {
   ok: boolean;
@@ -107,12 +108,11 @@ function ensureExecLine(content: string) {
 
 async function runDesktopCommand(command: string, args: string[]) {
   try {
-    const proc = Bun.spawn([command, ...args], {
-      stdout: 'ignore',
-      stderr: 'ignore',
-      stdin: 'ignore',
+    const exitCode = await spawnDetachedCommand({
+      args,
+      command,
+      envMode: 'external-command',
     });
-    const exitCode = await proc.exited;
     return exitCode === 0;
   } catch {
     return false;
@@ -120,23 +120,16 @@ async function runDesktopCommand(command: string, args: string[]) {
 }
 
 async function runWindowsRegistryCommand(args: string[]) {
-  const proc = Bun.spawn(['reg', ...args], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-    stdin: 'ignore',
+  const result = await runBufferedCommand({
+    args,
+    command: 'reg',
   });
 
-  const [stdoutText, stderrText, exitCode] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
-    proc.exited,
-  ]);
-
   return {
-    ok: exitCode === 0,
-    stdoutText,
-    stderrText,
-    exitCode,
+    ok: result.exitCode === 0,
+    stdoutText: result.stdoutText,
+    stderrText: result.stderrText,
+    exitCode: result.exitCode,
   };
 }
 

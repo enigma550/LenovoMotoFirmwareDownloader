@@ -135,6 +135,10 @@ export interface LocalDownloadedFilesResponse {
 export interface PlayStoreStatusResponse {
   ok: boolean;
   available: boolean;
+  backend?: 'aurora-dispenser';
+  authProfileSource?: 'env' | 'file' | 'dispenser';
+  authProfilePath?: string;
+  authProfileCount?: number;
   toolPath?: string;
   toolSource?: 'bundled' | 'system' | 'custom';
   downloadRoot?: string;
@@ -158,6 +162,13 @@ export interface PlayStoreDownloadResponse {
   packageName: string;
   downloadRoot?: string;
   artifacts: PlayStoreDownloadedArtifact[];
+  error?: string;
+}
+
+export interface PlayStoreDeleteDownloadResponse {
+  ok: boolean;
+  packageName: string;
+  deletedArtifactCount: number;
   error?: string;
 }
 

@@ -15,15 +15,6 @@ const CEF_VIEW_SERVER_PORT_START = 56000;
 const CEF_VIEW_SERVER_PORT_END = 56020;
 const INSTANCE_PID_PATH = join(tmpdir(), 'lenovo-moto-firmware-downloader.pid');
 
-type MutableBrowserWindow = BrowserWindow & {
-  webviewId: number;
-};
-
-type RemovableBrowserView = {
-  id: number;
-  remove(): void;
-};
-
 function hasLiveExistingInstance(pidValue: string) {
   const normalizedPid = pidValue.trim();
   if (!/^\d+$/.test(normalizedPid)) {
@@ -251,33 +242,6 @@ function nudgeLinuxCefPaint(mainWindow: BrowserWindow) {
   }, 80);
 }
 
-function replaceLinuxCefMainWebview(mainWindow: BrowserWindow, url: string) {
-  if (process.platform !== 'linux' || selectedRenderer !== 'cef') {
-    return;
-  }
-
-  const mutableMainWindow = mainWindow as MutableBrowserWindow;
-  const defaultWebview = mutableMainWindow.webview as unknown as RemovableBrowserView;
-  defaultWebview.remove();
-
-  const replacementWebview = new BrowserView({
-    url,
-    preload: 'views://bridge/index.js',
-    rpc,
-    renderer: 'cef',
-    partition: 'ephemeral',
-    frame: {
-      x: 0,
-      y: 0,
-      width: mutableMainWindow.frame.width,
-      height: mutableMainWindow.frame.height,
-    },
-    windowId: mutableMainWindow.id,
-  });
-
-  mutableMainWindow.webviewId = replacementWebview.id;
-}
-
 type DownloadProgressPayload = DownloadProgressMessage;
 type DownloadProgressSendFn = (
   message: 'downloadProgress',
@@ -332,7 +296,6 @@ const mainWindow = new BrowserWindow({
   },
 });
 mainWindowRef = mainWindow;
-replaceLinuxCefMainWebview(mainWindow, mainWindowUrl);
 
 mainWindow.webview.on('did-navigate', () => {
   mainWindow.maximize();

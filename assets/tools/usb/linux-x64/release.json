@@ -1,0 +1,7 @@
+{
+  "usbVersion": "2.17.0",
+  "buildFlavor": "podman:quay.io/pypa/manylinux2014_x86_64:node-16.20.2:no-udev",
+  "nodeVersion": "16.20.2",
+  "targetPlatform": "linux",
+  "targetArch": "x64"
+}

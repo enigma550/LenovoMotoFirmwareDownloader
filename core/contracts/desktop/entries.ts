@@ -20,6 +20,7 @@ export type PlayStoreArch = 'arm64' | 'armv7';
 export interface PlayStoreSearchResult {
   title: string;
   packageName: string;
+  iconUrl?: string;
 }
 
 export interface PlayStoreAppDetails {
@@ -44,6 +45,8 @@ export interface PlayStoreDownloadedArtifact {
 export interface PlayStoreDownloadGroup {
   id: string;
   packageName: string;
+  title?: string;
+  iconDataUrl?: string;
   versionCode?: string;
   totalSizeBytes: number;
   modifiedAt: number;

@@ -1,24 +1,30 @@
 import { execSync } from 'node:child_process';
 import {
-  copyFileSync,
   createWriteStream,
   existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
+  renameSync,
   rmSync,
   unlinkSync,
-  writeFileSync,
 } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
-const BUILD_DIR: string = process.env.ELECTROBUN_BUILD_DIR as string;
-const ARTIFACT_DIR: string = process.env.ELECTROBUN_ARTIFACT_DIR as string;
+const BUILD_DIR: string = resolve(process.env.ELECTROBUN_BUILD_DIR as string);
+const ARTIFACT_DIR: string = resolve(process.env.ELECTROBUN_ARTIFACT_DIR as string);
 const TARGET_OS: string | undefined = process.env.ELECTROBUN_OS;
 const IDENTIFIER: string =
   process.env.ELECTROBUN_APP_IDENTIFIER || 'com.github.enigma550.lenovomotofirmwaredownloader';
 const DESKTOP_DISPLAY_NAME: string = 'Lenovo Moto Firmware Downloader';
 const WM_CLASS: string = 'LenovoMotoFirmwareDown';
+const APPIMAGE_SCRIPT_PATH: string = resolve(
+  process.cwd(),
+  'tooling',
+  'build',
+  'appimage',
+  'make-appimage.sh',
+);
 
 type RcEditOptions = {
   icon: string;
@@ -73,42 +79,6 @@ function resolveArchiver(moduleValue: ModuleLikeValue): ArchiverFactory {
     throw new Error('archiver module did not export a callable factory.');
   }
   return candidate as ArchiverFactory;
-}
-
-function wait(durationMs: number) {
-  return new Promise((resolve) => setTimeout(resolve, durationMs));
-}
-
-async function execWithRetry(options: {
-  command: string;
-  label: string;
-  attempts?: number;
-  baseDelayMs?: number;
-}) {
-  const attempts = options.attempts ?? 4;
-  const baseDelayMs = options.baseDelayMs ?? 2000;
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      execSync(options.command, { stdio: 'inherit' });
-      return;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      if (attempt >= attempts) {
-        break;
-      }
-      const delay = baseDelayMs * attempt;
-      console.warn(
-        `FinalizeInstaller: ${options.label} failed (attempt ${attempt}/${attempts}). Retrying in ${Math.round(
-          delay / 1000,
-        )}s...`,
-      );
-      await wait(delay);
-    }
-  }
-
-  throw lastError;
 }
 
 if (!BUILD_DIR) {
@@ -191,6 +161,10 @@ async function buildLinuxAppImage(): Promise<void> {
     }
   }
 
+  if (existsSync(join(appDirPath, 'Info.plist'))) {
+    rmSync(join(appDirPath, 'Info.plist'), { force: true });
+  }
+
   let appVersion: string = '0.0.0';
   const versionJsonPath: string = join(appDirPath, 'Resources', 'version.json');
   if (existsSync(versionJsonPath)) {
@@ -211,158 +185,75 @@ async function buildLinuxAppImage(): Promise<void> {
   try {
     shortSha = execSync('git rev-parse --short HEAD').toString().trim();
   } catch {
-    /* fallback if git fails */
-  }
-
-  const zigZstdPath: string = join(appDirPath, 'bin', 'zig-zstd');
-  const bsPatchPath: string = join(appDirPath, 'bin', 'bspatch');
-  if (existsSync(zigZstdPath)) {
-    unlinkSync(zigZstdPath);
-  }
-  if (existsSync(bsPatchPath)) {
-    unlinkSync(bsPatchPath);
-  }
-
-  const appRunContent: string = `#!/bin/sh
-HERE="$(dirname "$(readlink -f "\${0}")")"
-exec "\${HERE}/bin/launcher" --class="${DESKTOP_DISPLAY_NAME}" "$@"
-`;
-  const appRunPath: string = join(appDirPath, 'AppRun');
-  writeFileSync(appRunPath, appRunContent, { mode: 0o755 });
-
-  const possibleIcons: string[] = [
-    join(appDirPath, 'Resources', 'appIcon.png'),
-    join(appDirPath, 'Resources', 'app', 'icon.png'),
-  ];
-  for (const iconPath of possibleIcons) {
-    if (existsSync(iconPath)) {
-      copyFileSync(iconPath, join(appDirPath, '.DirIcon'));
-      copyFileSync(iconPath, join(appDirPath, `${IDENTIFIER}.png`));
-
-      const hicolorDir: string = join(
-        appDirPath,
-        'usr',
-        'share',
-        'icons',
-        'hicolor',
-        '256x256',
-        'apps',
-      );
-      mkdirSync(hicolorDir, { recursive: true });
-      copyFileSync(iconPath, join(hicolorDir, `${IDENTIFIER}.png`));
-      break;
+    const githubSha: string = (process.env.GITHUB_SHA || '').trim();
+    if (githubSha) {
+      shortSha = githubSha.slice(0, 7);
     }
   }
-
-  const desktopFiles: string[] = readdirSync(appDirPath).filter((f: string) =>
-    f.endsWith('.desktop'),
-  );
-  const targetDesktopName: string = `${IDENTIFIER}.desktop`;
-
-  for (const desktopFile of desktopFiles) {
-    if (desktopFile !== targetDesktopName) {
-      unlinkSync(join(appDirPath, desktopFile));
-    }
-  }
-  const desktopFileContent: string = `[Desktop Entry]
-Version=1.0
-Type=Application
-Name=${DESKTOP_DISPLAY_NAME}
-Comment=${DESKTOP_DISPLAY_NAME} application
-Exec=AppRun
-Icon=${IDENTIFIER}
-Terminal=false
-StartupWMClass=${WM_CLASS}
-Categories=Utility;
-X-AppImage-Version=${cleanVersion}
-`;
-  writeFileSync(join(appDirPath, targetDesktopName), desktopFileContent);
 
   const isArm: boolean = process.arch === 'arm64' || process.env.ELECTROBUN_ARCH === 'arm64';
   const appImageArch: string = isArm ? 'aarch64' : 'x86_64';
   const fileArch: string = isArm ? 'arm64' : 'x64';
-  const uruntimeName: string = `uruntime-appimage-dwarfs-${appImageArch}`;
-  const uruntimePath: string = join(process.cwd(), uruntimeName);
-
-  if (!existsSync(uruntimePath)) {
-    console.log(`FinalizeInstaller: Downloading ${uruntimeName}...`);
-    try {
-      await execWithRetry({
-        command: `curl -fL -o "${uruntimePath}" "https://github.com/VHSgunzo/uruntime/releases/latest/download/${uruntimeName}"`,
-        label: `uruntime download (${uruntimeName})`,
-      });
-      execSync(`chmod +x "${uruntimePath}"`);
-    } catch (error) {
-      console.error('FinalizeInstaller: Failed to download uruntime.', error);
-      return;
-    }
-  }
-
   const nameBase: string = 'LMFD';
   const appImageOutName: string = `${channel}-linux-${fileArch}-v${cleanVersion}-${shortSha}-${nameBase}.AppImage`;
-  const appImageOutPath: string = join(ARTIFACT_DIR, appImageOutName);
-  const dwarfsImagePath: string = join(stagingDir, `${nameBase}-${appImageArch}.dwarfs`);
+  const finalAppImagePath: string = join(ARTIFACT_DIR, appImageOutName);
+  const tempAppImageOutName: string = `${appImageOutName}.tmp`;
+  const tempAppImagePath: string = join(ARTIFACT_DIR, tempAppImageOutName);
+  const zsyncPattern: string = `${channel}-linux-${fileArch}-v*-*-${nameBase}.AppImage.zsync`;
 
-  console.log(`FinalizeInstaller: Building DwarFS AppImage ${appImageOutName}...`);
+  let updateInfo: string = '';
+  if (channel === 'stable') {
+    updateInfo = `gh-releases-zsync|enigma550|LenovoMotoFirmwareDownloader|latest|${zsyncPattern}`;
+  } else if (channel === 'canary') {
+    updateInfo = `gh-releases-zsync|enigma550|LenovoMotoFirmwareDownloader|latest-pre|${zsyncPattern}`;
+  }
+
+  console.log(`FinalizeInstaller: Building AnyLinux AppImage ${appImageOutName}...`);
   try {
-    execSync(`"${uruntimePath}" --appimage-mkdwarfs -i "${appDirPath}" -o "${dwarfsImagePath}"`, {
-      stdio: 'inherit',
-    });
-
-    execSync(`cat "${uruntimePath}" "${dwarfsImagePath}" > "${appImageOutPath}"`, {
-      stdio: 'inherit',
-    });
-    execSync(`chmod +x "${appImageOutPath}"`);
-
-    const zsyncPattern: string = `${channel}-linux-${fileArch}-v*-*-${nameBase}.AppImage.zsync`;
-
-    let updateInfo: string = '';
-    if (channel === 'stable') {
-      updateInfo = `gh-releases-zsync|enigma550|LenovoMotoFirmwareDownloader|latest|${zsyncPattern}`;
-    } else if (channel === 'canary') {
-      updateInfo = `gh-releases-zsync|enigma550|LenovoMotoFirmwareDownloader|latest-pre|${zsyncPattern}`;
+    if (existsSync(tempAppImagePath)) {
+      unlinkSync(tempAppImagePath);
     }
 
-    if (updateInfo) {
-      execSync(
-        `TARGET_APPIMAGE="${appImageOutPath}" "${uruntimePath}" --appimage-addupdinfo "${updateInfo}"`,
-        {
-          stdio: 'inherit',
-        },
-      );
+    if (existsSync(finalAppImagePath)) {
+      renameSync(finalAppImagePath, `${finalAppImagePath}.previous`);
     }
 
-    if (channel === 'stable' || channel === 'canary') {
-      const hasZsyncMake: boolean = (() => {
-        try {
-          execSync('command -v zsyncmake >/dev/null 2>&1', { stdio: 'ignore' });
-          return true;
-        } catch {
-          return false;
-        }
-      })();
+    execSync(`bash ${JSON.stringify(APPIMAGE_SCRIPT_PATH)}`, {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        ['APPDIR']: appDirPath,
+        ['ARCH']: appImageArch,
+        ['OUTPATH']: ARTIFACT_DIR,
+        ['OUTNAME']: tempAppImageOutName,
+        ['UPINFO']: updateInfo,
+        ['MAIN_BIN']: 'launcher',
+        ['VERSION']: cleanVersion,
+        ['DESKTOP_NAME']: DESKTOP_DISPLAY_NAME,
+        ['APP_IDENTIFIER']: IDENTIFIER,
+        ['WM_CLASS']: WM_CLASS,
+      },
+    });
 
-      if (hasZsyncMake) {
-        // We strictly define the output path so it ends up in the artifacts folder
-        execSync(`zsyncmake -o "${appImageOutPath}.zsync" "${appImageOutPath}"`, {
-          stdio: 'inherit',
-        });
-        console.log(`FinalizeInstaller: Generated zsync metadata -> ${appImageOutPath}.zsync`);
-      }
+    if (existsSync(finalAppImagePath)) {
+      unlinkSync(finalAppImagePath);
+    }
 
-      const oldArtifacts: string[] = readdirSync(ARTIFACT_DIR).filter(
-        (f: string) =>
-          f.endsWith('.tar.gz') ||
-          f.endsWith('.tar.zst') ||
-          f.endsWith('.json') ||
-          f.endsWith('.patch'),
-      );
-      for (const f of oldArtifacts) {
-        unlinkSync(join(ARTIFACT_DIR, f));
-      }
+    renameSync(tempAppImagePath, finalAppImagePath);
+
+    const oldArtifacts: string[] = readdirSync(ARTIFACT_DIR).filter(
+      (f: string) =>
+        f.endsWith('.tar.gz') ||
+        f.endsWith('.tar.zst') ||
+        f.endsWith('.json') ||
+        f.endsWith('.patch'),
+    );
+    for (const f of oldArtifacts) {
+      unlinkSync(join(ARTIFACT_DIR, f));
     }
   } catch (error) {
-    console.error('FinalizeInstaller: Failed to build AppImage.', error);
+    console.error('FinalizeInstaller: Failed to build AnyLinux AppImage.', error);
+    throw error;
   } finally {
     if (existsSync(stagingDir)) {
       rmSync(stagingDir, { recursive: true, force: true });

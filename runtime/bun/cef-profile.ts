@@ -1,4 +1,4 @@
-import { chmod, lstat, mkdir, readdir, rm } from 'node:fs/promises';
+import { chmod, lstat, mkdir, readdir, rm, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 
 async function ensureDirectory(path: string) {
@@ -22,19 +22,27 @@ export async function cleanupLinuxCefProfileLocks(userCachePath: string) {
   }
 
   const cefRoot = join(userCachePath, 'CEF');
+  const defaultProfileDir = join(cefRoot, 'Default');
   const partitionsDir = join(cefRoot, 'Partitions');
-  const candidateProfileDirs = [
-    join(cefRoot, 'Default'),
-    partitionsDir,
-    join(partitionsDir, 'default'),
-  ];
+  const defaultPartitionDir = join(partitionsDir, 'default');
+  const candidateProfileDirs = [defaultProfileDir, partitionsDir, defaultPartitionDir];
 
   try {
     await ensureDirectory(cefRoot);
+    await ensureDirectory(defaultProfileDir);
+    await ensureDirectory(partitionsDir);
     await chmod(cefRoot, 0o700).catch(() => undefined);
-    for (const profileDir of candidateProfileDirs) {
-      await ensureDirectory(profileDir);
-      await chmod(profileDir, 0o700).catch(() => undefined);
+    await chmod(defaultProfileDir, 0o700).catch(() => undefined);
+    await chmod(partitionsDir, 0o700).catch(() => undefined);
+
+    try {
+      const stats = await lstat(defaultPartitionDir);
+      if (!stats.isSymbolicLink()) {
+        await rm(defaultPartitionDir, { recursive: true, force: true });
+        await symlink('../Default', defaultPartitionDir);
+      }
+    } catch {
+      await symlink('../Default', defaultPartitionDir).catch(() => undefined);
     }
 
     const cefEntries = await readdir(cefRoot).catch(() => []);
