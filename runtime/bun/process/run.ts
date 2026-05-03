@@ -26,6 +26,16 @@ type SpawnDetachedCommandOptions = {
   envOverrides?: Record<string, string | undefined>;
 };
 
+type LaunchDetachedCommandResult = {
+  error?: string;
+  exitCode?: number;
+  started: boolean;
+};
+
+type LaunchDetachedCommandOptions = SpawnDetachedCommandOptions & {
+  settleMs?: number;
+};
+
 function createAbortError(message: string): Error {
   const error = new Error(message);
   error.name = 'AbortError';
@@ -230,4 +240,49 @@ export async function spawnDetachedCommand(options: SpawnDetachedCommandOptions)
   });
   childProcess.unref();
   return childProcess.exited;
+}
+
+export async function launchDetachedCommand(
+  options: LaunchDetachedCommandOptions,
+): Promise<LaunchDetachedCommandResult> {
+  let childProcess: Bun.Subprocess;
+  try {
+    childProcess = Bun.spawn([options.command, ...(options.args ?? [])], {
+      cwd: options.cwd ?? process.cwd(),
+      env: createRuntimeProcessEnv({
+        mode: options.envMode,
+        overrides: options.envOverrides,
+      }),
+      stderr: 'ignore',
+      stdin: 'ignore',
+      stdout: 'ignore',
+    });
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error),
+      started: false,
+    };
+  }
+
+  childProcess.unref();
+  const settleMs = Math.max(0, options.settleMs ?? 1_500);
+  if (settleMs === 0) {
+    return { started: true };
+  }
+
+  const settled = await Promise.race([
+    childProcess.exited.then((exitCode) => ({ exitCode, type: 'exit' as const })),
+    new Promise<{ type: 'running' }>((resolve) =>
+      setTimeout(() => resolve({ type: 'running' }), settleMs),
+    ),
+  ]);
+
+  if (settled.type === 'running') {
+    return { started: true };
+  }
+
+  return {
+    exitCode: settled.exitCode,
+    started: settled.exitCode === 0,
+  };
 }
