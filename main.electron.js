@@ -863,7 +863,8 @@ function createWindow() {
     },
   });
 
-  win.webContents.openDevTools();
+// TẮT DEVTOOLS
+// win.webContents.openDevTools();
 
   bootstrapSessionCookie().then(() => {
     writeLog('✅ [Main] Session cookie bootstrapped');
