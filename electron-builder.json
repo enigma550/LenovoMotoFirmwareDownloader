@@ -1,0 +1,21 @@
+{
+  "appId": "com.enigma550.lenovomotofirmwaredownloader",
+  "productName": "Lenovo Moto Firmware Downloader",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "dist/**/*",
+    "web/dist/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "tooling/assets", 
+      "to": "assets",
+      "filter": ["**/*"]
+    }
+  ],
+  "mac": {
+    "target": ["dmg", "zip"]
+  }
+}

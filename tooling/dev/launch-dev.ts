@@ -500,19 +500,9 @@ try {
   process.exit(getExitCode(TYPED_ERROR));
 }
 
-console.log(`[6/${TOTAL_STEPS}] Building desktop wrapper...`);
-try {
-  execSync('bunx electrobun build --env=dev', {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      ['ELECTROBUN_SKIP_POSTPACKAGE']: '1',
-    },
-  });
-} catch {
-  console.error('\n[Fatal] Desktop wrapper build failed.');
-  process.exit(1);
-}
+console.log(`[6/${TOTAL_STEPS}] Skipping Electrobun wrapper build...`);
+console.log(`[7/${TOTAL_STEPS}] Environment ready! Handing over to Electron...`);
+process.exit(0);
 
 const INSTANCE_SUFFIX = createDevInstanceSuffix();
 let instanceIdentifier = BASE_DEV_IDENTIFIER;

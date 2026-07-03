@@ -7,7 +7,6 @@
     "rootDir": "..",
     "types": ["w3c-web-usb"]
   },
-  "files": ["../node_modules/electrobun/dist/api/browser/global.d.ts"],
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.spec.ts"]
 }
