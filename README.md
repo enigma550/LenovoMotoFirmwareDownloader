@@ -1,5 +1,8 @@
 # Lenovo Moto Firmware Downloader
 
+Repo này dành riêng cho Ventura vì electrobun yêu cầu Sonoma+ và bun thì yêu cầu Ventura+. Hiện tại chỉ hỗ trợ để tải firmware bằng cách lấy URL trong Terminal và chưa hỗ trợ tải tự động từ app, không biết làm. Bun cũ trên Big Sur/Monterey hên xui nha.
+-------------------------------------------------------------------------------------------------------
+
 Desktop app for Motorola/Lenovo firmware lookup via LMSA, built with Bun + Electrobun + Angular. Features flashing abilities, backup & restore of snapshots.
 You can download prebuilt binaries from the GitHub Releases page: [Releases](https://github.com/enigma550/LenovoMotoFirmwareDownloader/releases)
 
