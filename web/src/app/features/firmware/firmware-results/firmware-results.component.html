@@ -12,7 +12,7 @@
       [class.text-dark-text-bright]="store.isDark()"
       [class.text-light-text-bright]="!store.isDark()"
     >
-      Firmware Variants
+      {{ 'FIRMWARE.VARIANTS' | translate }}
       <span
         class="ml-2 font-mono text-sm font-normal opacity-70"
       >({{ store.firmwareVariants().length }})</span>
@@ -27,7 +27,7 @@
     }
 
     <app-rescue-flash-console
-      [title]="'Rescue Console'"
+      [title]="'CONSOLE.TITLE' | translate"
       [context]="'firmware'"
       [isDark]="store.isDark()"
       [download]="store.firmwareDownload()"

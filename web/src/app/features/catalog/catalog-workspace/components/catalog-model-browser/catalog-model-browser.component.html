@@ -13,14 +13,14 @@
         [class.text-dark-text-bright]="store.isDark()"
         [class.text-light-text-bright]="!store.isDark()"
       >
-        📋 Catalog Workspace
+        📋 {{ 'CATALOG.TITLE' | translate }}
       </h3>
       <p
         class="mt-1 text-sm"
         [class.text-dark-text-dim]="store.isDark()"
         [class.text-light-text-dim]="!store.isDark()"
       >
-        Filter models, select one, and run firmware lookups
+        {{ 'CATALOG.DESC' | translate }}
       </p>
     </div>
   </div>
@@ -39,7 +39,7 @@
       type="button"
       (click)="store.loadCatalog(false)"
     >
-      📂 Load Local
+      📂 {{ 'CATALOG.LOAD_LOCAL' | translate }}
     </button>
     <button
       class="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200"
@@ -54,7 +54,7 @@
       type="button"
       (click)="store.loadCatalog(true)"
     >
-      🔄 Refresh from LMSA
+      🔄 {{ 'CATALOG.REFRESH' | translate }}
     </button>
   </div>
 
@@ -68,7 +68,7 @@
           [class.text-dark-text-dim]="store.isDark()"
           [class.text-light-text-dim]="!store.isDark()"
         >
-          Category
+          {{ 'CATALOG.CATEGORY' | translate }}
         </label>
         <div class="relative w-full">
           <button
@@ -118,7 +118,7 @@
                 type="button"
                 (click)="selectCategory('all', $event)"
               >
-                All
+                {{ 'CATALOG.ALL' | translate }}
               </button>
               <button
                 class="block w-full px-3 py-2 text-left text-sm transition-colors"
@@ -131,7 +131,7 @@
                 type="button"
                 (click)="selectCategory('phone', $event)"
               >
-                📱 Phone
+                📱 {{ 'CATALOG.PHONE' | translate }}
               </button>
               <button
                 class="block w-full px-3 py-2 text-left text-sm transition-colors"
@@ -144,7 +144,7 @@
                 type="button"
                 (click)="selectCategory('tablet', $event)"
               >
-                📲 Tablet
+                📲 {{ 'CATALOG.TABLET' | translate }}
               </button>
               <button
                 class="block w-full px-3 py-2 text-left text-sm transition-colors"
@@ -157,7 +157,7 @@
                 type="button"
                 (click)="selectCategory('smart', $event)"
               >
-                ⌚ Smart
+                ⌚ {{ 'CATALOG.SMART' | translate }}
               </button>
             </div>
           }
@@ -171,7 +171,7 @@
           [class.text-dark-text-dim]="store.isDark()"
           [class.text-light-text-dim]="!store.isDark()"
         >
-          Read Support
+          {{ 'CATALOG.READ_SUPPORT' | translate }}
         </label>
         <div class="relative w-full">
           <button
@@ -221,7 +221,7 @@
                 type="button"
                 (click)="selectReadSupport('all', $event)"
               >
-                All
+                {{ 'CATALOG.ALL' | translate }}
               </button>
               <button
                 class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
@@ -245,7 +245,7 @@
                 >
                   <path d="M5 13l4 4L19 7" />
                 </svg>
-                Supported
+                {{ 'CATALOG.SUPPORTED' | translate }}
               </button>
               <button
                 class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
@@ -269,7 +269,7 @@
                 >
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Not supported
+                {{ 'CATALOG.NOT_SUPPORTED' | translate }}
               </button>
             </div>
           }
@@ -283,7 +283,7 @@
           [class.text-dark-text-dim]="store.isDark()"
           [class.text-light-text-dim]="!store.isDark()"
         >
-          🔍 Search
+          🔍 {{ 'CATALOG.SEARCH' | translate }}
         </label>
         <input
           class="w-full rounded-lg border px-3 py-2 text-sm transition-all duration-200 placeholder:opacity-50 focus:outline-none"
@@ -297,7 +297,7 @@
           [class.focus:border-accent]="!store.isDark()"
           [ngModel]="store.searchText()"
           (ngModelChange)="store.setSearchText($event)"
-          placeholder="model, market, platform..."
+          [placeholder]="'CATALOG.SEARCH_PLACEHOLDER' | translate"
         />
       </div>
     </div>
@@ -320,11 +320,11 @@
         [class.bg-light-bg]="!store.isDark()"
         [class.text-accent]="!store.isDark()"
       >
-        <span class="min-w-0">Model</span>
-        <span class="min-w-0">Market</span>
-        <span class="min-w-0">Platform</span>
-        <span class="min-w-0">Category</span>
-        <span class="text-right">Read Support</span>
+        <span class="min-w-0">{{ 'CATALOG.MODEL' | translate }}</span>
+        <span class="min-w-0">{{ 'CATALOG.MARKET' | translate }}</span>
+        <span class="min-w-0">{{ 'CATALOG.PLATFORM' | translate }}</span>
+        <span class="min-w-0">{{ 'CATALOG.CATEGORY' | translate }}</span>
+        <span class="text-right">{{ 'CATALOG.READ_SUPPORT' | translate }}</span>
       </div>
 
       <!-- Table rows -->
@@ -417,7 +417,7 @@
           [class.text-dark-text-dim]="store.isDark()"
           [class.text-light-text-dim]="!store.isDark()"
         >
-          No models match current filters.
+          {{ 'CATALOG.NO_MATCH' | translate }}
         </p>
       }
     </div>
@@ -436,7 +436,7 @@
         type="button"
         (click)="store.prevPage()"
       >
-        ← Prev
+        {{ 'CATALOG.PREV' | translate }}
       </button>
       <button
         class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all duration-200"
@@ -450,14 +450,14 @@
         type="button"
         (click)="store.nextPage()"
       >
-        Next →
+        {{ 'CATALOG.NEXT' | translate }}
       </button>
       <span
         class="text-sm"
         [class.text-dark-text-dim]="store.isDark()"
         [class.text-light-text-dim]="!store.isDark()"
       >
-        Page
+        {{ 'CATALOG.PAGE' | translate }}
         <span class="text-accent">{{ store.pageIndex() + 1 }}</span>
         /
         <span>{{ store.totalPages() }}</span>
@@ -468,7 +468,7 @@
         [class.text-dark-text-dim]="store.isDark()"
         [class.text-light-text-dim]="!store.isDark()"
       >
-        Matches:
+        {{ 'CATALOG.MATCHES' | translate }}:
         <span class="text-success">{{ store.filteredModels().length }}</span>
       </span>
     </div>

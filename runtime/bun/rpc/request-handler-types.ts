@@ -173,6 +173,11 @@ export interface BunRpcRequestHandlers {
   installWindowsQdloaderDriver: RpcHandler<undefined, RpcResponse<'installWindowsQdloaderDriver'>>;
   installWindowsSpdDriver: RpcHandler<undefined, RpcResponse<'installWindowsSpdDriver'>>;
   installWindowsMtkDriver: RpcHandler<undefined, RpcResponse<'installWindowsMtkDriver'>>;
+  getLinuxUdevStatus: RpcHandler<undefined, RpcResponse<'getLinuxUdevStatus'>>;
+  installLinuxUdevRules: RpcHandler<undefined, RpcResponse<'installLinuxUdevRules'>>;
+  getStorageUsage: RpcHandler<undefined, RpcResponse<'getStorageUsage'>>;
+  cleanExtractedFirmwares: RpcHandler<undefined, RpcResponse<'cleanExtractedFirmwares'>>;
+  probeFastbootDeviceHealth: RpcHandler<undefined, RpcResponse<'probeFastbootDeviceHealth'>>;
   deleteLocalFile: RpcHandler<{ filePath: string }, { ok: boolean; error?: string }>;
   pauseDownload: RpcHandler<{ downloadId: string }, { ok: boolean; error?: string }>;
   resumeDownload: RpcHandler<{ downloadId: string }, RpcResponse<'downloadFirmware'>>;

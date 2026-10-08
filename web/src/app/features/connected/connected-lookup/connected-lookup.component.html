@@ -11,14 +11,14 @@
     [class.text-dark-text-bright]="store.isDark()"
     [class.text-light-text-bright]="!store.isDark()"
   >
-    Connected Lookup
+    {{ 'CONNECTED.TITLE' | translate }}
   </h3>
   <p
     class="mt-1 text-sm"
     [class.text-dark-text-dim]="store.isDark()"
     [class.text-light-text-dim]="!store.isDark()"
   >
-    Run firmware lookup from connected device
+    {{ 'CONNECTED.DESC' | translate }}
   </p>
 
   <button
@@ -26,7 +26,7 @@
     type="button"
     (click)="store.runConnectedLookup()"
   >
-    ⚡ Run Lookup
+    {{ 'CONNECTED.RUN_LOOKUP' | translate }}
   </button>
 
   @if (store.connectedSummary()) {

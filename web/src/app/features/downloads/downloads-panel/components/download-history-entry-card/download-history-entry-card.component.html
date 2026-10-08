@@ -76,6 +76,16 @@
           />
         }
 
+        @if (isRescueLite(activeEntry) && !isInProgress()) {
+          <app-ui-action-button
+            label="Comprovante"
+            variant="primary"
+            appearance="outline"
+            [isDark]="isDark()"
+            (clicked)="showReportModal.set(true)"
+          />
+        }
+
         <app-ui-action-button
           label="Clear"
           variant="neutral"
@@ -147,4 +157,11 @@
       <p class="mt-1 break-all font-mono text-[10px] text-danger">⚠ {{ activeEntry.error }}</p>
     }
   </article>
+
+  <app-service-report-modal
+    [isOpen]="showReportModal()"
+    [isDark]="isDark()"
+    [report]="reportData()"
+    (close)="showReportModal.set(false)"
+  />
 }

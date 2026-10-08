@@ -8,7 +8,7 @@
 >
   <div class="flex items-center gap-2 text-warning">
     <span class="text-lg">🔑</span>
-    <span class="text-xs font-semibold uppercase tracking-wide">Authenticate</span>
+    <span class="text-xs font-semibold uppercase tracking-wide">{{ 'AUTH.TITLE' | translate }}</span>
   </div>
 
   <p
@@ -18,14 +18,14 @@
   >
     @if (store.hasCheckedStoredAuthorizationToken() && store.hasStoredAuthorizationToken()) {
       <span class="text-success">✓</span>
-      Stored token detected. One-click login available.
+      {{ 'AUTH.TOKEN_DETECTED' | translate }}
     } @else if (store.hasCheckedStoredAuthorizationToken()) {
       <span class="text-accent">→</span>
-      Open Lenovo login and complete sign-in.
+      {{ 'AUTH.OPEN_SIGN_IN' | translate }}
     } @else {
       <span class="inline-flex items-center gap-2">
         <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-accent"></span>
-        Checking stored tokens...
+        {{ 'AUTH.CHECKING_TOKENS' | translate }}
       </span>
     }
   </p>
@@ -39,7 +39,7 @@
       >
         <span class="flex items-center justify-center gap-2">
           <span>⚡</span>
-          <span>Quick Login</span>
+          <span>{{ 'AUTH.QUICK_LOGIN' | translate }}</span>
         </span>
       </button>
     </div>
@@ -54,7 +54,7 @@
       >
         <span class="flex items-center justify-center gap-2">
           <span>🔐</span>
-          <span>Open Lenovo Login</span>
+          <span>{{ 'AUTH.LOGIN_BROWSER' | translate }}</span>
         </span>
       </button>
 
@@ -71,14 +71,14 @@
             type="button"
             (click)="store.openInAppLogin()"
           >
-            Login inside LMFD
+            {{ 'AUTH.LOGIN_EMBEDDED' | translate }}
           </button>
           <p
             class="mt-2 text-xs leading-relaxed"
             [class.text-dark-text-dim]="store.isDark()"
             [class.text-light-text-dim]="!store.isDark()"
           >
-            Use this if your external browser did not return to LMFD after Lenovo sign-in.
+            {{ 'AUTH.LOGIN_EMBEDDED_HINT' | translate }}
           </p>
         </div>
       }

@@ -13,7 +13,7 @@
         [class.text-dark-text-bright]="store.isDark()"
         [class.text-light-text-bright]="!store.isDark()"
       >
-        Downloads
+        {{ 'DOWNLOADS.TITLE' | translate }}
       </h3>
     </div>
 
@@ -52,8 +52,63 @@
     >{{ store.downloadHistory().length }}</span>
   </p>
 
+  @if (storageInfo(); as storage) {
+    <div
+      class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-xs"
+      [class.border-dark-border]="store.isDark()"
+      [class.bg-dark-elevated]="store.isDark()"
+      [class.border-light-border]="!store.isDark()"
+      [class.bg-light-surface]="!store.isDark()"
+    >
+      <div class="flex flex-wrap items-center gap-4">
+        <div>
+          <span class="opacity-60">{{ 'STORAGE.FREE_SPACE' | translate }}: </span>
+          <span
+            class="font-mono font-semibold"
+            [class.text-dark-text-bright]="store.isDark()"
+            [class.text-light-text-bright]="!store.isDark()"
+          >
+            {{ formatBytes(storage.freeBytes) }}
+          </span>
+        </div>
+        <div class="opacity-30">|</div>
+        <div>
+          <span class="opacity-60">{{ 'STORAGE.PACKAGES' | translate }}: </span>
+          <span class="font-mono font-semibold text-accent">
+            {{ formatBytes(storage.totalPackageBytes) }}
+          </span>
+        </div>
+        <div class="opacity-30">|</div>
+        <div>
+          <span class="opacity-60">{{ 'STORAGE.EXTRACTED' | translate }}: </span>
+          <span class="font-mono font-semibold" [class.text-warning]="storage.totalExtractedBytes > 0">
+            {{ formatBytes(storage.totalExtractedBytes) }} ({{ storage.extractedDirsCount }})
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        @if (cleanFeedback(); as msg) {
+          <span class="text-xs font-medium text-success">{{ msg }}</span>
+        }
+        <button
+          type="button"
+          class="cursor-pointer rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-40"
+          [class.border-dark-border]="store.isDark()"
+          [class.hover:bg-dark-surface]="store.isDark()"
+          [class.border-light-border]="!store.isDark()"
+          [class.hover:bg-light-muted]="!store.isDark()"
+          [disabled]="cleaningStorage() || storage.totalExtractedBytes === 0"
+          (click)="cleanExtractedFirmwares()"
+        >
+          🧹 {{ cleaningStorage() ? 'Limpando...' : ('STORAGE.CLEAN_BTN' | translate) }}
+        </button>
+      </div>
+    </div>
+  }
+
   <app-rescue-flash-console
-    [title]="'Rescue Console'"
+    [title]="'CONSOLE.TITLE' | translate"
     [context]="'firmware'"
     [isDark]="store.isDark()"
     [download]="store.firmwareDownload()"

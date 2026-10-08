@@ -171,6 +171,14 @@ export type DesktopRpcSchema = DesktopRpcBaseSchema & {
       installWindowsQdloaderDriver: RpcRequest<undefined, WindowsQdloaderDriverInstallResponse>;
       installWindowsSpdDriver: RpcRequest<undefined, WindowsSpdDriverInstallResponse>;
       installWindowsMtkDriver: RpcRequest<undefined, WindowsMtkDriverInstallResponse>;
+      getLinuxUdevStatus: RpcRequest<undefined, DesktopApiResponse<'getLinuxUdevStatus'>>;
+      installLinuxUdevRules: RpcRequest<undefined, DesktopApiResponse<'installLinuxUdevRules'>>;
+      getStorageUsage: RpcRequest<undefined, DesktopApiResponse<'getStorageUsage'>>;
+      cleanExtractedFirmwares: RpcRequest<undefined, DesktopApiResponse<'cleanExtractedFirmwares'>>;
+      probeFastbootDeviceHealth: RpcRequest<
+        undefined,
+        DesktopApiResponse<'probeFastbootDeviceHealth'>
+      >;
       deleteLocalFile: RpcRequest<DeleteLocalFileRequest, DesktopApiResponse<'deleteLocalFile'>>;
       pauseDownload: RpcRequest<PauseDownloadRequest, DesktopApiResponse<'pauseDownload'>>;
       resumeDownload: RpcRequest<ResumeDownloadRequest, DesktopApiResponse<'resumeDownload'>>;

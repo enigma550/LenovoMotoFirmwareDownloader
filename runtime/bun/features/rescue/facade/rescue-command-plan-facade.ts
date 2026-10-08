@@ -87,8 +87,8 @@ function plannerAllowedForTransport(
   plannerId: RescuePlannerId,
   flashTransport: RescueFlashTransport,
 ) {
-  if (flashTransport === 'fastboot') {
-    return plannerId === 'fastboot-xml';
+  if (flashTransport === 'fastboot' || flashTransport === 'mediatek') {
+    return plannerId === 'fastboot-xml' || plannerId === 'mediatek-script';
   }
   if (flashTransport === 'qdl') {
     return plannerId === 'edl-firehose';
@@ -117,11 +117,6 @@ export async function buildRescueCommandPlan(options: {
   recipeHints?: RescueRecipeHints;
 }): Promise<RescueCommandPlan> {
   const flashTransport = options.flashTransport || 'fastboot';
-  if (flashTransport === 'mediatek') {
-    throw new Error(
-      'MediaTek rescue transport is still exposed in the UI, but no runtime flashing backend is wired into this project yet.',
-    );
-  }
   const qdlStorage = options.qdlStorage || 'auto';
   const qdlSerial = options.qdlSerial?.trim() || undefined;
   const extractedFiles = await collectFilesRecursive(options.workDir);
@@ -145,16 +140,33 @@ export async function buildRescueCommandPlan(options: {
   ).filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null);
   const candidates = filterCandidatesByTransport(allCandidates, flashTransport);
 
-  const { selected, xmlWarnings } = selectRescueCommandCandidate(candidates);
+  let { selected, xmlWarnings } = selectRescueCommandCandidate(candidates);
+
+  if (!selected || selected.commands.length === 0) {
+    const fallback = selectRescueCommandCandidate(allCandidates);
+    if (fallback.selected && fallback.selected.commands.length > 0) {
+      selected = fallback.selected;
+      xmlWarnings = [
+        ...fallback.xmlWarnings,
+        `Requested transport "${flashTransport}" had no matching files; automatically switched to ${selected.plannerId}.`,
+      ];
+    }
+  }
 
   if (!selected || selected.commands.length === 0) {
     const fastbootSignatures = detectFastbootSignatures(extractedFiles);
     const edlSignatures = detectEdlSignatures(extractedFiles);
     const unisocSignatures = detectUnisocSignatures(extractedFiles);
-    if (flashTransport === 'fastboot') {
+    if (flashTransport === 'fastboot' || flashTransport === 'mediatek') {
       const fastbootCandidate = allCandidates.find(
         (candidate) => candidate.plannerId === 'fastboot-xml',
       );
+      const mediatekCandidate = allCandidates.find(
+        (candidate) => candidate.plannerId === 'mediatek-script',
+      );
+      if (mediatekCandidate?.warnings?.length) {
+        throw new Error(mediatekCandidate.warnings[0]);
+      }
       if (fastbootCandidate?.warnings?.length) {
         throw new Error(fastbootCandidate.warnings[0]);
       }
@@ -174,7 +186,7 @@ export async function buildRescueCommandPlan(options: {
         );
       }
       throw new Error(
-        'Fastboot mode was selected, but this package does not contain supported Fastboot XML resources.',
+        'Fastboot/MediaTek mode was selected, but this package does not contain supported Fastboot XML or flash scripts.',
       );
     }
 

@@ -23,6 +23,8 @@ const SNAPSHOT_MEDIA_PER_PAGE = 24;
 const SNAPSHOT_CONTACTS_PER_PAGE = 36;
 const SNAPSHOT_MESSAGE_THREADS_PER_PAGE = 10;
 
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+
 @Component({
   selector: 'app-backup-restore-workspace',
   standalone: true,
@@ -34,6 +36,7 @@ const SNAPSHOT_MESSAGE_THREADS_PER_PAGE = 10;
     BackupFileTreeComponent,
     BackupPreviewCategoryControlsComponent,
     BackupSnapshotTabSelectorComponent,
+    TranslatePipe,
   ],
   templateUrl: './backup-restore-workspace.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,6 +1,8 @@
 import type { OnInit } from '@angular/core';
 import { Component, inject } from '@angular/core';
 import { ensureDesktopBridgeReady } from './core/bridge/electrobun-bridge';
+import { TranslatePipe } from './core/i18n/translate.pipe';
+import { TranslationService } from './core/i18n/translation.service';
 import { AboutWorkspaceComponent } from './features/about/about-workspace/about-workspace.component';
 import { DesktopPromptModalComponent } from './features/about/desktop-prompt-modal/desktop-prompt-modal.component';
 import { AppStoreWorkspaceComponent } from './features/app-store/app-store-workspace/app-store-workspace.component';
@@ -17,6 +19,7 @@ import { AppFacade } from './state';
   selector: 'app-root',
   standalone: true,
   imports: [
+    TranslatePipe,
     AuthPanelComponent,
     SourceModeComponent,
     ConnectedLookupComponent,
@@ -32,6 +35,7 @@ import { AppFacade } from './state';
 })
 export class App implements OnInit {
   protected readonly store = inject(AppFacade);
+  protected readonly i18n = inject(TranslationService);
 
   async ngOnInit() {
     await ensureDesktopBridgeReady();

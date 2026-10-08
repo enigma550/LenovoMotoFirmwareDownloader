@@ -1,10 +1,12 @@
 import { Component, inject } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SystemWorkflowService } from '../../system/state/system.workflow';
 import { AuthFacade } from '../state';
 
 @Component({
   selector: 'app-auth-panel',
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './auth-panel.component.html',
 })
 export class AuthPanelComponent {

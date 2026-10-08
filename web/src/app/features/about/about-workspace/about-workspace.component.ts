@@ -1,5 +1,6 @@
 import type { OnInit } from '@angular/core';
 import { Component, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import type { FrameworkUpdateInfo } from '../../../core/models/desktop-api';
 import { WorkflowUiService } from '../../../shared/state/workflow-ui.service';
 import { AboutFacade } from '../state';
@@ -52,6 +53,7 @@ function parseGitHubReleases(value: ReleasePayload) {
 @Component({
   selector: 'app-about-workspace',
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './about-workspace.component.html',
 })
 export class AboutWorkspaceComponent implements OnInit {
@@ -60,6 +62,8 @@ export class AboutWorkspaceComponent implements OnInit {
   protected desktopStatus = signal<
     'checking' | 'ok' | 'missing' | 'wrong_wmclass' | 'not_linux' | 'creating'
   >('checking');
+  protected udevStatus = signal<'checking' | 'installed' | 'missing'>('checking');
+  protected installingUdev = signal(false);
   protected checkingUpdate = signal(false);
   protected downloadingUpdate = signal(false);
   protected showUpdateModal = signal(false);
@@ -72,6 +76,7 @@ export class AboutWorkspaceComponent implements OnInit {
   ngOnInit() {
     this.store.loadAppInfo();
     this.checkIntegration();
+    this.checkUdevStatus();
   }
 
   protected isWindowsPlatform() {
@@ -97,6 +102,32 @@ export class AboutWorkspaceComponent implements OnInit {
       this.desktopStatus.set('missing');
       // In a real app we'd dispatch a toast from the store, but here we'll just fall back to missing.
       console.error('Failed to create shortcut:', res.error);
+    }
+  }
+
+  async checkUdevStatus() {
+    this.udevStatus.set('checking');
+    const res = await this.store.getLinuxUdevStatus();
+    this.udevStatus.set(res.installed ? 'installed' : 'missing');
+  }
+
+  async installUdevRules() {
+    if (this.installingUdev()) return;
+    this.installingUdev.set(true);
+    try {
+      const res = await this.store.installLinuxUdevRules();
+      if (res.ok) {
+        this.udevStatus.set('installed');
+        this.ui.showToast(
+          'Regras Udev instaladas com sucesso! Permissões USB ativadas.',
+          'success',
+        );
+      } else {
+        this.ui.showToast(res.error || 'Falha ao instalar regras Udev.', 'error');
+        await this.checkUdevStatus();
+      }
+    } finally {
+      this.installingUdev.set(false);
     }
   }
 

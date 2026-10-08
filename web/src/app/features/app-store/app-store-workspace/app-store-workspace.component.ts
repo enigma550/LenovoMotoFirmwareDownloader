@@ -1,5 +1,6 @@
 import type { OnInit } from '@angular/core';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import type { PlayStoreDownloadGroup } from '../../../core/models/desktop-api';
 import { UiActionButtonComponent } from '../../../shared/components/ui/ui-action-button/ui-action-button.component';
 import { formatBytes, formatTime } from '../../../shared/utils/format';
@@ -8,7 +9,7 @@ import { AppStoreFacade } from '../state';
 @Component({
   selector: 'app-app-store-workspace',
   standalone: true,
-  imports: [UiActionButtonComponent],
+  imports: [UiActionButtonComponent, TranslatePipe],
   templateUrl: './app-store-workspace.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

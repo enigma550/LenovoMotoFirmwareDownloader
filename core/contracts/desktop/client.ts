@@ -165,6 +165,16 @@ export function createDesktopApiFromInvoker(invokeRpc: DesktopRpcInvoker): Deskt
       invokeRpc('installWindowsSpdDriver') as ReturnType<DesktopApi['installWindowsSpdDriver']>,
     installWindowsMtkDriver: () =>
       invokeRpc('installWindowsMtkDriver') as ReturnType<DesktopApi['installWindowsMtkDriver']>,
+    getLinuxUdevStatus: () =>
+      invokeRpc('getLinuxUdevStatus') as ReturnType<DesktopApi['getLinuxUdevStatus']>,
+    installLinuxUdevRules: () =>
+      invokeRpc('installLinuxUdevRules') as ReturnType<DesktopApi['installLinuxUdevRules']>,
+    getStorageUsage: () =>
+      invokeRpc('getStorageUsage') as ReturnType<DesktopApi['getStorageUsage']>,
+    cleanExtractedFirmwares: () =>
+      invokeRpc('cleanExtractedFirmwares') as ReturnType<DesktopApi['cleanExtractedFirmwares']>,
+    probeFastbootDeviceHealth: () =>
+      invokeRpc('probeFastbootDeviceHealth') as ReturnType<DesktopApi['probeFastbootDeviceHealth']>,
     deleteLocalFile: (payload) =>
       invokeRpc('deleteLocalFile', payload) as ReturnType<DesktopApi['deleteLocalFile']>,
     pauseDownload: (payload) =>

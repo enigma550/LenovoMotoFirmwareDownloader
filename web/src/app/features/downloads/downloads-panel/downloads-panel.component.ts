@@ -1,9 +1,12 @@
 import type { OnInit } from '@angular/core';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { DownloadsDesktopApiService } from '../../../core/api/desktop';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import type {
   LocalDownloadedFile,
   RescueFlashTransport,
   RescueQdlStorage,
+  StorageUsageResponse,
 } from '../../../core/models/desktop-api';
 import {
   rescueDialogDescription as getRescueDialogDescription,
@@ -15,6 +18,7 @@ import { RescueFlashConsoleComponent } from '../../../shared/components/rescue/r
 import { RescueOptionsDialogComponent } from '../../../shared/components/rescue/rescue-options-dialog/rescue-options-dialog.component';
 import { UiActionButtonComponent } from '../../../shared/components/ui/ui-action-button/ui-action-button.component';
 import type { DataResetChoice } from '../../../shared/state/workflow.types';
+import { formatBytes } from '../../../shared/utils/format';
 import { DownloadsFacade } from '../state';
 import { DownloadHistoryEntryCardComponent } from './components/download-history-entry-card/download-history-entry-card.component';
 import { LocalDownloadedFileCardComponent } from './components/local-downloaded-file-card/local-downloaded-file-card.component';
@@ -29,6 +33,7 @@ import { LocalDownloadedFileCardComponent } from './components/local-downloaded-
     RescueFlashConsoleComponent,
     RescueOptionsDialogComponent,
     UiActionButtonComponent,
+    TranslatePipe,
   ],
   templateUrl: './downloads-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +41,13 @@ import { LocalDownloadedFileCardComponent } from './components/local-downloaded-
 export class DownloadsPanelComponent implements OnInit {
   protected readonly store = inject(DownloadsFacade);
   private readonly rescueDialogDefaults = inject(RescueDialogDefaultsService);
+  private readonly downloadsApi = inject(DownloadsDesktopApiService);
+
+  protected readonly formatBytes = formatBytes;
+  protected readonly storageInfo = signal<StorageUsageResponse | null>(null);
+  protected readonly cleaningStorage = signal(false);
+  protected readonly cleanFeedback = signal<string | null>(null);
+
   protected rescueDialogOpen = false;
   protected rescueDialogFile: LocalDownloadedFile | null = null;
   protected rescueDialogDryRun = false;
@@ -51,7 +63,40 @@ export class DownloadsPanelComponent implements OnInit {
   protected windowsMtkDriverInstalled = false;
 
   async ngOnInit() {
-    await this.store.refreshLocalDownloadedFiles();
+    await Promise.all([this.store.refreshLocalDownloadedFiles(), this.loadStorageUsage()]);
+  }
+
+  protected async loadStorageUsage() {
+    try {
+      const info = await this.downloadsApi.getStorageUsage();
+      this.storageInfo.set(info);
+    } catch {
+      // ignore
+    }
+  }
+
+  protected async cleanExtractedFirmwares() {
+    if (this.cleaningStorage()) return;
+    this.cleaningStorage.set(true);
+    this.cleanFeedback.set(null);
+    try {
+      const res = await this.downloadsApi.cleanExtractedFirmwares();
+      if (res.ok) {
+        if (res.freedBytes > 0) {
+          this.cleanFeedback.set(
+            `✓ ${this.formatBytes(res.freedBytes)} liberados (${res.cleanedCount} pastas).`,
+          );
+        } else {
+          this.cleanFeedback.set('Nenhum arquivo temporário para limpar.');
+        }
+        await this.loadStorageUsage();
+      }
+    } catch (e) {
+      this.cleanFeedback.set(`Erro ao limpar: ${e}`);
+    } finally {
+      this.cleaningStorage.set(false);
+      setTimeout(() => this.cleanFeedback.set(null), 5000);
+    }
   }
 
   protected startRescueLiteFromLocal(file: LocalDownloadedFile) {

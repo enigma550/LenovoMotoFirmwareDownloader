@@ -42,39 +42,7 @@ function detectTransportFromExplicitSignal(
     return null;
   }
 
-  if (
-    looksLikePacPackage(value) ||
-    looksLikePacPackage(leafName) ||
-    includesAny(value, ['unisoc', 'spreadtrum', 'sprd']) ||
-    includesAny(leafName, ['unisoc', 'spreadtrum', 'sprd'])
-  ) {
-    return 'unisoc';
-  }
-
-  if (
-    includesAny(value, ['_android_scatter.txt', '/scatter', '/mtk/', 'mediatek']) ||
-    includesAny(leafName, ['_android_scatter.txt', 'scatter']) ||
-    value.includes('_mtk_')
-  ) {
-    return 'mediatek';
-  }
-
-  if (
-    includesAny(value, [
-      'rawprogram',
-      'firehose',
-      'loadinfo.xml',
-      '/qpst',
-      '_qpst',
-      '/qcom/',
-      'qfil',
-    ]) ||
-    includesAny(leafName, ['rawprogram', 'firehose', 'loadinfo.xml']) ||
-    leafName === 'qfil'
-  ) {
-    return 'qdl';
-  }
-
+  // 1. Fastboot XML check first (standard fastboot flash XMLs / CFC)
   if (
     includesAny(value, [
       'flashfile.xml',
@@ -87,9 +55,55 @@ function detectTransportFromExplicitSignal(
       '_cfc.xml',
       'fastboot',
       'bootloader',
+    ]) ||
+    includesAny(leafName, [
+      'flashfile.xml',
+      'servicefile.xml',
+      'softwareupgrade.xml',
+      'flashinfo.xml',
+      'flashinfo_rsa.xml',
+      'efuse.xml',
+      'lkbin.xml',
+      '_cfc.xml',
     ])
   ) {
     return 'fastboot';
+  }
+
+  // 2. Unisoc PAC check
+  if (
+    looksLikePacPackage(value) ||
+    looksLikePacPackage(leafName) ||
+    includesAny(value, ['unisoc', 'spreadtrum', 'sprd']) ||
+    includesAny(leafName, ['unisoc', 'spreadtrum', 'sprd'])
+  ) {
+    return 'unisoc';
+  }
+
+  // 3. MediaTek check
+  if (
+    includesAny(value, [
+      '_android_scatter.txt',
+      '/scatter',
+      '/mtk/',
+      'mediatek',
+      'flashall.sh',
+      'cfc_flash.bat',
+      'preloader',
+    ]) ||
+    includesAny(leafName, ['_android_scatter.txt', 'scatter', 'flashall.sh', 'cfc_flash.bat']) ||
+    value.includes('_mtk_') ||
+    /\bmt\d{4}\b/i.test(value)
+  ) {
+    return 'mediatek';
+  }
+
+  // 4. Qualcomm EDL (QDL) emergency mode
+  if (
+    includesAny(value, ['rawprogram', 'firehose', 'loadinfo.xml', 'qfil']) ||
+    includesAny(leafName, ['rawprogram', 'firehose', 'loadinfo.xml', 'qfil'])
+  ) {
+    return 'qdl';
   }
 
   return null;
@@ -100,29 +114,7 @@ function detectTransportFromRecipeName(recipeName: string): RescueFlashTransport
     return null;
   }
 
-  if (
-    includesAny(recipeName, ['unisoc', 'spreadtrum', 'sprd', 'tablet-pac']) ||
-    /\bpac\b/.test(recipeName)
-  ) {
-    return 'unisoc';
-  }
-
-  if (
-    includesAny(recipeName, ['recoveryqcom', 'recoveryqfil', '_qcom_', '_qfil_']) ||
-    includesAny(recipeName, ['firehose', 'rawprogram', 'edl'])
-  ) {
-    return 'qdl';
-  }
-
-  if (
-    includesAny(recipeName, ['_mtk_', ' scatter', '_scatter', 'flashtool']) ||
-    recipeName.startsWith('recovery_mtk') ||
-    recipeName.startsWith('rescue_mtk') ||
-    recipeName.includes('mediatek')
-  ) {
-    return 'mediatek';
-  }
-
+  // 1. Fastboot check first (if recipe mentions fastboot or standard XML, it's fastboot)
   if (
     includesAny(recipeName, [
       'fastboot',
@@ -134,6 +126,32 @@ function detectTransportFromRecipeName(recipeName: string): RescueFlashTransport
     ])
   ) {
     return 'fastboot';
+  }
+
+  // 2. Unisoc / Spreadtrum PAC recipes
+  if (
+    includesAny(recipeName, ['unisoc', 'spreadtrum', 'sprd', 'tablet-pac']) ||
+    /\bpac\b/.test(recipeName)
+  ) {
+    return 'unisoc';
+  }
+
+  // 3. MediaTek recipes
+  if (
+    includesAny(recipeName, ['_mtk_', ' scatter', '_scatter', 'flashtool']) ||
+    recipeName.startsWith('recovery_mtk') ||
+    recipeName.startsWith('rescue_mtk') ||
+    recipeName.includes('mediatek')
+  ) {
+    return 'mediatek';
+  }
+
+  // 4. Qualcomm emergency EDL recipes (do NOT match generic '_qcom_' which matches normal Fastboot recipes)
+  if (
+    includesAny(recipeName, ['recoveryqcom', 'recoveryqfil', '_qfil_']) ||
+    includesAny(recipeName, ['firehose', 'rawprogram', 'edl'])
+  ) {
+    return 'qdl';
   }
 
   return null;

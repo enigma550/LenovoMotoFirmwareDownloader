@@ -339,3 +339,51 @@ export interface WindowsMtkDriverInstallResponse {
   detail?: string;
   error?: string;
 }
+
+export interface LinuxUdevStatusResponse {
+  isLinux: boolean;
+  installed: boolean;
+  filePath: string;
+  hasRules: boolean;
+  userInPlugdev: boolean;
+  error?: string;
+}
+
+export interface LinuxUdevInstallResponse {
+  ok: boolean;
+  message: string;
+  error?: string;
+}
+
+export interface StorageUsageResponse {
+  ok: boolean;
+  freeBytes: number;
+  totalBytes: number;
+  downloadDir: string;
+  totalPackageBytes: number;
+  packageCount: number;
+  totalExtractedBytes: number;
+  extractedDirsCount: number;
+  error?: string;
+}
+
+export interface CleanStorageResponse {
+  ok: boolean;
+  freedBytes: number;
+  cleanedCount: number;
+  error?: string;
+}
+
+export interface FastbootDeviceHealthResponse {
+  ok: boolean;
+  connected: boolean;
+  serialNumber?: string;
+  product?: string;
+  batteryLevel?: string;
+  batteryVoltage?: string;
+  batteryStatus: 'ok' | 'low' | 'unknown';
+  unlocked?: boolean;
+  secure?: boolean;
+  warnings: string[];
+  error?: string;
+}

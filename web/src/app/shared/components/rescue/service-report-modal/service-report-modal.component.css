@@ -1,0 +1,18 @@
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #service-report-printable,
+  #service-report-printable * {
+    visibility: visible;
+  }
+  #service-report-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #000;
+    background: #fff;
+    padding: 24px;
+  }
+}

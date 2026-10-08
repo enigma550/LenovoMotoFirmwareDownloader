@@ -22,6 +22,7 @@ import type {
   BridgePingResponse,
   CancelDownloadResponse,
   CatalogModelsResponse,
+  CleanStorageResponse,
   ConnectedBackupPreviewProgressResponse,
   ConnectedBackupPreviewResponse,
   ConnectedLookupResponse,
@@ -29,6 +30,9 @@ import type {
   DeleteBackupSnapshotResponse,
   DownloadFirmwareResponse,
   ExtractLocalFirmwareResponse,
+  FastbootDeviceHealthResponse,
+  LinuxUdevInstallResponse,
+  LinuxUdevStatusResponse,
   LocalDownloadedFilesResponse,
   ManualCatalogLookupResponse,
   PendingAuthCallbackResponse,
@@ -44,6 +48,7 @@ import type {
   ReadSupportLookupResponse,
   RescueLiteFirmwareResponse,
   RestoreBackupSnapshotResponse,
+  StorageUsageResponse,
   StoredAuthStateResponse,
   WindowsMtkDriverInstallResponse,
   WindowsQdloaderDriverInstallResponse,
@@ -354,6 +359,11 @@ export interface DesktopApi {
   installWindowsQdloaderDriver: () => Promise<WindowsQdloaderDriverInstallResponse>;
   installWindowsSpdDriver: () => Promise<WindowsSpdDriverInstallResponse>;
   installWindowsMtkDriver: () => Promise<WindowsMtkDriverInstallResponse>;
+  getLinuxUdevStatus: () => Promise<LinuxUdevStatusResponse>;
+  installLinuxUdevRules: () => Promise<LinuxUdevInstallResponse>;
+  getStorageUsage: () => Promise<StorageUsageResponse>;
+  cleanExtractedFirmwares: () => Promise<CleanStorageResponse>;
+  probeFastbootDeviceHealth: () => Promise<FastbootDeviceHealthResponse>;
   deleteLocalFile: (payload: DeleteLocalFileRequest) => Promise<{ ok: boolean; error?: string }>;
   pauseDownload: (payload: PauseDownloadRequest) => Promise<{ ok: boolean; error?: string }>;
   resumeDownload: (payload: ResumeDownloadRequest) => Promise<DownloadFirmwareResponse>;

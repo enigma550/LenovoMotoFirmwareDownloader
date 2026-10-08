@@ -1,5 +1,6 @@
 import { KeyValuePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { TranslatePipe } from '../../../../../core/i18n/translate.pipe';
 import type { FirmwareVariant } from '../../../../../core/models/desktop-api';
 import {
   findBestLocalFileMatchForVariant,
@@ -11,7 +12,7 @@ import { DownloadsFacade } from '../../../../downloads/state';
 @Component({
   selector: 'app-firmware-variant-card',
   standalone: true,
-  imports: [KeyValuePipe],
+  imports: [KeyValuePipe, TranslatePipe],
   templateUrl: './firmware-variant-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

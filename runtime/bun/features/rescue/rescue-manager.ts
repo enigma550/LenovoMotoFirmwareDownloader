@@ -340,7 +340,10 @@ export async function rescueLiteFirmwareWithProgress(
           stepIndex: index + 1,
           stepTotal: commands.length,
           stepLabel: command.label,
+          consoleLine: `[DRY RUN] (${index + 1}/${commands.length}) ${command.label}`,
+          consoleTone: 'info',
         });
+        await Bun.sleep(20);
       }
 
       emit({
@@ -351,6 +354,8 @@ export async function rescueLiteFirmwareWithProgress(
         stepIndex: commands.length,
         stepTotal: commands.length,
         stepLabel: 'Dry run completed. No commands executed.',
+        consoleLine: `[DRY RUN] Simulação concluída com sucesso! ${commands.length} comandos validados (${commandSource}).`,
+        consoleTone: 'success',
       });
 
       return {

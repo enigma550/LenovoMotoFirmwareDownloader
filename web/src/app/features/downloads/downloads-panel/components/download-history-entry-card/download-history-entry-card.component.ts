@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import {
   formatBytes as formatByteSize,
   dataResetLabel as formatDataResetLabel,
@@ -13,6 +13,10 @@ import {
   isRescueLiteEntry,
 } from '../../../../../features/downloads/state/download-utils';
 import { ProgressBarComponent } from '../../../../../shared/components/progress-bar/progress-bar.component';
+import {
+  type ServiceReportData,
+  ServiceReportModalComponent,
+} from '../../../../../shared/components/rescue/service-report-modal/service-report-modal.component';
 import { UiActionButtonComponent } from '../../../../../shared/components/ui/ui-action-button/ui-action-button.component';
 import type { DownloadHistoryEntry } from '../../../../../shared/state/workflow.types';
 import { DownloadsFacade } from '../../../state';
@@ -20,7 +24,7 @@ import { DownloadsFacade } from '../../../state';
 @Component({
   selector: 'app-download-history-entry-card',
   standalone: true,
-  imports: [ProgressBarComponent, UiActionButtonComponent],
+  imports: [ProgressBarComponent, UiActionButtonComponent, ServiceReportModalComponent],
   templateUrl: './download-history-entry-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,6 +34,7 @@ export class DownloadHistoryEntryCardComponent {
 
   private readonly store = inject(DownloadsFacade);
 
+  protected readonly showReportModal = signal(false);
   protected readonly formatBytes = formatByteSize;
   protected readonly dataResetLabel = formatDataResetLabel;
   protected readonly flashTransportLabel = formatFlashTransportLabel;
@@ -96,5 +101,20 @@ export class DownloadHistoryEntryCardComponent {
 
   protected onClear() {
     this.store.clearDownloadById(this.entry().downloadId);
+  }
+
+  protected reportData(): ServiceReportData {
+    const e = this.entry();
+    const model = e.romMatchIdentifier || (e.romName ? e.romName.split('_')[0] : 'Motorola Device');
+    return {
+      deviceModel: model,
+      serialNumber: e.qdlSerial || '',
+      firmwareVersion: e.romName || 'Lenovo/Motorola Firmware',
+      transport: e.flashTransport || 'fastboot',
+      dataResetChoice: e.dataReset || 'yes',
+      status:
+        e.status === 'completed' ? 'success' : e.status === 'failed' ? 'failed' : 'in_progress',
+      date: this.formatTime(e.startedAt || Date.now()),
+    };
   }
 }

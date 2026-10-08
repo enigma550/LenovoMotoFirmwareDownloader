@@ -1,0 +1,207 @@
+@if (isOpen() && report(); as data) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 print:p-0 print:bg-white print:static"
+    (click)="onBackdropClick()"
+  >
+    <div
+      class="relative w-full max-w-xl rounded-2xl border p-6 shadow-2xl transition-all print:border-none print:shadow-none print:p-0"
+      [class.border-dark-border]="isDark()"
+      [class.bg-dark-surface]="isDark()"
+      [class.border-light-border]="!isDark()"
+      [class.bg-light-surface]="!isDark()"
+      (click)="onDialogClick($event)"
+    >
+      <!-- Printable Receipt Card -->
+      <div id="service-report-printable" class="space-y-4">
+        <!-- Receipt Header -->
+        <div
+          class="border-b pb-4 text-center"
+          [class.border-dark-border]="isDark()"
+          [class.border-light-border]="!isDark()"
+        >
+          <div class="mb-1 inline-flex items-center justify-center gap-2">
+            <span class="text-xl">🛠️</span>
+            <h3
+              class="text-base font-bold uppercase tracking-wider"
+              [class.text-dark-text-bright]="isDark()"
+              [class.text-light-text-bright]="!isDark()"
+            >
+              {{ 'REPORT.TITLE' | translate }}
+            </h3>
+          </div>
+          <p
+            class="text-xs"
+            [class.text-dark-text-dim]="isDark()"
+            [class.text-light-text-dim]="!isDark()"
+          >
+            {{ 'REPORT.SUBTITLE' | translate }}
+          </p>
+          <p
+            class="mt-1 font-mono text-[11px] opacity-70"
+            [class.text-dark-text-dim]="isDark()"
+            [class.text-light-text-dim]="!isDark()"
+          >
+            {{ 'REPORT.DATE' | translate }}: {{ data.date }}
+          </p>
+        </div>
+
+        <!-- Receipt Content Table -->
+        <div class="space-y-2.5 text-xs">
+          <div
+            class="flex items-center justify-between rounded-lg border p-2.5"
+            [class.border-dark-border]="isDark()"
+            [class.bg-dark-elevated]="isDark()"
+            [class.border-light-border]="!isDark()"
+            [class.bg-light-muted]="!isDark()"
+          >
+            <span class="opacity-70">{{ 'REPORT.DEVICE' | translate }}:</span>
+            <span
+              class="font-mono font-semibold"
+              [class.text-dark-text-bright]="isDark()"
+              [class.text-light-text-bright]="!isDark()"
+            >
+              {{ data.deviceModel || 'Motorola Device' }}
+            </span>
+          </div>
+
+          @if (data.serialNumber) {
+            <div
+              class="flex items-center justify-between rounded-lg border p-2.5"
+              [class.border-dark-border]="isDark()"
+              [class.bg-dark-elevated]="isDark()"
+              [class.border-light-border]="!isDark()"
+              [class.bg-light-muted]="!isDark()"
+            >
+              <span class="opacity-70">{{ 'REPORT.SERIAL' | translate }}:</span>
+              <span class="font-mono font-semibold text-accent">{{ data.serialNumber }}</span>
+            </div>
+          }
+
+          <div
+            class="flex flex-col gap-1 rounded-lg border p-2.5"
+            [class.border-dark-border]="isDark()"
+            [class.bg-dark-elevated]="isDark()"
+            [class.border-light-border]="!isDark()"
+            [class.bg-light-muted]="!isDark()"
+          >
+            <span class="opacity-70">{{ 'REPORT.FIRMWARE' | translate }}:</span>
+            <span
+              class="break-all font-mono text-[11px] font-semibold"
+              [class.text-dark-text-bright]="isDark()"
+              [class.text-light-text-bright]="!isDark()"
+            >
+              {{ data.firmwareVersion || 'Oficial Lenovo / Motorola ROM' }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div
+              class="rounded-lg border p-2.5"
+              [class.border-dark-border]="isDark()"
+              [class.bg-dark-elevated]="isDark()"
+              [class.border-light-border]="!isDark()"
+              [class.bg-light-muted]="!isDark()"
+            >
+              <span class="mb-0.5 block opacity-70">Protocolo:</span>
+              <span class="font-mono font-semibold uppercase">{{ data.transport || 'Fastboot' }}</span>
+            </div>
+
+            <div
+              class="rounded-lg border p-2.5"
+              [class.border-dark-border]="isDark()"
+              [class.bg-dark-elevated]="isDark()"
+              [class.border-light-border]="!isDark()"
+              [class.bg-light-muted]="!isDark()"
+            >
+              <span class="mb-0.5 block opacity-70">Partição de Dados:</span>
+              <span
+                class="font-medium"
+                [class.text-warning]="data.dataResetChoice === 'yes'"
+                [class.text-success]="data.dataResetChoice === 'no'"
+              >
+                {{ data.dataResetChoice === 'no' ? ('REPORT.DATA_PRESERVED' | translate) : ('REPORT.DATA_WIPED' | translate) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Status badge -->
+          <div
+            class="rounded-lg border p-3 text-center font-medium"
+            [class.border-emerald-500/40]="data.status === 'success'"
+            [class.bg-emerald-500/10]="data.status === 'success'"
+            [class.text-emerald-500]="data.status === 'success'"
+            [class.border-rose-500/40]="data.status === 'failed'"
+            [class.bg-rose-500/10]="data.status === 'failed'"
+            [class.text-rose-400]="data.status === 'failed'"
+          >
+            @if (data.status === 'success') {
+              <span>✓ {{ 'REPORT.STATUS_SUCCESS' | translate }}</span>
+            } @else {
+              <span>✕ Falha na Instalação / Interrompido</span>
+            }
+          </div>
+
+          <!-- Signature lines for printable paper -->
+          <div
+            class="mt-6 hidden border-t border-dashed pt-4 print:block"
+            [class.border-dark-border]="isDark()"
+            [class.border-light-border]="!isDark()"
+          >
+            <div class="mt-6 grid grid-cols-2 gap-8 text-center text-[11px]">
+              <div>
+                <div class="mb-1 border-b border-black"></div>
+                <span>Técnico Responsável</span>
+              </div>
+              <div>
+                <div class="mb-1 border-b border-black"></div>
+                <span>Assinatura do Cliente</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dialog Action Buttons (Hidden when printing) -->
+      <div
+        class="mt-6 flex flex-wrap items-center justify-between gap-2 border-t pt-4 print:hidden"
+        [class.border-dark-border]="isDark()"
+        [class.border-light-border]="!isDark()"
+      >
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+            [class.border-dark-border]="isDark()"
+            [class.bg-dark-elevated]="isDark()"
+            [class.text-dark-text]="isDark()"
+            [class.hover:bg-dark-surface]="isDark()"
+            [class.border-light-border]="!isDark()"
+            [class.bg-light-muted]="!isDark()"
+            [class.text-light-text]="!isDark()"
+            [class.hover:bg-light-surface]="!isDark()"
+            (click)="copyReportText()"
+          >
+            <span>📋</span>
+            <span>{{ copied() ? ('REPORT.COPIED' | translate) : ('REPORT.COPY' | translate) }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="flex cursor-pointer items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-accent-hover"
+            (click)="printReport()"
+          >
+            <span>🖨️</span>
+            <span>{{ 'REPORT.PRINT' | translate }}</span>
+          </button>
+        </div>
+
+        <app-rescue-dialog-button
+          [label]="'COMMON.CLOSE' | translate"
+          [isDark]="isDark()"
+          variant="secondary"
+          (clicked)="onBackdropClick()"
+        />
+      </div>
+    </div>
+  </div>
+}

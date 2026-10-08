@@ -37,11 +37,11 @@
 
     @if (hasRecipeAvailable()) {
       <p class="mt-1 font-mono text-[10px] text-success">
-        ✓ Recipe available
+        {{ 'FIRMWARE.RECIPE_AVAILABLE' | translate }}
       </p>
     } @else {
       <p class="mt-1 font-mono text-[10px] text-warning">
-        ⚠ Recipe unavailable (will fallback to local XML/script)
+        {{ 'FIRMWARE.RECIPE_UNAVAILABLE' | translate }}
       </p>
     }
 
@@ -64,7 +64,7 @@
           type="button"
           (click)="onRequestRescue()"
         >
-          ⚡ Rescue Lite
+          {{ 'FIRMWARE.RESCUE_LITE' | translate }}
         </button>
         <button
           class="rounded-lg border px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider transition-colors duration-200"
@@ -77,7 +77,7 @@
           type="button"
           (click)="onRequestRescueDryRun()"
         >
-          Dry Run
+          {{ 'FIRMWARE.DRY_RUN' | translate }}
         </button>
       }
 
@@ -94,7 +94,7 @@
           type="button"
           (click)="onAttachRecipeToLocalZip()"
         >
-          {{ linkingVariantRecipe() ? 'Linking...' : 'Use local archive' }}
+          {{ linkingVariantRecipe() ? ('FIRMWARE.LINKING' | translate) : ('FIRMWARE.USE_LOCAL_ARCHIVE' | translate) }}
         </button>
       }
 
@@ -114,19 +114,19 @@
           (click)="onStartDownload()"
         >
           @if (isVariantDownloadActive() && getVariantStatus() === 'canceling') {
-            Cancelling...
+            {{ 'FIRMWARE.CANCELLING' | translate }}
           } @else if (isVariantDownloadActive()) {
             @if (getVariantMode() === 'rescue-lite') {
               @if (getVariantDryRun()) {
-                Dry run...
+                {{ 'FIRMWARE.DRY_RUN_PROGRESS' | translate }}
               } @else {
-                Running...
+                {{ 'FIRMWARE.RUNNING' | translate }}
               }
             } @else {
-              Downloading...
+              {{ 'FIRMWARE.DOWNLOADING' | translate }}
             }
           } @else {
-            ↓ Download
+            ↓ {{ 'FIRMWARE.DOWNLOAD' | translate }}
           }
         </button>
       } @else {
@@ -137,7 +137,7 @@
           [class.border-success]="!isDark()"
           [class.text-success]="!isDark()"
         >
-          ✓ In Downloads
+          {{ 'FIRMWARE.IN_DOWNLOADS' | translate }}
         </span>
       }
 

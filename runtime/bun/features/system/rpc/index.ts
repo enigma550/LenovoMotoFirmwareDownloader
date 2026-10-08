@@ -11,6 +11,7 @@ import {
   switchSoftwareFixProtocolToLmfd,
 } from '../../../desktop-integration.ts';
 import type { BunRpcRequestHandlers } from '../../../rpc/request-handler-types.ts';
+import { cleanExtractedFirmwares, getStorageUsage } from '../../downloads/storage-management.ts';
 import { installWindowsMtkDriverManually } from '../../rescue/commands/windows-mtk-driver-installer.ts';
 import {
   getWindowsQdloaderDriverStatus,
@@ -18,6 +19,7 @@ import {
 } from '../../rescue/commands/windows-qdloader-driver-installer.ts';
 import { installWindowsSpdDriverManually } from '../../rescue/commands/windows-spd-driver-installer.ts';
 import { cancelActiveRescue } from '../../rescue/rescue-manager.ts';
+import { checkLinuxUdevRules, installLinuxUdevRules } from '../udev-rules.ts';
 
 export function createSystemHandlers(): Pick<
   BunRpcRequestHandlers,
@@ -35,6 +37,10 @@ export function createSystemHandlers(): Pick<
   | 'installWindowsQdloaderDriver'
   | 'installWindowsSpdDriver'
   | 'installWindowsMtkDriver'
+  | 'getLinuxUdevStatus'
+  | 'installLinuxUdevRules'
+  | 'getStorageUsage'
+  | 'cleanExtractedFirmwares'
 > {
   return {
     checkDesktopIntegration: async () => {
@@ -228,6 +234,18 @@ echo Update script finished at %DATE% %TIME%. >> "${logPathWin}"
         console.error('[Updater] Failed to apply update manually:', error);
         throw error;
       }
+    },
+    getLinuxUdevStatus: async () => {
+      return checkLinuxUdevRules();
+    },
+    installLinuxUdevRules: async () => {
+      return installLinuxUdevRules();
+    },
+    getStorageUsage: async () => {
+      return getStorageUsage();
+    },
+    cleanExtractedFirmwares: async () => {
+      return cleanExtractedFirmwares();
     },
   };
 }

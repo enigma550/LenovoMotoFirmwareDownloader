@@ -10,7 +10,7 @@
   >
     <div class="flex items-center gap-2 text-accent">
       <span class="text-lg">📱</span>
-      <span class="text-xs font-semibold uppercase tracking-wide">Select Source</span>
+      <span class="text-xs font-semibold uppercase tracking-wide">{{ 'SOURCE.TITLE' | translate }}</span>
     </div>
 
     <div class="mt-4 grid gap-2">
@@ -47,12 +47,12 @@
           }
         </span>
         <span>
-          <span class="block">Connected Device</span>
+          <span class="block">{{ 'SOURCE.CONNECTED' | translate }}</span>
           <span
             class="block text-xs"
             [class.text-dark-text-dim]="store.isDark()"
             [class.text-light-text-dim]="!store.isDark()"
-            >via ADB</span
+            >{{ 'SOURCE.CONNECTED_VIA_ADB' | translate }}</span
           >
         </span>
       </button>
@@ -87,7 +87,7 @@
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span>Model Catalog</span>
+        <span>{{ 'SOURCE.CATALOG' | translate }}</span>
       </button>
     </div>
   </section>
@@ -107,7 +107,7 @@
         class="text-xs font-semibold uppercase tracking-wide"
         [class.text-dark-text-dim]="store.isDark()"
         [class.text-light-text-dim]="!store.isDark()"
-        >Workspace</span
+        >{{ 'WORKSPACE.TITLE' | translate }}</span
       >
     </div>
 
@@ -144,7 +144,7 @@
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span>Downloads</span>
+        <span>{{ 'WORKSPACE.DOWNLOADS' | translate }}</span>
       </button>
 
       <!-- Backup/Restore -->
@@ -183,7 +183,7 @@
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span>Backup/Restore</span>
+        <span>{{ 'WORKSPACE.BACKUP_RESTORE' | translate }}</span>
       </button>
 
       <!-- App Store -->
@@ -218,7 +218,7 @@
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span class="block">App Store</span>
+        <span class="block">{{ 'WORKSPACE.APP_STORE' | translate }}</span>
       </button>
 
       <!-- About -->
@@ -256,7 +256,7 @@
               <span class="h-2 w-2 rounded-full bg-accent"></span>
             }
           </span>
-          <span>About</span>
+          <span>{{ 'WORKSPACE.ABOUT' | translate }}</span>
         </button>
       </div>
     </div>

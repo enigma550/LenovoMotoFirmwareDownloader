@@ -16,47 +16,41 @@
       [class.shadow-sm]="!store.isDark()"
     >
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <!-- Logo and title -->
+        <!-- Logo and title with Lenovo Software Fix styling -->
         <div class="flex items-center gap-4">
           <div
-            class="hidden md:flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.bg-accent-light]="!store.isDark()"
+            class="hidden md:flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg shadow-sm"
+            [class.bg-accent]="true"
           >
-            <span
-              class="block w-[2.6ch] text-center font-mono text-base font-black leading-none tracking-wide"
-              [class.text-accent]="true"
-              >LM</span
-            >
-            <span
-              class="block w-[2.6ch] text-center font-mono text-base font-black leading-none tracking-wide"
-              [class.text-accent]="true"
-              >FD</span
-            >
+            <span class="block text-center font-mono text-xs font-black tracking-widest text-white">LENOVO</span>
+            <span class="block text-center font-mono text-[10px] font-bold text-white/80">FIX</span>
           </div>
           <div>
-            <h1
-              class="text-xl font-semibold md:text-2xl"
-              [class.text-dark-text-bright]="store.isDark()"
-              [class.text-light-text-bright]="!store.isDark()"
-            >
-              Lenovo Moto Firmware Downloader
-            </h1>
+            <div class="flex items-center gap-2">
+              <span class="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">Lenovo</span>
+              <h1
+                class="text-xl font-bold tracking-tight md:text-2xl"
+                [class.text-dark-text-bright]="store.isDark()"
+                [class.text-light-text-bright]="!store.isDark()"
+              >
+                {{ 'APP.TITLE' | translate }}
+              </h1>
+            </div>
             <p
-              class="text-sm"
+              class="text-xs font-medium"
               [class.text-dark-text-dim]="store.isDark()"
               [class.text-light-text-dim]="!store.isDark()"
             >
-              Device management tool
+              {{ 'APP.SUBTITLE' | translate }}
             </p>
           </div>
         </div>
 
-        <!-- Status indicators -->
-        <div class="flex flex-wrap items-center gap-3">
+        <!-- Status indicators & Controls -->
+        <div class="flex flex-wrap items-center gap-2.5">
           <!-- Bridge status -->
           <div
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm"
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium"
             [class.bg-dark-elevated]="store.isDark()"
             [class.bg-light-border]="!store.isDark()"
           >
@@ -68,13 +62,13 @@
             <span
               [class.text-dark-text-dim]="store.isDark()"
               [class.text-light-text-dim]="!store.isDark()"
-              >{{ store.bridgeStatus() }}</span
+              >{{ (store.bridgeHealthy() ? 'STATUS.BRIDGE_CONNECTED' : 'STATUS.BRIDGE_DISCONNECTED') | translate }}</span
             >
           </div>
 
           <!-- Auth status -->
           <div
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm"
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium"
             [class.bg-success-light]="store.authComplete() && !store.isDark()"
             [class.text-success]="store.authComplete()"
             [class.bg-warning-light]="!store.authComplete() && !store.isDark()"
@@ -86,12 +80,29 @@
               [class.bg-success]="store.authComplete()"
               [class.bg-warning]="!store.authComplete()"
             ></span>
-            {{ store.authComplete() ? 'Authenticated' : 'Not authenticated' }}
+            {{ (store.authComplete() ? 'STATUS.AUTHENTICATED' : 'STATUS.NOT_AUTHENTICATED') | translate }}
           </div>
+
+          <!-- Language toggle -->
+          <button
+            class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-xs transition-all hover:scale-105 active:scale-95"
+            [class.bg-dark-elevated]="store.isDark()"
+            [class.border-dark-border-bright]="store.isDark()"
+            [class.text-dark-text-bright]="store.isDark()"
+            [class.bg-light-surface]="!store.isDark()"
+            [class.border-light-border]="!store.isDark()"
+            [class.text-light-text-bright]="!store.isDark()"
+            type="button"
+            (click)="i18n.toggleLanguage()"
+            [title]="i18n.currentLang() === 'pt-BR' ? 'Alternar para Inglês' : 'Switch to Portuguese'"
+          >
+            <span>🌐</span>
+            <span>{{ i18n.currentLang() === 'pt-BR' ? '🇧🇷 PT-BR' : '🇺🇸 EN' }}</span>
+          </button>
 
           <!-- Theme toggle -->
           <button
-            class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+            class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
             [class.bg-dark-elevated]="store.isDark()"
             [class.text-dark-text]="store.isDark()"
             [class.hover:bg-dark-border]="store.isDark()"
@@ -101,7 +112,7 @@
             type="button"
             (click)="store.toggleTheme()"
           >
-            {{ store.isDark() ? '☀ Light' : '☾ Dark' }}
+            {{ (store.isDark() ? 'THEME.LIGHT' : 'THEME.DARK') | translate }}
           </button>
         </div>
       </div>
@@ -181,7 +192,7 @@
           [class.bg-light-surface]="!store.isDark()"
           [class.text-light-text-dim]="!store.isDark()"
         >
-          Authentication required for Catalog and Connected Device features.
+          {{ 'AUTH.REQUIRED_NOTICE' | translate }}
         </div>
         } @else if (store.sourceMode() === 'connected') {
         <app-connected-lookup />
@@ -208,7 +219,7 @@
             [class.text-dark-text-dim]="store.isDark()"
             [class.text-light-text-dim]="!store.isDark()"
           >
-            Select a source module to begin
+            {{ 'COMMON.SELECT_MODULE' | translate }}
           </p>
         </div>
         } @if (store.authComplete() && store.sourceMode() !== 'downloads' && store.sourceMode() !==
