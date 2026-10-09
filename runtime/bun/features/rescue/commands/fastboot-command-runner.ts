@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { FastbootClient } from 'fastboot-bun-ts/fastboot';
 import { waitForFastbootDevice, waitForFastbootDeviceRemoval } from 'fastboot-bun-ts/usb';
+import { splitImageForDownload } from './fastboot-sparse.ts';
 import {
   resolveFastbootReconnectTimeoutMs,
   resolveFastbootSerial,
@@ -145,6 +146,24 @@ async function reconnectFastbootAfterReboot(
   }
 }
 
+// Drops fastboot flash options such as `-S 1G` (sparse split size, handled by the
+// client's own max-download-size splitting) so positional args are partition, file.
+export function stripFlashOptions(args: string[]) {
+  const positional: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] || '';
+    if (arg === '-S' || arg === '--slot' || arg === '-s') {
+      i++;
+      continue;
+    }
+    if (arg.startsWith('-') && arg.length > 1) {
+      continue;
+    }
+    positional.push(arg);
+  }
+  return positional;
+}
+
 export async function runFastbootCommand(
   command: PreparedFastbootCommand,
   context: RescueCommandExecutionContext,
@@ -157,14 +176,25 @@ export async function runFastbootCommand(
 
   switch (verb) {
     case 'flash': {
-      const partition = command.args[1];
-      const filePath = command.args[2];
+      const [partition, filePath] = stripFlashOptions(command.args.slice(1));
       if (!partition || !filePath) {
         throw new Error(`Malformed fastboot flash command: ${command.label}`);
       }
-      await withAbortableFastbootCall(context, (client) =>
-        client.flashFile(partition, resolve(context.workDir, filePath)),
-      );
+      const resolvedPath = resolve(context.workDir, filePath);
+      await withAbortableFastbootCall(context, async (client) => {
+        const maxDownloadSize = await client.getMaxDownloadSize();
+        const fileSize = Bun.file(resolvedPath).size;
+        if (maxDownloadSize === null || fileSize <= maxDownloadSize) {
+          await client.flashFile(partition, resolvedPath);
+          return;
+        }
+        // Larger than the device accepts in one download: resplit into sparse pieces,
+        // like the official fastboot does.
+        for await (const piece of splitImageForDownload(resolvedPath, maxDownloadSize)) {
+          await client.downloadBytes(piece);
+          await client.flash(partition);
+        }
+      });
       return;
     }
 
@@ -218,6 +248,7 @@ export async function runFastbootCommand(
       return;
     }
 
+    case 'set_active':
     case 'set-active': {
       const slot = command.args[1];
       if (!slot) {

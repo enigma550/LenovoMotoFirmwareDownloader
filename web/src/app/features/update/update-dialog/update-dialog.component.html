@@ -1,0 +1,235 @@
+@if (update.isOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+    (click)="onBackdropClick()"
+  >
+    <div
+      class="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border p-5 shadow-xl border-base bg-surface"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'UPDATE.TITLE' | translate"
+      (click)="onDialogClick($event)"
+    >
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h4
+            class="text-base font-semibold text-fg-strong"
+          >
+            {{ 'UPDATE.TITLE' | translate }}
+          </h4>
+          <p
+            class="mt-1 text-xs text-fg-dim"
+          >
+            @if (update.preflight()?.mode === 'source') {
+            {{ 'UPDATE.MODE_SOURCE' | translate }}
+            } @else {
+            {{ 'UPDATE.MODE_PACKAGED' | translate }}
+            }
+            @if (update.preflight()?.appVersion) {
+            · v{{ update.preflight()?.appVersion }}
+            }
+          </p>
+        </div>
+        <button
+          class="shrink-0 rounded-lg px-2 py-1 text-sm opacity-70 transition hover:opacity-100"
+          type="button"
+          [attr.aria-label]="'UPDATE.CLOSE' | translate"
+          [title]="'UPDATE.CLOSE' | translate"
+          (click)="update.closeDialog()"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="mt-4 flex-1 space-y-4 overflow-y-auto pr-1">
+        @if (update.checking()) {
+        <div class="flex items-center gap-2 text-sm">
+          <span
+            class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+          ></span>
+          {{ 'UPDATE.CHECKING' | translate }}
+        </div>
+        }
+
+        @if (update.errorCode()) {
+        <div
+          class="rounded-lg border-l-4 p-3 text-sm"
+          [class.border-danger]="true"
+          [class.bg-danger-light]="!store.isDark()"
+          [class.bg-elevated]="store.isDark()"
+          [class.text-danger]="true"
+        >
+          <p class="font-semibold">{{ update.errorMessage() }}</p>
+          @if (hintKey(update.errorCode()); as hint) {
+          <p class="mt-1 text-xs opacity-80">{{ hint | translate }}</p>
+          }
+        </div>
+        }
+
+        @if (update.preflight(); as preflight) {
+        <!-- Credentials -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span
+            class="rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide"
+            [class.bg-success-light]="preflight.credentialStatus === 'ok' && !store.isDark()"
+            [class.bg-elevated]="store.isDark()"
+            [class.text-success]="preflight.credentialStatus === 'ok'"
+            [class.text-warning]="preflight.credentialStatus !== 'ok'"
+          >
+            {{ credentialKey(preflight.credentialStatus) | translate }}
+          </span>
+          @if (preflight.currentCommit) {
+          <span
+            class="font-mono text-fg-dim"
+          >
+            {{ preflight.currentBranch }} @ {{ preflight.currentCommit.slice(0, 10) }}
+          </span>
+          }
+        </div>
+
+        @if (preflight.upToDate) {
+        <p class="text-sm text-success">{{ 'UPDATE.NO_UPDATES' | translate }}</p>
+        } @else {
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-accent">
+            {{ 'UPDATE.INCOMING_COMMITS' | translate }} ({{ preflight.behindCount }})
+          </p>
+          <ul class="mt-2 space-y-1">
+            @for (commit of preflight.incomingCommits.slice(0, 8); track commit.sha) {
+            <li
+              class="flex items-start gap-2 text-xs text-fg"
+            >
+              <span class="font-mono opacity-70">{{ commit.sha }}</span>
+              <span>{{ commit.summary }}</span>
+            </li>
+            }
+          </ul>
+        </div>
+        }
+
+        @if (preflight.dirtyFiles.length > 0) {
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-warning">
+            {{ 'UPDATE.DIRTY_FILES' | translate }} ({{ preflight.dirtyFiles.length }})
+          </p>
+          <ul
+            class="mt-2 space-y-1 font-mono text-[11px] text-fg-dim"
+          >
+            @for (file of preflight.dirtyFiles.slice(0, 5); track file) {
+            <li>{{ file }}</li>
+            }
+          </ul>
+          <label class="mt-2 flex cursor-pointer items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              [checked]="update.backupLocalChanges()"
+              (change)="update.toggleBackupLocalChanges()"
+            />
+            {{ 'UPDATE.BACKUP_OPTION' | translate }}
+          </label>
+        </div>
+        }
+        }
+
+        <!-- Progress -->
+        @if (update.running()) {
+        <div>
+          <div class="flex items-center justify-between text-xs">
+            <span>{{ update.progress()?.stepLabel || ('UPDATE.RUNNING' | translate) }}</span>
+            <span>{{ update.progressPercent() }}%</span>
+          </div>
+          <div
+            class="mt-1 h-2 w-full overflow-hidden rounded-full"
+            [class.bg-elevated]="store.isDark()"
+            [class.bg-base]="!store.isDark()"
+          >
+            <div
+              class="h-full rounded-full bg-accent transition-all duration-300"
+              [style.width.%]="update.progressPercent()"
+            ></div>
+          </div>
+        </div>
+        }
+
+        @if (update.requiresRestart()) {
+        <p class="rounded-lg border-l-4 border-success bg-success-light/30 p-3 text-sm text-success">
+          {{ 'UPDATE.RESTART_HINT' | translate }}
+        </p>
+        }
+
+        <!-- Console -->
+        @if (update.consoleEntries().length > 0) {
+        <div
+          class="max-h-48 overflow-y-auto rounded-lg border p-2 font-mono text-[11px] leading-relaxed border-base bg-canvas"
+          aria-live="polite"
+        >
+          @for (entry of update.consoleEntries(); track entry.id) {
+          <p
+            [class.text-success]="entry.tone === 'success'"
+            [class.text-danger]="entry.tone === 'error'"
+            [class.text-warning]="entry.tone === 'warning'"
+            [class.text-fg-dim]="entry.tone === 'info' && store.isDark()"
+            [class.text-fg-dim]="entry.tone === 'info' && !store.isDark()"
+          >
+            {{ entry.text }}
+          </p>
+          }
+        </div>
+        }
+
+        <!-- Log viewer -->
+        @if (update.showLog()) {
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-accent">
+            {{ 'UPDATE.LOG_TITLE' | translate }}
+          </p>
+          <pre
+            class="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-lg border p-2 font-mono text-[10px] border-base bg-canvas"
+            >{{ update.logContent() }}</pre
+          >
+        </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="mt-4 flex flex-wrap items-center justify-end gap-2">
+        <button
+          class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:scale-105 active:scale-95"
+          type="button"
+          [disabled]="update.checking() || update.running()"
+          (click)="update.check()"
+        >
+          {{ 'UPDATE.REFRESH' | translate }}
+        </button>
+        <button
+          class="rounded-lg border px-3 py-1.5 text-xs font-semibold transition hover:scale-105 active:scale-95"
+          type="button"
+          (click)="update.toggleLog()"
+        >
+          {{ (update.showLog() ? 'UPDATE.HIDE_LOG' : 'UPDATE.OPEN_LOG') | translate }}
+        </button>
+        @if (update.running()) {
+        <button
+          class="rounded-lg border border-danger px-3 py-1.5 text-xs font-semibold text-danger transition hover:scale-105 active:scale-95"
+          type="button"
+          [disabled]="update.canceling()"
+          (click)="update.cancel()"
+        >
+          {{ (update.canceling() ? 'UPDATE.CANCELING' : 'UPDATE.CANCEL') | translate }}
+        </button>
+        } @else {
+        <button
+          class="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white transition hover:scale-105 active:scale-95 disabled:opacity-50"
+          type="button"
+          [disabled]="update.checking() || !update.preflight() || update.preflight()?.upToDate"
+          (click)="update.start()"
+        >
+          {{ 'UPDATE.START' | translate }}
+        </button>
+        }
+      </div>
+    </div>
+  </div>
+}

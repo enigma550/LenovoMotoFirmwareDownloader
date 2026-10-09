@@ -170,6 +170,67 @@ export interface FrameworkUpdateInfo {
   error: string;
 }
 
+export type ProjectUpdateMode = 'source' | 'packaged';
+
+export type ProjectUpdatePhase =
+  | 'preflight'
+  | 'fetch'
+  | 'sync'
+  | 'dependencies'
+  | 'build'
+  | 'finalize'
+  | 'done'
+  | 'failed'
+  | 'canceled';
+
+export type ProjectUpdateTone = 'info' | 'success' | 'warning' | 'error';
+
+export type ProjectUpdateCredentialStatus =
+  | 'ok'
+  | 'not-applicable'
+  | 'auth-failed'
+  | 'network-failed'
+  | 'missing-remote'
+  | 'unknown';
+
+export interface ProjectUpdateCommit {
+  sha: string;
+  summary: string;
+  author: string;
+  date: string;
+}
+
+export interface ProjectUpdatePreflight {
+  mode: ProjectUpdateMode;
+  available: boolean;
+  reason?: string;
+  currentBranch?: string;
+  currentCommit?: string;
+  remoteUrl?: string;
+  behindCount: number;
+  aheadCount: number;
+  upToDate: boolean;
+  diverged: boolean;
+  incomingCommits: ProjectUpdateCommit[];
+  dirtyFiles: string[];
+  credentialStatus: ProjectUpdateCredentialStatus;
+  appVersion: string;
+  logPath?: string;
+}
+
+export interface ProjectUpdateProgressMessage {
+  updateId: string;
+  mode: ProjectUpdateMode;
+  phase: ProjectUpdatePhase;
+  status: 'starting' | 'running' | 'completed' | 'failed' | 'canceled';
+  stepIndex?: number;
+  stepTotal?: number;
+  stepLabel?: string;
+  consoleLine?: string;
+  consoleTone?: ProjectUpdateTone;
+  error?: string;
+}
+
 export interface DesktopIntegrationStatus {
   ok: boolean;
   status: 'ok' | 'missing' | 'wrong_wmclass' | 'not_linux';

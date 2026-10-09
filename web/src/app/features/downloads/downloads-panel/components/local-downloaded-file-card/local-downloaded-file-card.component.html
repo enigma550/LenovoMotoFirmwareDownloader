@@ -1,27 +1,23 @@
 @if (file(); as activeFile) {
   <article
     class="rounded-lg border p-3"
-    [class.border-dark-border-bright]="isDark()"
-    [class.bg-dark-surface]="isDark()"
-    [class.border-light-border]="!isDark()"
-    [class.bg-light-elevated]="!isDark()"
+    [class.border-strong]="isDark()"
+    [class.bg-surface]="isDark()"
+    [class.border-base]="!isDark()"
+    [class.bg-elevated]="!isDark()"
   >
     <p
-      class="text-sm font-bold uppercase tracking-wide"
-      [class.text-dark-text-bright]="isDark()"
-      [class.text-light-text-bright]="!isDark()"
+      class="text-sm font-bold uppercase tracking-wide text-fg-strong"
     >
       {{ activeFile.fileName }}
     </p>
-    <p class="mt-1 font-mono text-[10px]" [class.text-dark-text]="isDark()" [class.text-light-text]="!isDark()">
+    <p class="mt-1 font-mono text-[10px] text-fg"  >
       <span class="text-accent">size:</span> {{ formatBytes(activeFile.sizeBytes) }}
       <span class="mx-1 opacity-30">|</span>
       <span class="text-accent">published:</span> {{ activeFile.publishDate || 'Unknown' }}
     </p>
     <p
-      class="mt-0.5 flex flex-wrap gap-1 font-mono text-[10px] opacity-70"
-      [class.text-dark-text-dim]="isDark()"
-      [class.text-light-text-dim]="!isDark()"
+      class="mt-0.5 flex flex-wrap gap-1 font-mono text-[10px] opacity-70 text-fg-dim"
     >
       @if (activeFile.romMatchIdentifier) {
         <span class="whitespace-nowrap">match_id: {{ activeFile.romMatchIdentifier }}</span>
@@ -132,7 +128,7 @@
     </div>
 
     @if (activeFile.recipeUrl) {
-      <p class="mt-2 break-all font-mono text-[10px]" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+      <p class="mt-2 break-all font-mono text-[10px] text-fg-dim"  >
         {{ activeFile.recipeUrl }}
       </p>
     }
@@ -141,8 +137,8 @@
       class="mt-2 break-all font-mono text-[10px]"
       [class.text-success]="activeFile.hasExtractedDir && isDark()"
       [class.text-success]="activeFile.hasExtractedDir && !isDark()"
-      [class.text-dark-text-dim]="!activeFile.hasExtractedDir && isDark()"
-      [class.text-light-text-dim]="!activeFile.hasExtractedDir && !isDark()"
+      [class.text-fg-dim]="!activeFile.hasExtractedDir && isDark()"
+      [class.text-fg-dim]="!activeFile.hasExtractedDir && !isDark()"
     >
       extracted:
       @if (activeFile.hasExtractedDir && activeFile.extractedDir) {
@@ -152,7 +148,7 @@
       }
     </p>
 
-    <p class="break-all font-mono text-[10px]" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+    <p class="break-all font-mono text-[10px] text-fg-dim"  >
       path: {{ activeFile.relativePath || activeFile.fullPath }}
     </p>
 

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { TranslatePipe } from '../../../../../core/i18n/translate.pipe';
 import {
   dataResetLabel as formatDataResetLabel,
   flashTransportLabel as formatFlashTransportLabel,
@@ -18,7 +19,7 @@ import { DownloadsFacade } from '../../../../downloads/state';
 @Component({
   selector: 'app-firmware-active-download-card',
   standalone: true,
-  imports: [ProgressBarComponent, UiActionButtonComponent],
+  imports: [TranslatePipe, ProgressBarComponent, UiActionButtonComponent],
   templateUrl: './firmware-active-download-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

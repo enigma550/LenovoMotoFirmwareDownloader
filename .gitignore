@@ -36,6 +36,7 @@ runtime/bun/features/rescue/fastboot-native/linux-helper/lmfd_fastboot_helper
 
 # IntelliJ based IDEs
 .idea
+.kilo
 
 # Finder (MacOS) folder config
 .DS_Store

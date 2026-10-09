@@ -1,17 +1,11 @@
 @if (store.selectedModel()) {
   <section
     id="selected-model-panel"
-    class="mt-5 rounded-xl border p-5 transition-all duration-200"
-    [class.border-dark-border]="store.isDark()"
-    [class.bg-dark-surface]="store.isDark()"
-    [class.border-light-border]="!store.isDark()"
-    [class.bg-light-surface]="!store.isDark()"
+    class="mt-5 rounded-xl border p-5 transition-all duration-200 border-base bg-surface"
     [class.shadow-sm]="!store.isDark()"
   >
     <h3
-      class="text-lg font-bold tracking-wide"
-      [class.text-dark-text-bright]="store.isDark()"
-      [class.text-light-text-bright]="!store.isDark()"
+      class="text-lg font-bold tracking-wide text-fg-strong"
     >
       📱 Selected: {{ store.selectedModel()!.modelName }}
       <span
@@ -21,9 +15,7 @@
 
     @if (!store.selectedModelIsReadSupport()) {
       <p
-        class="mt-2 text-sm"
-        [class.text-dark-text-dim]="store.isDark()"
-        [class.text-light-text-dim]="!store.isDark()"
+        class="mt-2 text-sm text-fg-dim"
       >
         <span class="text-warning">⚠️</span>
         readSupport=false → manual model lookup (getResource)
@@ -31,22 +23,16 @@
 
       @if (store.countryOptions()?.foundCountrySelector) {
         <label
-          class="mt-4 mb-1.5 block text-xs font-medium"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="mt-4 mb-1.5 block text-xs font-medium text-fg-dim"
         >
           🌍 Country
         </label>
         <div class="relative w-full max-w-sm">
           <button
             #countryTrigger
-            class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200"
-            [class.border-dark-border-bright]="store.isDark()"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.text-dark-text]="store.isDark()"
-            [class.border-light-border-bright]="!store.isDark()"
-            [class.bg-light-surface]="!store.isDark()"
-            [class.text-light-text]="!store.isDark()"
+            class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200 border-strong text-fg"
+            [class.bg-elevated]="store.isDark()"
+            [class.bg-surface]="!store.isDark()"
             type="button"
             aria-haspopup="listbox"
             [attr.aria-expanded]="isMenuOpen('country')"
@@ -58,23 +44,19 @@
 
           @if (isMenuOpen('country')) {
             <div
-              class="absolute z-30 max-h-64 w-full overflow-auto rounded-lg border py-1 shadow-xl"
+              class="absolute z-30 max-h-64 w-full overflow-auto rounded-lg border py-1 shadow-xl border-strong"
               [class.bottom-full]="isMenuUpward('country')"
               [class.mb-1]="isMenuUpward('country')"
               [class.top-full]="!isMenuUpward('country')"
               [class.mt-1]="!isMenuUpward('country')"
-              [class.border-dark-border-bright]="store.isDark()"
-              [class.bg-dark-surface]="store.isDark()"
-              [class.border-light-border-bright]="!store.isDark()"
-              [class.bg-light-elevated]="!store.isDark()"
+              [class.bg-surface]="store.isDark()"
+              [class.bg-elevated]="!store.isDark()"
               role="listbox"
             >
               <button
-                class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
@@ -83,11 +65,9 @@
                 First branch value (default)
               </button>
               <button
-                class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
@@ -97,11 +77,9 @@
               </button>
               @for (countryValue of store.countryOptions()!.countryValues; track countryValue) {
                 <button
-                  class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                  [class.text-dark-text]="store.isDark()"
+                  class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                   [class.hover:bg-success/10]="store.isDark()"
                   [class.hover:text-success]="store.isDark()"
-                  [class.text-light-text]="!store.isDark()"
                   [class.hover:bg-success-light]="!store.isDark()"
                   [class.hover:text-success]="!store.isDark()"
                   type="button"
@@ -133,13 +111,9 @@
 
       @if (store.manualCatalogResult()) {
         <div
-          class="mt-4 rounded-lg border p-3 font-mono text-xs"
-          [class.border-dark-border-bright]="store.isDark()"
-          [class.bg-dark-elevated]="store.isDark()"
-          [class.text-dark-text]="store.isDark()"
-          [class.border-light-border-bright]="!store.isDark()"
-          [class.bg-light-surface]="!store.isDark()"
-          [class.text-light-text]="!store.isDark()"
+          class="mt-4 rounded-lg border p-3 font-mono text-xs border-strong text-fg"
+          [class.bg-elevated]="store.isDark()"
+          [class.bg-surface]="!store.isDark()"
         >
           <span class="text-accent">states:</span>
           {{ store.manualCatalogResult()!.statesExplored }}

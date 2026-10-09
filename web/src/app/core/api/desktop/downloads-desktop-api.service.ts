@@ -5,11 +5,13 @@ import type {
   AttachLocalRecipeResponse,
   CancelDownloadRequest,
   CancelDownloadResponse,
+  CleanStorageResponse,
   DeleteLocalFileRequest,
   DownloadFirmwareRequest,
   DownloadFirmwareResponse,
   ExtractLocalFirmwareRequest,
   ExtractLocalFirmwareResponse,
+  FastbootDeviceHealthResponse,
   LocalDownloadedFilesResponse,
   PauseDownloadRequest,
   ReadLocalFileContentRequest,
@@ -18,6 +20,7 @@ import type {
   RescueLiteFirmwareRequest,
   RescueLiteFirmwareResponse,
   ResumeDownloadRequest,
+  StorageUsageResponse,
 } from '../../models/desktop-api';
 import {
   mapAttachLocalRecipeResponse,
@@ -129,5 +132,17 @@ export class DownloadsDesktopApiService {
       desktopApi.resumeDownload(payload),
     );
     return mapDownloadFirmwareResponse(response);
+  }
+
+  async getStorageUsage(): Promise<StorageUsageResponse> {
+    return this.bridge.withDesktopApi((desktopApi) => desktopApi.getStorageUsage());
+  }
+
+  async cleanExtractedFirmwares(): Promise<CleanStorageResponse> {
+    return this.bridge.withDesktopApi((desktopApi) => desktopApi.cleanExtractedFirmwares());
+  }
+
+  async probeFastbootDeviceHealth(): Promise<FastbootDeviceHealthResponse> {
+    return this.bridge.withDesktopApi((desktopApi) => desktopApi.probeFastbootDeviceHealth());
   }
 }

@@ -1,0 +1,41 @@
+@if (confirm.pending(); as request) {
+  <div
+    class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+    (click)="onBackdropClick()"
+  >
+    <div
+      class="relative w-full max-w-md rounded-2xl border p-5 shadow-xl border-base bg-surface"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="request.title"
+      (click)="onDialogClick($event)"
+    >
+      <h4
+        class="text-base font-semibold text-fg-strong"
+      >
+        {{ request.title }}
+      </h4>
+      <p
+        class="mt-2 text-sm text-fg"
+      >
+        {{ request.message }}
+      </p>
+      <div class="mt-5 flex items-center justify-end gap-2">
+        <button
+          class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors border-base text-fg"
+          type="button"
+          (click)="confirm.decline()"
+        >
+          {{ 'COMMON.CANCEL' | translate }}
+        </button>
+        <button
+          class="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-white transition-colors"
+          type="button"
+          (click)="confirm.accept()"
+        >
+          {{ 'COMMON.CONFIRM' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

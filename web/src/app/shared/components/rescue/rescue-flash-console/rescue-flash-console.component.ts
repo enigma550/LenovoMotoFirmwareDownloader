@@ -24,10 +24,16 @@ const ANSI_ESCAPE_SEQUENCE_PATTERN = new RegExp(`${ANSI_ESCAPE_PREFIX}\\[[0-9;]*
 type LogTone = 'info' | 'verbose' | 'success' | 'warning' | 'error';
 type BuiltLogLine = { message: string; tone: LogTone } | null;
 
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import {
+  type ServiceReportData,
+  ServiceReportModalComponent,
+} from '../service-report-modal/service-report-modal.component';
+
 @Component({
   selector: 'app-rescue-flash-console',
   standalone: true,
-  imports: [NgTerminalModule, UiActionButtonComponent],
+  imports: [NgTerminalModule, UiActionButtonComponent, TranslatePipe, ServiceReportModalComponent],
   templateUrl: './rescue-flash-console.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -70,6 +76,33 @@ export class RescueFlashConsoleComponent {
       current.status === 'flashing'
     );
   });
+
+  protected readonly showReportModal = signal(false);
+  protected readonly currentReportData = computed<ServiceReportData | null>(() => {
+    const d = this.download();
+    if (!d.downloadId) {
+      return null;
+    }
+    const model = d.romMatchIdentifier || (d.romName ? d.romName.split('_')[0] : 'Motorola Device');
+    return {
+      deviceModel: model,
+      serialNumber: d.qdlSerial || '',
+      firmwareVersion: d.romName || 'Lenovo/Motorola Firmware',
+      transport: d.flashTransport || 'fastboot',
+      dataResetChoice: d.dataReset || 'yes',
+      status:
+        d.status === 'completed' ? 'success' : d.status === 'failed' ? 'failed' : 'in_progress',
+      date: new Date().toLocaleString(),
+    };
+  });
+
+  protected openReportModal() {
+    this.showReportModal.set(true);
+  }
+
+  protected closeReportModal() {
+    this.showReportModal.set(false);
+  }
 
   private terminal: NgTerminalComponent | null = null;
   private consoleSectionElement: HTMLElement | null = null;

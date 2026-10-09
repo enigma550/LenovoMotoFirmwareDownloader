@@ -1,10 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { TranslationService } from '../../core/i18n/translation.service';
+import { ConfirmDialogService } from './confirm-dialog.service';
 import { readInitialThemeMode, writeThemeMode } from './theme-mode.storage';
 import type { ThemeMode, ToastMessage, ToastVariant } from './workflow.types';
 
 @Injectable({ providedIn: 'root' })
 export class WorkflowUiService {
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly i18n = inject(TranslationService);
   private toastIdCounter = 0;
   private readonly activeActionCount = signal(0);
 
@@ -20,7 +24,11 @@ export class WorkflowUiService {
     const nextTheme: ThemeMode = this.themeMode() === 'dark' ? 'light' : 'dark';
     this.themeMode.set(nextTheme);
     writeThemeMode(nextTheme);
-    this.showToast(`Switched to ${nextTheme} mode.`, 'info', 2000);
+    this.showToast(
+      this.i18n.translate(nextTheme === 'dark' ? 'THEME.SWITCHED_DARK' : 'THEME.SWITCHED_LIGHT'),
+      'info',
+      2000,
+    );
   }
 
   showToast(message: string, variant: ToastVariant = 'info', timeoutMs = 2600) {
@@ -57,14 +65,13 @@ export class WorkflowUiService {
   getErrorMessage<ErrorValue>(error: ErrorValue) {
     if (error instanceof HttpErrorResponse) {
       const payload = error.error as { error?: string } | null;
-      return payload?.error || error.message || 'Request failed.';
+      return payload?.error || error.message || this.i18n.translate('ERRORS.REQUEST_FAILED');
     }
     if (error instanceof Error) return error.message;
     return String(error);
   }
 
   confirm(title: string, message: string): Promise<boolean> {
-    // For now, use window.confirm. In the future, this could be a custom modal signal.
-    return Promise.resolve(window.confirm(`${title}\n\n${message}`));
+    return this.confirmDialog.confirm(title, message);
   }
 }

@@ -1,9 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { AboutFacade } from '../state';
 
 @Component({
   selector: 'app-desktop-prompt-modal',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
+  imports: [TranslatePipe],
   templateUrl: './desktop-prompt-modal.component.html',
 })
 export class DesktopPromptModalComponent {
@@ -43,5 +46,12 @@ export class DesktopPromptModalComponent {
   toggleDontAsk(event: Event) {
     const target = event.target as HTMLInputElement;
     this.dontAskAgain.set(target.checked);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (!this.isProcessing()) {
+      void this.dismiss();
+    }
   }
 }

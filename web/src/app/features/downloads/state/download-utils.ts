@@ -34,7 +34,7 @@ export function isCancelingStatus(status: DownloadStatus) {
 }
 
 export function cancelButtonLabel(status: DownloadStatus) {
-  return isCancelingStatus(status) ? 'Cancelling...' : 'Cancel';
+  return isCancelingStatus(status) ? 'DOWNLOADS.CANCELLING' : 'COMMON.CANCEL';
 }
 
 export function formatBytes(bytes: number | null | undefined) {
@@ -50,42 +50,39 @@ export function formatBytes(bytes: number | null | undefined) {
 }
 
 export function dataResetLabel(choice: DataResetChoice) {
-  return choice === 'yes' ? 'Yes' : 'No';
+  return choice === 'yes' ? 'COMMON.YES' : 'COMMON.NO';
 }
 
 export function rescueDialogTitle(dryRun: boolean) {
-  return dryRun ? 'Rescue Lite (Dry run)' : 'Rescue Lite';
+  return dryRun ? 'RESCUE.DRY_RUN_TITLE' : 'RESCUE.TITLE';
 }
 
 export function rescueDialogDescription(dryRun: boolean) {
-  if (dryRun) {
-    return 'Dry run only parses rescue commands and prints the planned command sequence. No flashing is executed.';
-  }
-  return 'Rescue Lite executes firmware rescue commands from the selected package.';
+  return dryRun ? 'RESCUE.DIALOG_DESC_DRY' : 'RESCUE.DIALOG_DESC';
 }
 
 export function rescueExecutionLabel(dryRun: boolean) {
-  return dryRun ? 'Dry run' : 'Live flash';
+  return dryRun ? 'DOWNLOADS.EXEC_DRY_RUN' : 'DOWNLOADS.EXEC_LIVE';
 }
 
 export function flashTransportLabel(transport: RescueFlashTransport) {
   if (transport === 'qdl') {
-    return 'QDL (EDL/Firehose)';
+    return 'TRANSPORT.QDL';
   }
   if (transport === 'unisoc') {
-    return 'Unisoc PAC';
+    return 'TRANSPORT.UNISOC';
   }
   if (transport === 'mediatek') {
-    return 'MediaTek';
+    return 'TRANSPORT.MEDIATEK';
   }
-  return 'Fastboot';
+  return 'TRANSPORT.FASTBOOT';
 }
 
 export function actionLabelFromMode(mode: DownloadMode, dryRun: boolean) {
   if (mode !== 'rescue-lite') {
-    return 'Download';
+    return 'DOWNLOADS.LABEL_DOWNLOAD';
   }
-  return dryRun ? 'Rescue Lite (Dry run)' : 'Rescue Lite';
+  return dryRun ? 'RESCUE.DRY_RUN_TITLE' : 'RESCUE.TITLE';
 }
 
 export function actionLabel(entry: DownloadHistoryEntry) {
@@ -94,21 +91,21 @@ export function actionLabel(entry: DownloadHistoryEntry) {
 
 export function completedStatusLabel(mode: DownloadMode, dryRun: boolean) {
   if (mode !== 'rescue-lite') {
-    return 'Download completed.';
+    return 'DOWNLOADS.COMPLETED';
   }
-  return dryRun ? 'Rescue dry run completed.' : 'Rescue completed.';
+  return dryRun ? 'DOWNLOADS.RESCUE_DRY_COMPLETED' : 'DOWNLOADS.RESCUE_COMPLETED';
 }
 
 export function canceledStatusLabel(mode: DownloadMode) {
-  return mode === 'rescue-lite' ? 'Rescue canceled.' : 'Download canceled.';
+  return mode === 'rescue-lite' ? 'DOWNLOADS.RESCUE_CANCELED' : 'DOWNLOADS.CANCELED';
 }
 
 export function cancelingStatusLabel(mode: DownloadMode) {
-  return mode === 'rescue-lite' ? 'Cancelling rescue...' : 'Cancelling download...';
+  return mode === 'rescue-lite' ? 'DOWNLOADS.CANCELING_RESCUE' : 'DOWNLOADS.CANCELING_DOWNLOAD';
 }
 
 export function canceledToastLabel(mode: DownloadMode) {
-  return mode === 'rescue-lite' ? 'Rescue' : 'Download';
+  return mode === 'rescue-lite' ? 'DOWNLOADS.LABEL_RESCUE' : 'DOWNLOADS.LABEL_DOWNLOAD';
 }
 
 export function isRescueLiteEntry(entry: DownloadHistoryEntry) {

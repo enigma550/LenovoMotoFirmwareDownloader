@@ -3,11 +3,14 @@ import {
   Component,
   computed,
   DestroyRef,
+  HostListener,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import { TranslationService } from '../../../../core/i18n/translation.service';
 import { flashTransportLabel as formatFlashTransportLabel } from '../../../../features/downloads/state/download-utils';
 import type { RescueDryRunPlanDialog } from '../../../../shared/state/workflow.types';
 import { RescueDialogButtonComponent } from '../rescue-dialog-button/rescue-dialog-button.component';
@@ -15,7 +18,7 @@ import { RescueDialogButtonComponent } from '../rescue-dialog-button/rescue-dial
 @Component({
   selector: 'app-rescue-dry-run-plan-dialog',
   standalone: true,
-  imports: [RescueDialogButtonComponent],
+  imports: [RescueDialogButtonComponent, TranslatePipe],
   templateUrl: './rescue-dry-run-plan-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -25,17 +28,19 @@ export class RescueDryRunPlanDialogComponent {
   readonly close = output<void>();
   protected readonly flashTransportLabel = formatFlashTransportLabel;
   private readonly destroyRef = inject(DestroyRef);
+  private readonly i18n = inject(TranslationService);
   private readonly copyStatus = signal<'idle' | 'copied' | 'failed'>('idle');
   private resetCopyStatusTimeout: ReturnType<typeof setTimeout> | null = null;
   protected readonly copyButtonLabel = computed(() => {
+    this.i18n.currentLang();
     const status = this.copyStatus();
     if (status === 'copied') {
-      return 'Copied';
+      return this.i18n.translate('COMMON.COPIED');
     }
     if (status === 'failed') {
-      return 'Copy failed';
+      return this.i18n.translate('COMMON.COPY_FAILED');
     }
-    return 'Copy';
+    return this.i18n.translate('COMMON.COPY');
   });
   protected readonly hasCommands = computed(() => (this.plan()?.commands.length ?? 0) > 0);
 
@@ -49,6 +54,11 @@ export class RescueDryRunPlanDialogComponent {
   }
 
   protected onBackdropClick() {
+    this.close.emit();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
     this.close.emit();
   }
 

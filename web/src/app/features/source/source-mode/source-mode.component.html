@@ -1,16 +1,12 @@
 <div class="space-y-4">
   <!-- Source Selection Panel -->
   <section
-    class="rounded-xl border p-5 transition-all duration-200"
-    [class.border-dark-border]="store.isDark()"
-    [class.bg-dark-surface]="store.isDark()"
-    [class.border-light-border]="!store.isDark()"
-    [class.bg-light-surface]="!store.isDark()"
+    class="rounded-xl border p-5 transition-all duration-200 border-base bg-surface"
     [class.shadow-sm]="!store.isDark()"
   >
     <div class="flex items-center gap-2 text-accent">
       <span class="text-lg">📱</span>
-      <span class="text-xs font-semibold uppercase tracking-wide">Select Source</span>
+      <span class="text-xs font-semibold uppercase tracking-wide">{{ 'SOURCE.TITLE' | translate }}</span>
     </div>
 
     <div class="mt-4 grid gap-2">
@@ -21,16 +17,16 @@
         [class.bg-accent-subtle]="store.sourceMode() === 'connected' && !store.isDark()"
         [class.bg-accent/10]="store.sourceMode() === 'connected' && store.isDark()"
         [class.text-accent]="store.sourceMode() === 'connected'"
-        [class.border-dark-border]="store.sourceMode() !== 'connected' && store.isDark()"
-        [class.bg-dark-elevated]="store.sourceMode() !== 'connected' && store.isDark()"
-        [class.text-dark-text]="store.sourceMode() !== 'connected' && store.isDark()"
-        [class.hover:border-dark-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.bg-elevated]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'connected' && store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'connected' && store.isDark()
         "
-        [class.border-light-border]="store.sourceMode() !== 'connected' && !store.isDark()"
-        [class.bg-light-surface]="store.sourceMode() !== 'connected' && !store.isDark()"
-        [class.text-light-text]="store.sourceMode() !== 'connected' && !store.isDark()"
-        [class.hover:border-light-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'connected' && !store.isDark()"
+        [class.bg-surface]="store.sourceMode() !== 'connected' && !store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'connected' && !store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'connected' && !store.isDark()
         "
         type="button"
@@ -39,20 +35,18 @@
         <span
           class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
           [class.border-accent]="store.sourceMode() === 'connected'"
-          [class.border-dark-border-bright]="store.sourceMode() !== 'connected' && store.isDark()"
-          [class.border-light-border-bright]="store.sourceMode() !== 'connected' && !store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'connected' && store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'connected' && !store.isDark()"
         >
           @if (store.sourceMode() === 'connected') {
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
         <span>
-          <span class="block">Connected Device</span>
+          <span class="block">{{ 'SOURCE.CONNECTED' | translate }}</span>
           <span
-            class="block text-xs"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
-            >via ADB</span
+            class="block text-xs text-fg-dim"
+            >{{ 'SOURCE.CONNECTED_VIA_ADB' | translate }}</span
           >
         </span>
       </button>
@@ -64,14 +58,14 @@
         [class.bg-accent-subtle]="store.sourceMode() === 'catalog' && !store.isDark()"
         [class.bg-accent/10]="store.sourceMode() === 'catalog' && store.isDark()"
         [class.text-accent]="store.sourceMode() === 'catalog'"
-        [class.border-dark-border]="store.sourceMode() !== 'catalog' && store.isDark()"
-        [class.bg-dark-elevated]="store.sourceMode() !== 'catalog' && store.isDark()"
-        [class.text-dark-text]="store.sourceMode() !== 'catalog' && store.isDark()"
-        [class.hover:border-dark-border-bright]="store.sourceMode() !== 'catalog' && store.isDark()"
-        [class.border-light-border]="store.sourceMode() !== 'catalog' && !store.isDark()"
-        [class.bg-light-surface]="store.sourceMode() !== 'catalog' && !store.isDark()"
-        [class.text-light-text]="store.sourceMode() !== 'catalog' && !store.isDark()"
-        [class.hover:border-light-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.bg-elevated]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.hover:border-strong]="store.sourceMode() !== 'catalog' && store.isDark()"
+        [class.border-base]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        [class.bg-surface]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'catalog' && !store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'catalog' && !store.isDark()
         "
         type="button"
@@ -80,34 +74,28 @@
         <span
           class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
           [class.border-accent]="store.sourceMode() === 'catalog'"
-          [class.border-dark-border-bright]="store.sourceMode() !== 'catalog' && store.isDark()"
-          [class.border-light-border-bright]="store.sourceMode() !== 'catalog' && !store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'catalog' && store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'catalog' && !store.isDark()"
         >
           @if (store.sourceMode() === 'catalog') {
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span>Model Catalog</span>
+        <span>{{ 'SOURCE.CATALOG' | translate }}</span>
       </button>
     </div>
   </section>
 
   <!-- Workspace Panel -->
   <section
-    class="rounded-xl border p-5 transition-all duration-200"
-    [class.border-dark-border]="store.isDark()"
-    [class.bg-dark-surface]="store.isDark()"
-    [class.border-light-border]="!store.isDark()"
-    [class.bg-light-surface]="!store.isDark()"
+    class="rounded-xl border p-5 transition-all duration-200 border-base bg-surface"
     [class.shadow-sm]="!store.isDark()"
   >
     <div class="flex items-center gap-2">
       <span class="text-lg">📂</span>
       <span
-        class="text-xs font-semibold uppercase tracking-wide"
-        [class.text-dark-text-dim]="store.isDark()"
-        [class.text-light-text-dim]="!store.isDark()"
-        >Workspace</span
+        class="text-xs font-semibold uppercase tracking-wide text-fg-dim"
+        >{{ 'WORKSPACE.TITLE' | translate }}</span
       >
     </div>
 
@@ -119,16 +107,16 @@
         [class.bg-accent-subtle]="store.sourceMode() === 'downloads' && !store.isDark()"
         [class.bg-accent/10]="store.sourceMode() === 'downloads' && store.isDark()"
         [class.text-accent]="store.sourceMode() === 'downloads'"
-        [class.border-dark-border]="store.sourceMode() !== 'downloads' && store.isDark()"
-        [class.bg-dark-elevated]="store.sourceMode() !== 'downloads' && store.isDark()"
-        [class.text-dark-text]="store.sourceMode() !== 'downloads' && store.isDark()"
-        [class.hover:border-dark-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.bg-elevated]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'downloads' && store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'downloads' && store.isDark()
         "
-        [class.border-light-border]="store.sourceMode() !== 'downloads' && !store.isDark()"
-        [class.bg-light-surface]="store.sourceMode() !== 'downloads' && !store.isDark()"
-        [class.text-light-text]="store.sourceMode() !== 'downloads' && !store.isDark()"
-        [class.hover:border-light-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        [class.bg-surface]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'downloads' && !store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'downloads' && !store.isDark()
         "
         type="button"
@@ -137,14 +125,14 @@
         <span
           class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
           [class.border-accent]="store.sourceMode() === 'downloads'"
-          [class.border-dark-border-bright]="store.sourceMode() !== 'downloads' && store.isDark()"
-          [class.border-light-border-bright]="store.sourceMode() !== 'downloads' && !store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'downloads' && store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'downloads' && !store.isDark()"
         >
           @if (store.sourceMode() === 'downloads') {
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span>Downloads</span>
+        <span>{{ 'WORKSPACE.DOWNLOADS' | translate }}</span>
       </button>
 
       <!-- Backup/Restore -->
@@ -154,16 +142,16 @@
         [class.bg-accent-subtle]="store.sourceMode() === 'backup-restore' && !store.isDark()"
         [class.bg-accent/10]="store.sourceMode() === 'backup-restore' && store.isDark()"
         [class.text-accent]="store.sourceMode() === 'backup-restore'"
-        [class.border-dark-border]="store.sourceMode() !== 'backup-restore' && store.isDark()"
-        [class.bg-dark-elevated]="store.sourceMode() !== 'backup-restore' && store.isDark()"
-        [class.text-dark-text]="store.sourceMode() !== 'backup-restore' && store.isDark()"
-        [class.hover:border-dark-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.bg-elevated]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'backup-restore' && store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'backup-restore' && store.isDark()
         "
-        [class.border-light-border]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
-        [class.bg-light-surface]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
-        [class.text-light-text]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
-        [class.hover:border-light-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        [class.bg-surface]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'backup-restore' && !store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'backup-restore' && !store.isDark()
         "
         type="button"
@@ -172,10 +160,10 @@
         <span
           class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
           [class.border-accent]="store.sourceMode() === 'backup-restore'"
-          [class.border-dark-border-bright]="
+          [class.border-strong]="
             store.sourceMode() !== 'backup-restore' && store.isDark()
           "
-          [class.border-light-border-bright]="
+          [class.border-strong]="
             store.sourceMode() !== 'backup-restore' && !store.isDark()
           "
         >
@@ -183,7 +171,7 @@
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span>Backup/Restore</span>
+        <span>{{ 'WORKSPACE.BACKUP_RESTORE' | translate }}</span>
       </button>
 
       <!-- App Store -->
@@ -193,16 +181,16 @@
         [class.bg-accent-subtle]="store.sourceMode() === 'app-store' && !store.isDark()"
         [class.bg-accent/10]="store.sourceMode() === 'app-store' && store.isDark()"
         [class.text-accent]="store.sourceMode() === 'app-store'"
-        [class.border-dark-border]="store.sourceMode() !== 'app-store' && store.isDark()"
-        [class.bg-dark-elevated]="store.sourceMode() !== 'app-store' && store.isDark()"
-        [class.text-dark-text]="store.sourceMode() !== 'app-store' && store.isDark()"
-        [class.hover:border-dark-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'app-store' && store.isDark()"
+        [class.bg-elevated]="store.sourceMode() !== 'app-store' && store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'app-store' && store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'app-store' && store.isDark()
         "
-        [class.border-light-border]="store.sourceMode() !== 'app-store' && !store.isDark()"
-        [class.bg-light-surface]="store.sourceMode() !== 'app-store' && !store.isDark()"
-        [class.text-light-text]="store.sourceMode() !== 'app-store' && !store.isDark()"
-        [class.hover:border-light-border-bright]="
+        [class.border-base]="store.sourceMode() !== 'app-store' && !store.isDark()"
+        [class.bg-surface]="store.sourceMode() !== 'app-store' && !store.isDark()"
+        [class.text-fg]="store.sourceMode() !== 'app-store' && !store.isDark()"
+        [class.hover:border-strong]="
           store.sourceMode() !== 'app-store' && !store.isDark()
         "
         type="button"
@@ -211,21 +199,19 @@
         <span
           class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
           [class.border-accent]="store.sourceMode() === 'app-store'"
-          [class.border-dark-border-bright]="store.sourceMode() !== 'app-store' && store.isDark()"
-          [class.border-light-border-bright]="store.sourceMode() !== 'app-store' && !store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'app-store' && store.isDark()"
+          [class.border-strong]="store.sourceMode() !== 'app-store' && !store.isDark()"
         >
           @if (store.sourceMode() === 'app-store') {
             <span class="h-2 w-2 rounded-full bg-accent"></span>
           }
         </span>
-        <span class="block">App Store</span>
+        <span class="block">{{ 'WORKSPACE.APP_STORE' | translate }}</span>
       </button>
 
       <!-- About -->
       <div
-        class="mt-2 border-t pt-3"
-        [class.border-dark-border]="store.isDark()"
-        [class.border-light-border]="!store.isDark()"
+        class="mt-2 border-t pt-3 border-base"
       >
         <button
           class="flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition-all"
@@ -233,14 +219,14 @@
           [class.bg-accent-subtle]="store.sourceMode() === 'about' && !store.isDark()"
           [class.bg-accent/10]="store.sourceMode() === 'about' && store.isDark()"
           [class.text-accent]="store.sourceMode() === 'about'"
-          [class.border-dark-border]="store.sourceMode() !== 'about' && store.isDark()"
-          [class.bg-dark-elevated]="store.sourceMode() !== 'about' && store.isDark()"
-          [class.text-dark-text]="store.sourceMode() !== 'about' && store.isDark()"
-          [class.hover:border-dark-border-bright]="store.sourceMode() !== 'about' && store.isDark()"
-          [class.border-light-border]="store.sourceMode() !== 'about' && !store.isDark()"
-          [class.bg-light-surface]="store.sourceMode() !== 'about' && !store.isDark()"
-          [class.text-light-text]="store.sourceMode() !== 'about' && !store.isDark()"
-          [class.hover:border-light-border-bright]="
+          [class.border-base]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.bg-elevated]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.text-fg]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.hover:border-strong]="store.sourceMode() !== 'about' && store.isDark()"
+          [class.border-base]="store.sourceMode() !== 'about' && !store.isDark()"
+          [class.bg-surface]="store.sourceMode() !== 'about' && !store.isDark()"
+          [class.text-fg]="store.sourceMode() !== 'about' && !store.isDark()"
+          [class.hover:border-strong]="
             store.sourceMode() !== 'about' && !store.isDark()
           "
           type="button"
@@ -249,14 +235,14 @@
           <span
             class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
             [class.border-accent]="store.sourceMode() === 'about'"
-            [class.border-dark-border-bright]="store.sourceMode() !== 'about' && store.isDark()"
-            [class.border-light-border-bright]="store.sourceMode() !== 'about' && !store.isDark()"
+            [class.border-strong]="store.sourceMode() !== 'about' && store.isDark()"
+            [class.border-strong]="store.sourceMode() !== 'about' && !store.isDark()"
           >
             @if (store.sourceMode() === 'about') {
               <span class="h-2 w-2 rounded-full bg-accent"></span>
             }
           </span>
-          <span>About</span>
+          <span>{{ 'WORKSPACE.ABOUT' | translate }}</span>
         </button>
       </div>
     </div>

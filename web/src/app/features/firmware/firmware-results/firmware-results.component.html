@@ -1,18 +1,16 @@
 @if (store.firmwareVariants().length > 0) {
   <section
     class="rounded-xl border p-5"
-    [class.border-dark-border-bright]="store.isDark()"
-    [class.bg-dark-surface]="store.isDark()"
-    [class.border-light-border]="!store.isDark()"
-    [class.bg-light-elevated]="!store.isDark()"
+    [class.border-strong]="store.isDark()"
+    [class.bg-surface]="store.isDark()"
+    [class.border-base]="!store.isDark()"
+    [class.bg-elevated]="!store.isDark()"
     [class.shadow-md]="!store.isDark()"
   >
     <h3
-      class="text-lg font-bold uppercase tracking-wide"
-      [class.text-dark-text-bright]="store.isDark()"
-      [class.text-light-text-bright]="!store.isDark()"
+      class="text-lg font-bold uppercase tracking-wide text-fg-strong"
     >
-      Firmware Variants
+      {{ 'FIRMWARE.VARIANTS' | translate }}
       <span
         class="ml-2 font-mono text-sm font-normal opacity-70"
       >({{ store.firmwareVariants().length }})</span>
@@ -27,7 +25,7 @@
     }
 
     <app-rescue-flash-console
-      [title]="'Rescue Console'"
+      [title]="'CONSOLE.TITLE' | translate"
       [context]="'firmware'"
       [isDark]="store.isDark()"
       [download]="store.firmwareDownload()"
@@ -54,8 +52,8 @@
 <app-rescue-options-dialog
   [isOpen]="rescueDialogOpen"
   [isDark]="store.isDark()"
-  [title]="rescueDialogTitle()"
-  [description]="rescueDialogDescription()"
+  [title]="rescueDialogTitle() | translate"
+  [description]="rescueDialogDescription() | translate"
   [targetLabel]="rescueDialogVariant?.romName || ''"
   [dryRun]="rescueDialogDryRun"
   [dataReset]="rescueDialogDataReset"

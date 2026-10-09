@@ -185,7 +185,13 @@ function buildArgsForOperation(operation: string, attributes: Map<string, string
 function shouldSoftFailFastbootCommand(args: string[]) {
   const verb = (args[0] || '').toLowerCase();
   const subject = (args[1] || '').toLowerCase();
-  return verb === 'getvar' && subject === 'max-sparse-size';
+  if (verb === 'getvar' && subject === 'max-sparse-size') {
+    return true;
+  }
+  if (verb === 'flash' && (subject === 'preloader' || subject === 'boot0' || subject === 'boot1')) {
+    return true;
+  }
+  return false;
 }
 
 function parseFastbootXmlSteps(xmlText: string) {
@@ -328,6 +334,17 @@ export const xmlFastbootPlannerStrategy: RescueCommandPlannerStrategy = {
         softFail: shouldSoftFailFastbootCommand(normalizedArgs),
         timeoutMs: defaultFastbootCommandTimeoutMs,
         args: normalizedArgs,
+      });
+    }
+
+    const hasRebootStep = commands.some((cmd) => cmd.args[0] === 'reboot');
+    if (!hasRebootStep && commands.length > 0) {
+      commands.push({
+        tool: 'fastboot',
+        label: 'fastboot reboot',
+        softFail: false,
+        timeoutMs: defaultFastbootCommandTimeoutMs,
+        args: ['reboot'],
       });
     }
 

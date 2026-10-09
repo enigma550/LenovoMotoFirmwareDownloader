@@ -1,6 +1,9 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getLogger } from '../../../../core/common/logger.ts';
+
+const log = getLogger('auth-callback');
 
 const AUTH_CALLBACK_PREFIX = /^softwarefix:\/\/callback/i;
 const CALLBACK_DROP_PATH = join(tmpdir(), 'lenovo-moto-firmware-downloader-auth-callback.txt');
@@ -119,7 +122,7 @@ let queuedRuntimeAuthCallbackUrl = '';
 let consumedStartupAuthCallback = false;
 
 if (queuedStartupAuthCallbackUrl) {
-  console.log('[AuthCallback] Captured startup callback URL from process arguments.');
+  log.info('[AuthCallback] Captured startup callback URL from process arguments.');
   try {
     writeFileSync(CALLBACK_DROP_PATH, queuedStartupAuthCallbackUrl, 'utf8');
   } catch {
@@ -134,7 +137,7 @@ function consumeDroppedAuthCallbackUrl() {
     const value = normalizeCandidate(readFileSync(CALLBACK_DROP_PATH, 'utf8'));
     unlinkSync(CALLBACK_DROP_PATH);
     if (value) {
-      console.log('[AuthCallback] Loaded callback URL from drop file.');
+      log.info('[AuthCallback] Loaded callback URL from drop file.');
     }
     return value;
   } catch {
@@ -156,7 +159,7 @@ export function consumeStartupAuthCallbackUrl() {
   if (queuedRuntimeAuthCallbackUrl) {
     const value = queuedRuntimeAuthCallbackUrl;
     queuedRuntimeAuthCallbackUrl = '';
-    console.log('[AuthCallback] Consuming runtime callback URL from in-process queue.');
+    log.info('[AuthCallback] Consuming runtime callback URL from in-process queue.');
     return value;
   }
 

@@ -14,7 +14,14 @@ export class RpcHandlerRegistry<Handlers extends object> {
         continue;
       }
 
-      this.handlers.set(method as HandlerKey<Handlers>, handler as Handlers[HandlerKey<Handlers>]);
+      // Normalize `null` params (malformed renderer payloads) to undefined so
+      // destructuring handlers fail gracefully instead of throwing TypeErrors.
+      const guardedHandler = ((params?: unknown) =>
+        (handler as (value?: unknown) => unknown)(
+          params === null ? undefined : params,
+        )) as Handlers[HandlerKey<Handlers>];
+
+      this.handlers.set(method as HandlerKey<Handlers>, guardedHandler);
     }
   }
 

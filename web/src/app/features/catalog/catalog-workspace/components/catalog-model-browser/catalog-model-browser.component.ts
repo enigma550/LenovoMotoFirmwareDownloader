@@ -1,5 +1,13 @@
-import { Component, type ElementRef, HostListener, inject, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  type ElementRef,
+  HostListener,
+  inject,
+  ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '../../../../../core/i18n/translate.pipe';
 import type { ModelCatalogEntry } from '../../../../../core/models/desktop-api';
 import { DropdownState } from '../../../../../core/ui/dropdown-state';
 import type { CategoryFilter, ReadSupportFilter } from '../../../../../shared/state/workflow.types';
@@ -9,8 +17,9 @@ type DropdownMenu = 'category' | 'readSupport' | null;
 
 @Component({
   selector: 'app-catalog-model-browser',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   templateUrl: './catalog-model-browser.component.html',
 })
 export class CatalogModelBrowserComponent {

@@ -181,10 +181,13 @@ export class CatalogWorkflowService {
 
       await this.tryAutoSelectConnectedModel(response);
 
+      const imeiMissing = !response.device?.imei;
       this.ui.status.set(
         response.variants.length > 0
           ? `Found ${response.variants.length} firmware variant(s).`
-          : 'No firmware variant found from connected lookup.',
+          : imeiMissing
+            ? 'No firmware found by serial, and the IMEI could not be read over ADB (Android 13+ often blocks it). Put the phone in Fastboot (Vol- + Power) and click again, or use Catalog lookup by IMEI (dial *#06#).'
+            : 'No firmware variant found from connected lookup.',
       );
     });
   }

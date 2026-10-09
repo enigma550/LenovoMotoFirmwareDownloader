@@ -1,5 +1,8 @@
 import type { AppConfig } from '../common/app-config.ts';
+import { getLogger } from '../common/logger.ts';
 import { CONFIG_PATH, ensureProjectStorageReady } from './storage.ts';
+
+const log = getLogger('config');
 
 export async function loadConfig() {
   await ensureProjectStorageReady();
@@ -10,7 +13,7 @@ export async function loadConfig() {
     const config: AppConfig = await file.json();
     return config;
   } catch {
-    console.error(`[WARN] Could not parse config file at ${CONFIG_PATH}. Starting fresh.`);
+    log.error(`[WARN] Could not parse config file at ${CONFIG_PATH}. Starting fresh.`);
     return {};
   }
 }

@@ -27,8 +27,10 @@ APP_IDENTIFIER="${APP_IDENTIFIER:-com.github.enigma550.lenovomotofirmwaredownloa
 WM_CLASS="${WM_CLASS:-LenovoMotoFirmwareDown}"
 VERSION="${VERSION:-0.0.0}"
 
-QUICK_SHARUN_URL="${QUICK_SHARUN_URL:-https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/quick-sharun.sh}"
-ANDROID_UDEV_RULES_URL="${ANDROID_UDEV_RULES_URL:-https://raw.githubusercontent.com/M0Rf30/android-udev-rules/refs/heads/main/51-android.rules}"
+# Pinned by commit SHA — upstream scripts are executed during the build, so the
+# floating `main` branch is not acceptable (supply-chain hardening).
+QUICK_SHARUN_URL="${QUICK_SHARUN_URL:-https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/3513258ee1473058f434495114ba9f737bba9ae0/useful-tools/quick-sharun.sh}"
+ANDROID_UDEV_RULES_URL="${ANDROID_UDEV_RULES_URL:-https://raw.githubusercontent.com/M0Rf30/android-udev-rules/548e01d7bf8ad94583e75c5162de6c945b3f58c6/51-android.rules}"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:-ghcr.io/pkgforge-dev/archlinux:latest}"
 CONDA_CHANNEL_BASE="${CONDA_CHANNEL_BASE:-https://conda.anaconda.org/conda-forge}"
 DWARFS_COMP="${DWARFS_COMP:-zstd:level=22 -S24 -B4}"

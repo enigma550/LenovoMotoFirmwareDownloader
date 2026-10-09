@@ -1,8 +1,6 @@
 <div class="mt-2">
   <p
-    class="text-[11px] font-semibold uppercase tracking-[0.18em]"
-    [class.text-light-text-dim]="!store.isDark()"
-    [class.text-dark-text-dim]="store.isDark()"
+    class="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-dim"
   >
     Backup content
   </p>
@@ -14,10 +12,10 @@
         [class.border-success]="store.isConnectedBackupCategoryEnabled(category)"
         [class.bg-success-light]="store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
         [class.bg-success/10]="store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
-        [class.border-light-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
-        [class.bg-light-elevated]="!store.isDark()"
-        [class.border-dark-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
-        [class.bg-dark-surface]="store.isDark()"
+        [class.border-strong]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
+        [class.bg-elevated]="!store.isDark()"
+        [class.border-strong]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
+        [class.bg-surface]="store.isDark()"
         (click)="store.toggleConnectedBackupCategory(category)"
       >
         <span
@@ -25,10 +23,10 @@
           [class.border-success]="store.isConnectedBackupCategoryEnabled(category)"
           [class.bg-success]="store.isConnectedBackupCategoryEnabled(category)"
           [class.text-white]="store.isConnectedBackupCategoryEnabled(category)"
-          [class.border-dark-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
-          [class.bg-dark-elevated]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
-          [class.border-light-border-bright]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
-          [class.bg-light-elevated]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
+          [class.border-strong]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
+          [class.bg-elevated]="!store.isConnectedBackupCategoryEnabled(category) && store.isDark()"
+          [class.border-strong]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
+          [class.bg-elevated]="!store.isConnectedBackupCategoryEnabled(category) && !store.isDark()"
           [class.text-transparent]="!store.isConnectedBackupCategoryEnabled(category)"
         >
           ✓
@@ -36,15 +34,13 @@
         <span class="min-w-0">
           <span
             class="block text-xs font-semibold"
-            [class.text-light-text]="!store.isDark()"
-            [class.text-dark-text-bright]="store.isDark()"
+            [class.text-fg]="!store.isDark()"
+            [class.text-fg-strong]="store.isDark()"
           >
             {{ categoryLabel(category) }}
           </span>
           <span
-            class="block text-[11px]"
-            [class.text-light-text-dim]="!store.isDark()"
-            [class.text-dark-text-dim]="store.isDark()"
+            class="block text-[11px] text-fg-dim"
           >
             {{ connectedCategorySelectedCount(category) }}/{{ connectedCategoryTotalCount(category) }}
             selected
@@ -57,16 +53,14 @@
 
 <div class="mt-4">
   <p
-    class="text-[11px] font-semibold uppercase tracking-[0.18em]"
-    [class.text-light-text-dim]="!store.isDark()"
-    [class.text-dark-text-dim]="store.isDark()"
+    class="text-[11px] font-semibold uppercase tracking-[0.18em] text-fg-dim"
   >
     Inspect
   </p>
   <div
     class="mt-1 flex flex-wrap items-end gap-x-4 gap-y-2 border-b pb-1"
-    [class.border-light-border]="!store.isDark()"
-    [class.border-dark-border-bright]="store.isDark()"
+    [class.border-base]="!store.isDark()"
+    [class.border-strong]="store.isDark()"
   >
     @for (tab of previewTabs; track tab) {
       <button
@@ -75,15 +69,15 @@
         [class.border-accent]="store.connectedBackupPreviewTab() === tab"
         [class.text-accent]="store.connectedBackupPreviewTab() === tab"
         [class.border-transparent]="store.connectedBackupPreviewTab() !== tab"
-        [class.text-light-text]="store.connectedBackupPreviewTab() !== tab && !store.isDark()"
-        [class.text-dark-text]="store.connectedBackupPreviewTab() !== tab && store.isDark()"
+        [class.text-fg]="store.connectedBackupPreviewTab() !== tab && !store.isDark()"
+        [class.text-fg]="store.connectedBackupPreviewTab() !== tab && store.isDark()"
         (click)="store.setConnectedBackupPreviewTab(tab)"
       >
         {{ categoryLabel(tab) }}
         <span
           class="ml-1 text-[11px]"
-          [class.text-light-text-dim]="store.connectedBackupPreviewTab() !== tab && !store.isDark()"
-          [class.text-dark-text-dim]="store.connectedBackupPreviewTab() !== tab && store.isDark()"
+          [class.text-fg-dim]="store.connectedBackupPreviewTab() !== tab && !store.isDark()"
+          [class.text-fg-dim]="store.connectedBackupPreviewTab() !== tab && store.isDark()"
           [class.text-accent]="store.connectedBackupPreviewTab() === tab"
         >
           ({{ connectedCategoryTotalCount(tab) }})

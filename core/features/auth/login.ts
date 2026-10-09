@@ -3,6 +3,10 @@ import type { JsonObject, JsonValue } from '../../common/json.ts';
 import { loadConfig, saveConfig } from '../../infra/config.ts';
 import { bootstrapSessionCookie, requestApi } from '../../infra/lmsa/api.ts';
 import { cookieJar, session } from '../../infra/lmsa/state.ts';
+import {
+  createOauthContextStore,
+  type PendingOauthContext as OauthContextStorePendingContext,
+} from './oauth-context-store.ts';
 
 interface BasicApiResponse {
   code?: string;
@@ -11,18 +15,25 @@ interface BasicApiResponse {
   content?: JsonValue;
 }
 
-interface PendingOauthContext {
-  cookieEntries: Array<[string, string]>;
-  createdAtMs: number;
-  guid?: string;
-  clientUuid?: string;
-}
+type PendingOauthContext = OauthContextStorePendingContext;
 
-const pendingOauthContexts = new Map<string, PendingOauthContext>();
-const MAX_PENDING_OAUTH_CONTEXTS = 10;
-const PENDING_OAUTH_CONTEXT_TTL_MS = 30 * 60 * 1000;
+const oauthContextStore = createOauthContextStore({
+  loadRecords: async () => {
+    const config = await loadConfig();
+    return Array.isArray(config.pendingOauthContexts) ? config.pendingOauthContexts : [];
+  },
+  saveRecords: async (records) => {
+    const config = await loadConfig();
+    if (records.length === 0) {
+      delete config.pendingOauthContexts;
+    } else {
+      config.pendingOauthContexts = records;
+    }
+    await saveConfig(config);
+  },
+});
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-let pendingOauthContextsLoaded = false;
 type SessionUuid = (typeof session)['guid'];
 
 function toJsonObject(value: JsonValue | null | undefined): JsonObject | null {
@@ -36,33 +47,6 @@ function extractStateFromUrl(url: string) {
   } catch {
     return '';
   }
-}
-
-function isPendingOauthContext(value: unknown): value is PendingOauthContext {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const candidate = value as {
-    createdAtMs?: unknown;
-    cookieEntries?: unknown;
-    guid?: unknown;
-    clientUuid?: unknown;
-  };
-
-  if (typeof candidate.createdAtMs !== 'number') return false;
-  if (!Array.isArray(candidate.cookieEntries)) return false;
-  if (candidate.guid !== undefined && typeof candidate.guid !== 'string') return false;
-  if (candidate.clientUuid !== undefined && typeof candidate.clientUuid !== 'string') return false;
-
-  return candidate.cookieEntries.every(
-    (entry) =>
-      Array.isArray(entry) &&
-      entry.length === 2 &&
-      typeof entry[0] === 'string' &&
-      typeof entry[1] === 'string',
-  );
-}
-
-function isContextExpired(createdAtMs: number) {
-  return Date.now() - createdAtMs > PENDING_OAUTH_CONTEXT_TTL_MS;
 }
 
 function applyCookieEntries(cookieEntries: Array<[string, string]>) {
@@ -90,111 +74,21 @@ function applyPendingOauthContext(context: PendingOauthContext) {
   applyCookieEntries(context.cookieEntries);
 }
 
-function prunePendingOauthContexts() {
-  for (const [state, context] of pendingOauthContexts.entries()) {
-    if (isContextExpired(context.createdAtMs)) {
-      pendingOauthContexts.delete(state);
-    }
-  }
-
-  if (pendingOauthContexts.size <= MAX_PENDING_OAUTH_CONTEXTS) {
-    return;
-  }
-
-  const oldestState = Array.from(pendingOauthContexts.entries()).sort(
-    (left, right) => left[1].createdAtMs - right[1].createdAtMs,
-  )[0]?.[0];
-
-  if (oldestState) {
-    pendingOauthContexts.delete(oldestState);
-  }
-}
-
-async function loadPendingOauthContextsFromConfig() {
-  if (pendingOauthContextsLoaded) return;
-  pendingOauthContextsLoaded = true;
-
-  const config = await loadConfig();
-  const persistedContexts = config.pendingOauthContexts;
-  if (!Array.isArray(persistedContexts)) return;
-
-  for (const contextEntry of persistedContexts) {
-    if (!contextEntry || typeof contextEntry !== 'object') continue;
-    const candidate = contextEntry as {
-      state?: unknown;
-      context?: unknown;
-      cookieEntries?: unknown;
-      createdAtMs?: unknown;
-      guid?: unknown;
-      clientUuid?: unknown;
-    };
-
-    if (typeof candidate.state !== 'string' || !candidate.state) continue;
-
-    const directContext: unknown = {
-      cookieEntries: candidate.cookieEntries,
-      createdAtMs: candidate.createdAtMs,
-      guid: candidate.guid,
-      clientUuid: candidate.clientUuid,
-    };
-    const wrappedContext = candidate.context;
-    const normalizedContext = isPendingOauthContext(wrappedContext)
-      ? wrappedContext
-      : isPendingOauthContext(directContext)
-        ? (directContext as PendingOauthContext)
-        : null;
-
-    if (!normalizedContext || isContextExpired(normalizedContext.createdAtMs)) {
-      continue;
-    }
-
-    pendingOauthContexts.set(candidate.state, normalizedContext);
-  }
-
-  prunePendingOauthContexts();
-}
-
-async function persistPendingOauthContextsToConfig() {
-  const config = await loadConfig();
-  prunePendingOauthContexts();
-
-  if (pendingOauthContexts.size === 0) {
-    delete config.pendingOauthContexts;
-    await saveConfig(config);
-    return;
-  }
-
-  config.pendingOauthContexts = Array.from(pendingOauthContexts.entries()).map(
-    ([state, context]) => ({
-      state,
-      cookieEntries: context.cookieEntries,
-      createdAtMs: context.createdAtMs,
-      guid: context.guid,
-      clientUuid: context.clientUuid,
-    }),
-  );
-  await saveConfig(config);
-}
-
 async function rememberOauthContext(loginUrl: string) {
-  await loadPendingOauthContextsFromConfig();
   const state = extractStateFromUrl(loginUrl);
   if (!state) return;
 
-  pendingOauthContexts.set(state, {
+  await oauthContextStore.remember(state, {
     cookieEntries: Array.from(cookieJar.entries()),
     createdAtMs: Date.now(),
     guid: session.guid,
     clientUuid: session.clientUuid,
   });
-
-  prunePendingOauthContexts();
-  await persistPendingOauthContextsToConfig();
 }
 
-function restoreOauthContext(state: string) {
-  const pendingContext = pendingOauthContexts.get(state);
-  if (!pendingContext || isContextExpired(pendingContext.createdAtMs)) return false;
+async function restoreOauthContext(state: string) {
+  const pendingContext = await oauthContextStore.restore(state);
+  if (!pendingContext) return false;
 
   applyPendingOauthContext(pendingContext);
   return true;
@@ -202,10 +96,7 @@ function restoreOauthContext(state: string) {
 
 async function removeOauthContext(state: string) {
   if (!state) return;
-  if (!pendingOauthContexts.has(state)) return;
-
-  pendingOauthContexts.delete(state);
-  await persistPendingOauthContextsToConfig();
+  await oauthContextStore.remove(state);
 }
 
 function isOauthStateNotFound(protocolUrl: string, responseText: string) {
@@ -249,7 +140,6 @@ async function exchangeOauthCallback(parsedUrl: URL) {
     { raw: true, method: 'GET', withoutAuth: true },
   );
   const responseText = await response.text();
-  console.log('[DEBUG] callback.jhtml response:', responseText);
 
   return parseOauthCallbackResult(responseText, parsedUrl.searchParams.get('state')?.trim() || '');
 }
@@ -301,7 +191,6 @@ async function exchangeOauthCallbackViaTipsPage(callbackUrl: URL) {
     },
   });
   const callbackResponseText = await callbackResponse.text();
-  console.log('[DEBUG] tips callback response:', callbackResponseText);
   return parseOauthCallbackResult(
     callbackResponseText,
     callbackUrl.searchParams.get('state')?.trim() || '',
@@ -400,7 +289,7 @@ export async function extractAuthToken(urlOrToken: string): Promise<string> {
 
   if (sanitizedValue.includes('code=') && sanitizedValue.includes('state=')) {
     try {
-      await loadPendingOauthContextsFromConfig();
+      await oauthContextStore.hydrate();
       const parsedUrl = new URL(sanitizedValue);
       const isLenovoTipsSuccessUrl =
         parsedUrl.hostname === 'lsa.lenovo.com' &&
@@ -416,9 +305,8 @@ export async function extractAuthToken(urlOrToken: string): Promise<string> {
       }
 
       if (callbackState) {
-        restoreOauthContext(callbackState);
+        await restoreOauthContext(callbackState);
       }
-      console.log(`[DEBUG] Attempting OAuth exchange with cookies:`, Array.from(cookieJar.keys()));
 
       const initialCallbackResult = await exchangeOauthCallback(parsedUrl);
       let callbackResult = initialCallbackResult;
@@ -428,8 +316,8 @@ export async function extractAuthToken(urlOrToken: string): Promise<string> {
       }
 
       if (isOauthStateNotFound(callbackResult.protocolUrl, callbackResult.responseText)) {
-        for (const [storedState, pendingContext] of pendingOauthContexts.entries()) {
-          if (storedState === callbackState || isContextExpired(pendingContext.createdAtMs)) {
+        for (const [storedState, pendingContext] of oauthContextStore.entries()) {
+          if (storedState === callbackState) {
             continue;
           }
 

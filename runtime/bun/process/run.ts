@@ -55,10 +55,20 @@ async function readStreamText(stream: ReadableStream<Uint8Array> | number | unde
   return new Response(stream).text();
 }
 
-export async function runBufferedCommand(
-  options: RunBufferedCommandOptions,
-): Promise<RuntimeCommandResult> {
+/**
+ * Shared buffered-command engine used by both runBufferedCommand (result
+ * object) and runCheckedBufferedCommand (throws on unexpected exit codes).
+ */
+async function runBufferedCommandInternal(
+  options: RunBufferedCommandOptions & { onSpawned?: (process: Bun.Subprocess) => void },
+): Promise<
+  RuntimeCommandResult & {
+    aborted: boolean;
+    process: Bun.Subprocess | null;
+  }
+> {
   let timedOut = false;
+  let aborted = false;
   let childProcess: Bun.Subprocess;
 
   try {
@@ -78,8 +88,12 @@ export async function runBufferedCommand(
       stderrText: '',
       stdoutText: '',
       timedOut,
+      aborted: false,
+      process: null,
     };
   }
+
+  options.onSpawned?.(childProcess);
 
   const timeout =
     typeof options.timeoutMs === 'number' && options.timeoutMs > 0
@@ -96,6 +110,7 @@ export async function runBufferedCommand(
   const abortListener =
     options.signal &&
     (() => {
+      aborted = true;
       try {
         childProcess.kill();
       } catch {
@@ -120,6 +135,8 @@ export async function runBufferedCommand(
       stderrText,
       stdoutText,
       timedOut,
+      aborted,
+      process: childProcess,
     };
   } catch (error) {
     return {
@@ -128,6 +145,8 @@ export async function runBufferedCommand(
       stderrText: '',
       stdoutText: '',
       timedOut,
+      aborted,
+      process: childProcess,
     };
   } finally {
     if (abortListener) {
@@ -137,6 +156,19 @@ export async function runBufferedCommand(
       clearTimeout(timeout);
     }
   }
+}
+
+export async function runBufferedCommand(
+  options: RunBufferedCommandOptions,
+): Promise<RuntimeCommandResult> {
+  const result = await runBufferedCommandInternal(options);
+  return {
+    error: result.error,
+    exitCode: result.exitCode,
+    stderrText: result.stderrText,
+    stdoutText: result.stdoutText,
+    timedOut: result.timedOut,
+  };
 }
 
 export async function runCheckedBufferedCommand(
@@ -149,80 +181,30 @@ export async function runCheckedBufferedCommand(
     throw createAbortError('Operation aborted.');
   }
 
-  let timedOut = false;
-  let childProcess: Bun.Subprocess;
-
   try {
-    childProcess = Bun.spawn([options.command, ...(options.args ?? [])], {
-      cwd: options.cwd ?? process.cwd(),
-      env: createRuntimeProcessEnv({
-        mode: options.envMode,
-        overrides: options.envOverrides,
-      }),
-      stderr: 'pipe',
-      stdout: 'pipe',
-    });
-  } catch (error) {
-    throw error instanceof Error ? error : new Error(String(error));
-  }
-
-  options.onProcess?.(childProcess);
-
-  const timeout =
-    typeof options.timeoutMs === 'number' && options.timeoutMs > 0
-      ? setTimeout(() => {
-          timedOut = true;
-          try {
-            childProcess.kill();
-          } catch {
-            // Ignore kill races.
-          }
-        }, options.timeoutMs)
-      : null;
-
-  const abortListener =
-    options.signal &&
-    (() => {
-      try {
-        childProcess.kill();
-      } catch {
-        // Ignore kill races.
-      }
+    const result = await runBufferedCommandInternal({
+      ...options,
+      onSpawned: options.onProcess,
     });
 
-  if (abortListener) {
-    options.signal?.addEventListener('abort', abortListener, { once: true });
-  }
-
-  try {
-    const [stdoutText, stderrText, exitCode] = await Promise.all([
-      readStreamText(childProcess.stdout),
-      readStreamText(childProcess.stderr),
-      childProcess.exited,
-    ]);
-
-    if (options.signal?.aborted) {
+    if (options.signal?.aborted || result.aborted) {
       throw createAbortError('Operation aborted.');
     }
 
-    if (timedOut && options.timeoutMs) {
+    if (result.timedOut && options.timeoutMs) {
       throw createTimeoutError(options.command, options.timeoutMs);
     }
 
     const allowExitCodes = options.allowExitCodes ?? [0];
-    if (!allowExitCodes.includes(exitCode)) {
-      const errorOutput = [stderrText.trim(), stdoutText.trim()].filter(Boolean).join('\n');
-      throw new Error(errorOutput || `${options.command} exited with code ${exitCode}.`);
+    if (!allowExitCodes.includes(result.exitCode)) {
+      const errorOutput = [result.stderrText.trim(), result.stdoutText.trim()]
+        .filter(Boolean)
+        .join('\n');
+      throw new Error(errorOutput || `${options.command} exited with code ${result.exitCode}.`);
     }
 
-    return { stderrText, stdoutText };
+    return { stderrText: result.stderrText, stdoutText: result.stdoutText };
   } finally {
-    if (abortListener) {
-      options.signal?.removeEventListener('abort', abortListener);
-    }
-    if (timeout) {
-      clearTimeout(timeout);
-    }
     options.onProcess?.(null);
   }
 }

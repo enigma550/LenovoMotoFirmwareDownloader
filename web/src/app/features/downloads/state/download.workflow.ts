@@ -10,6 +10,7 @@
  */
 import { computed, Injectable, inject, signal } from '@angular/core';
 import { DownloadsDesktopApiService } from '../../../core/api/desktop';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import type {
   FirmwareVariant,
   LocalDownloadedFile,
@@ -83,6 +84,7 @@ function isActiveRescueEntry(state: FirmwareDownloadState) {
 export class DownloadWorkflowService {
   private readonly backend = inject(DownloadsDesktopApiService);
   private readonly ui = inject(WorkflowUiService);
+  private readonly i18n = inject(TranslationService);
   private readonly localFiles = inject(DownloadLocalFilesService);
   private readonly progressHandler = inject(DownloadProgressHandlerService);
   private readonly dismissedDownloadIds = new Set<string>();
@@ -203,9 +205,9 @@ export class DownloadWorkflowService {
 
   private async startVariantDownload(variant: FirmwareVariant, options: DownloadStartOptions) {
     if (options.mode === 'rescue-lite' && this.isRescueActive()) {
-      const message = 'Another Rescue Lite operation is already running.';
+      const message = this.i18n.translate('DOWNLOADS.ALREADY_RUNNING');
       this.ui.errorMessage.set(message);
-      this.ui.status.set('Rescue Lite already running.');
+      this.ui.status.set(this.i18n.translate('DOWNLOADS.RESCUE_ALREADY_RUNNING'));
       this.ui.showToast(message, 'info', 3200);
       return;
     }
@@ -218,11 +220,13 @@ export class DownloadWorkflowService {
       );
       if (existingLocalFile) {
         const preferredFileName = getPreferredVariantFileName(variant);
-        const message = `Download skipped. Archive already exists: ${existingLocalFile.fileName}`;
+        const message = this.i18n.translate('DOWNLOADS.SKIPPED_EXISTS_MSG', {
+          name: existingLocalFile.fileName,
+        });
         this.ui.errorMessage.set(message);
-        this.ui.status.set('Download skipped (already exists).');
+        this.ui.status.set(this.i18n.translate('DOWNLOADS.SKIPPED_EXISTS_STATUS'));
         this.ui.showToast(
-          `Already downloaded: ${preferredFileName}. Use the local file from Downloads.`,
+          this.i18n.translate('DOWNLOADS.ALREADY_DOWNLOADED', { name: preferredFileName }),
           'info',
           4200,
         );
@@ -265,15 +269,26 @@ export class DownloadWorkflowService {
     this.firmwareDownload.set(nextState);
     this.upsertDownloadHistory(nextState);
     if (options.mode === 'rescue-lite') {
-      this.ui.status.set('Rescue Lite: Starting firmware package download...');
+      this.ui.status.set(this.i18n.translate('DOWNLOADS.RESCUE_RUNNING'));
       this.ui.showToast(
-        `Rescue Lite${options.dryRun ? ' (Dry run)' : ''} started (${options.localFile?.fileName || variant.romName}) | Data reset: ${dataResetLabel(options.dataReset)} | Transport: ${flashTransportLabel(options.flashTransport)}`,
+        this.i18n.translate(
+          options.dryRun ? 'DOWNLOADS.RESCUE_STARTED_DRY' : 'DOWNLOADS.RESCUE_STARTED',
+          {
+            name: options.localFile?.fileName || variant.romName,
+            wipe: this.i18n.translate(dataResetLabel(options.dataReset)),
+            transport: this.i18n.translate(flashTransportLabel(options.flashTransport)),
+          },
+        ),
         'info',
         2600,
       );
     } else {
-      this.ui.status.set('Starting download...');
-      this.ui.showToast(`Starting download: ${variant.romName}`, 'info', 1800);
+      this.ui.status.set(this.i18n.translate('DOWNLOADS.STARTING_STATUS'));
+      this.ui.showToast(
+        this.i18n.translate('DOWNLOADS.STARTING', { name: variant.romName }),
+        'info',
+        1800,
+      );
     }
 
     try {
@@ -327,7 +342,7 @@ export class DownloadWorkflowService {
         const message = response.error || 'Download failed.';
         const existing = this.findDownloadHistoryEntry(downloadId);
         if (existing && (existing.status === 'canceling' || existing.status === 'canceled')) {
-          this.ui.status.set(canceledStatusLabel(options.mode));
+          this.ui.status.set(this.i18n.translate(canceledStatusLabel(options.mode)));
           return;
         }
 
@@ -359,12 +374,12 @@ export class DownloadWorkflowService {
         this.upsertDownloadHistory(failedState);
 
         if (failedState.status === 'canceled') {
-          this.ui.status.set(canceledStatusLabel(options.mode));
+          this.ui.status.set(this.i18n.translate(canceledStatusLabel(options.mode)));
           return;
         }
 
         this.ui.errorMessage.set(message);
-        this.ui.status.set('Idle');
+        this.ui.status.set(this.i18n.translate('STATUS.IDLE'));
         this.showFailureToastOnce(downloadId, message, 4200);
         return;
       }
@@ -397,7 +412,7 @@ export class DownloadWorkflowService {
       this.firmwareDownload.set(completedState);
       this.upsertDownloadHistory(completedState);
 
-      const doneLabel = completedStatusLabel(options.mode, options.dryRun);
+      const doneLabel = this.i18n.translate(completedStatusLabel(options.mode, options.dryRun));
       this.ui.status.set(doneLabel);
       this.ui.showToast(doneLabel, 'success', 3200);
 
@@ -457,7 +472,7 @@ export class DownloadWorkflowService {
       this.firmwareDownload.set(failedState);
       this.upsertDownloadHistory(failedState);
       this.ui.errorMessage.set(message);
-      this.ui.status.set('Idle');
+      this.ui.status.set(this.i18n.translate('STATUS.IDLE'));
       this.showFailureToastOnce(downloadId, message, 4200);
     }
   }
@@ -494,7 +509,7 @@ export class DownloadWorkflowService {
     if (this.firmwareDownload().downloadId === downloadId) {
       this.firmwareDownload.set(cancelingState);
     }
-    this.ui.status.set(cancelingStatusLabel(currentEntry.mode));
+    this.ui.status.set(this.i18n.translate(cancelingStatusLabel(currentEntry.mode)));
 
     try {
       const response = await this.backend.cancelDownload({
@@ -519,7 +534,7 @@ export class DownloadWorkflowService {
       if (this.firmwareDownload().downloadId === downloadId) {
         this.firmwareDownload.set(canceledState);
       }
-      this.ui.status.set(canceledStatusLabel(currentEntry.mode));
+      this.ui.status.set(this.i18n.translate(canceledStatusLabel(currentEntry.mode)));
     } catch (error) {
       const message = this.ui.getErrorMessage(error);
       const failedState: FirmwareDownloadState = {
@@ -537,7 +552,7 @@ export class DownloadWorkflowService {
         this.firmwareDownload.set(failedState);
       }
       this.ui.errorMessage.set(message);
-      this.ui.status.set('Idle');
+      this.ui.status.set(this.i18n.translate('STATUS.IDLE'));
       this.ui.showToast(message, 'error', 4200);
     }
   }

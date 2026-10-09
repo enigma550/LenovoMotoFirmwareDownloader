@@ -9,5 +9,5 @@
   },
   "files": ["../node_modules/electrobun/dist/api/browser/global.d.ts"],
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts"]
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
 }

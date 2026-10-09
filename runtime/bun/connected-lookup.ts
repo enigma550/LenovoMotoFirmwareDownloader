@@ -13,6 +13,11 @@ import {
   resetConnectedDeviceConnection,
   waitForConnectedDeviceAvailability,
 } from './device/connected-device-facade.ts';
+import {
+  readDeviceInfoViaBootloader,
+  readFastbootDeviceInfo,
+} from './features/rescue/connected/fastboot-device-info.ts';
+import { rebootConnectedDeviceToBootloader } from './features/rescue/reboot-to-bootloader.ts';
 
 type LmsaPayloadValue = object | string | number | boolean | null;
 
@@ -130,6 +135,24 @@ export async function lookupConnectedDeviceFirmwareFromDeviceInfo(
   };
 }
 
+/**
+ * The ADB shell cannot read the IMEI on some devices (Android 13+). Without it the
+ * serial-only lookup usually finds nothing, so briefly boot through the bootloader
+ * (which exposes the IMEI) and return to Android.
+ */
+async function completeImeiViaBootloader(device: DeviceInfo): Promise<DeviceInfo> {
+  if (device.imei) {
+    return device;
+  }
+  const fastbootInfo = await readDeviceInfoViaBootloader(rebootConnectedDeviceToBootloader);
+  // The phone is back in Android on a new USB session; drop the stale ADB connection.
+  await resetConnectedDeviceConnection().catch(() => {});
+  if (!fastbootInfo?.imei) {
+    return device;
+  }
+  return { ...device, imei: fastbootInfo.imei, sn: device.sn || fastbootInfo.sn };
+}
+
 export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupResponse> {
   const attemptRead = async (attemptLabel: string, reuseShared = true) => {
     return readConnectedDeviceInfo({
@@ -141,6 +164,7 @@ export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupRe
   try {
     // Prefer the existing shared Tango session immediately after preview/backup.
     const connectedDevice = await attemptRead('catalog-connected-lookup:read-device-info-shared');
+    connectedDevice.device = await completeImeiViaBootloader(connectedDevice.device);
     return lookupConnectedDeviceFirmwareFromDeviceInfo(connectedDevice.device, {
       adbAvailable: connectedDevice.adbAvailable,
     });
@@ -161,10 +185,18 @@ export async function lookupConnectedDeviceFirmware(): Promise<ConnectedLookupRe
         'catalog-connected-lookup:read-device-info-after-reset',
         false,
       );
+      connectedDevice.device = await completeImeiViaBootloader(connectedDevice.device);
       return lookupConnectedDeviceFirmwareFromDeviceInfo(connectedDevice.device, {
         adbAvailable: connectedDevice.adbAvailable,
       });
     } catch (secondError) {
+      // No ADB device: the phone may already be in Fastboot (bootloader) mode.
+      const fastbootDevice = await readFastbootDeviceInfo();
+      if (fastbootDevice) {
+        return lookupConnectedDeviceFirmwareFromDeviceInfo(fastbootDevice, {
+          adbAvailable: false,
+        });
+      }
       const secondDetail = secondError instanceof Error ? secondError.message : String(secondError);
       throw new Error(secondDetail || firstDetail || 'Connected lookup via Tango ADB failed.');
     }

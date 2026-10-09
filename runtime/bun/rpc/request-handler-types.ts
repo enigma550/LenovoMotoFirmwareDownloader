@@ -33,6 +33,7 @@ import type {
   PlayStoreSearchRequest,
   PlayStoreSearchResponse,
   PlayStoreStatusResponse,
+  ProjectUpdateProgressMessage,
   ReadLocalFileContentRequest,
   ReadLocalFileContentResponse,
   ReadSupportHintsRequest,
@@ -40,6 +41,7 @@ import type {
   RescueLiteFirmwareRequest,
   RestoreBackupSnapshotRequest,
   RestoreBackupSnapshotResponse,
+  StartProjectUpdateRequest,
 } from '../../shared/desktop-rpc';
 
 type RpcPayloadValue = object | string | number | boolean | null | undefined;
@@ -173,12 +175,22 @@ export interface BunRpcRequestHandlers {
   installWindowsQdloaderDriver: RpcHandler<undefined, RpcResponse<'installWindowsQdloaderDriver'>>;
   installWindowsSpdDriver: RpcHandler<undefined, RpcResponse<'installWindowsSpdDriver'>>;
   installWindowsMtkDriver: RpcHandler<undefined, RpcResponse<'installWindowsMtkDriver'>>;
+  getLinuxUdevStatus: RpcHandler<undefined, RpcResponse<'getLinuxUdevStatus'>>;
+  installLinuxUdevRules: RpcHandler<undefined, RpcResponse<'installLinuxUdevRules'>>;
+  getStorageUsage: RpcHandler<undefined, RpcResponse<'getStorageUsage'>>;
+  cleanExtractedFirmwares: RpcHandler<undefined, RpcResponse<'cleanExtractedFirmwares'>>;
+  probeFastbootDeviceHealth: RpcHandler<undefined, RpcResponse<'probeFastbootDeviceHealth'>>;
   deleteLocalFile: RpcHandler<{ filePath: string }, { ok: boolean; error?: string }>;
   pauseDownload: RpcHandler<{ downloadId: string }, { ok: boolean; error?: string }>;
   resumeDownload: RpcHandler<{ downloadId: string }, RpcResponse<'downloadFirmware'>>;
+  checkProjectUpdate: RpcHandler<undefined, RpcResponse<'checkProjectUpdate'>>;
+  startProjectUpdate: RpcHandler<StartProjectUpdateRequest, RpcResponse<'startProjectUpdate'>>;
+  cancelProjectUpdate: RpcHandler<undefined, RpcResponse<'cancelProjectUpdate'>>;
+  getProjectUpdateLog: RpcHandler<undefined, RpcResponse<'getProjectUpdateLog'>>;
 }
 
 export type DownloadProgressDispatch = (payload: DownloadProgressMessage) => void;
+export type UpdateProgressDispatch = (payload: ProjectUpdateProgressMessage) => void;
 
 export function toErrorMessage<ErrorValue>(error: ErrorValue) {
   return error instanceof Error ? error.message : String(error);

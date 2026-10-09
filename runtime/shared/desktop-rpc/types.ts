@@ -1,5 +1,9 @@
 import type { ElectrobunRPCSchema, RPCSchema } from 'electrobun';
-import type { DesktopApi, DownloadProgressMessage } from '../../../core/contracts/desktop/index.ts';
+import type {
+  DesktopApi,
+  DownloadProgressMessage,
+  ProjectUpdateProgressMessage,
+} from '../../../core/contracts/desktop/index.ts';
 
 export type {
   AttachLocalRecipeFromModelRequest,
@@ -20,9 +24,11 @@ export type {
   BridgePingResponse,
   CancelDownloadRequest,
   CancelDownloadResponse,
+  CancelProjectUpdateResponse,
   CatalogCountryOptions,
   CatalogFirmwareLookupResult,
   CatalogModelsResponse,
+  CheckProjectUpdateResponse,
   ConnectedBackupPreviewProgressResponse,
   ConnectedBackupPreviewResponse,
   ConnectedLookupResponse,
@@ -41,6 +47,7 @@ export type {
   FirmwareTaskStatus,
   FirmwareVariant,
   GetCatalogModelsRequest,
+  GetProjectUpdateLogResponse,
   LocalDownloadedFile,
   LocalDownloadedFilesResponse,
   LookupCatalogManualRequest,
@@ -69,6 +76,14 @@ export type {
   PlayStoreSearchResponse,
   PlayStoreSearchResult,
   PlayStoreStatusResponse,
+  ProjectUpdateCommit,
+  ProjectUpdateCredentialStatus,
+  ProjectUpdateErrorCode,
+  ProjectUpdateMode,
+  ProjectUpdatePhase,
+  ProjectUpdatePreflight,
+  ProjectUpdateProgressMessage,
+  ProjectUpdateTone,
   ReadLocalFileContentRequest,
   ReadLocalFileContentResponse,
   ReadSupportFirmwareLookupResult,
@@ -84,6 +99,8 @@ export type {
   RestoreBackupSnapshotResponse,
   ResumeDownloadRequest,
   SetDesktopPromptPreferenceRequest,
+  StartProjectUpdateRequest,
+  StartProjectUpdateResponse,
   StoredAuthStateResponse,
   WindowsMtkDriverInstallResponse,
   WindowsQdloaderDriverInstallResponse,
@@ -121,6 +138,7 @@ export type DesktopRpcWebviewSchema = RPCSchema<{
   requests: Record<PropertyKey, never>;
   messages: {
     downloadProgress: DownloadProgressMessage;
+    updateProgress: ProjectUpdateProgressMessage;
   };
 }>;
 

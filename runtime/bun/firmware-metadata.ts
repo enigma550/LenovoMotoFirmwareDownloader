@@ -1,4 +1,6 @@
+import { getDownloadDirectory } from './firmware-package-paths.ts';
 import { type JsonObject, type JsonValue, normalizeRemoteUrl } from './firmware-package-utils.ts';
+import { assertPathInsideAllowedRoots } from './path-guard.ts';
 
 export type FirmwarePackageMetadata = {
   version: 1;
@@ -85,7 +87,12 @@ export async function writeFirmwareMetadata(
     selectedParameters?: Record<string, string>;
   },
 ) {
-  const existing = await readFirmwareMetadata(packagePath);
+  const safePackagePath = assertPathInsideAllowedRoots(
+    packagePath,
+    [getDownloadDirectory()],
+    'firmware package path',
+  );
+  const existing = await readFirmwareMetadata(safePackagePath);
   const merged: FirmwarePackageMetadata = {
     version: 1,
     savedAt: Date.now(),
@@ -98,5 +105,5 @@ export async function writeFirmwareMetadata(
     selectedParameters:
       sanitizeParameters(patch.selectedParameters) || existing?.selectedParameters,
   };
-  await Bun.write(getFirmwareMetadataPath(packagePath), JSON.stringify(merged, null, 2));
+  await Bun.write(getFirmwareMetadataPath(safePackagePath), JSON.stringify(merged, null, 2));
 }

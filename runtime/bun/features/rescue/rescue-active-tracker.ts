@@ -2,7 +2,11 @@
  * Active rescue operation tracker.
  * Manages the lifecycle of active rescue/flash operations (cancel, process tracking).
  */
+
+import { getLogger } from '../../../../core/common/logger.ts';
 import type { DownloadProgressMessage } from '../../../shared/desktop-rpc';
+
+const log = getLogger('rescue-tracker');
 
 export type RescueProgressEmitter = (progress: DownloadProgressMessage) => void;
 
@@ -54,7 +58,7 @@ export function cancelActiveRescue(downloadId?: string) {
     return true;
   }
 
-  console.log(`[RescueManager] Canceling ${activeRescues.size} active rescue(s)...`);
+  log.info(`[RescueManager] Canceling ${activeRescues.size} active rescue(s)...`);
   for (const [, rescue] of activeRescues.entries()) {
     try {
       rescue.canceled = true;

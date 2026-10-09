@@ -1,16 +1,14 @@
 @if (entry(); as activeEntry) {
   <article
     class="rounded-lg border p-3"
-    [class.border-dark-border-bright]="isDark()"
-    [class.bg-dark-surface]="isDark()"
-    [class.border-light-border]="!isDark()"
-    [class.bg-light-elevated]="!isDark()"
+    [class.border-strong]="isDark()"
+    [class.bg-surface]="isDark()"
+    [class.border-base]="!isDark()"
+    [class.bg-elevated]="!isDark()"
   >
     <div class="flex flex-wrap items-center justify-between gap-2">
       <p
-        class="text-sm font-bold uppercase tracking-wide"
-        [class.text-dark-text-bright]="isDark()"
-        [class.text-light-text-bright]="!isDark()"
+        class="text-sm font-bold uppercase tracking-wide text-fg-strong"
       >
         {{ activeEntry.romName }}
       </p>
@@ -22,14 +20,10 @@
           [class.border-accent]="!isDark()"
           [class.text-accent]="!isDark()"
         >
-          {{ actionLabel(activeEntry) }}
+          {{ actionLabel(activeEntry) | translate }}
         </span>
         <span
-          class="rounded border px-2 py-1 font-mono text-[10px] uppercase tracking-wider"
-          [class.border-dark-border-bright]="isDark()"
-          [class.text-dark-text]="isDark()"
-          [class.border-light-border-bright]="!isDark()"
-          [class.text-light-text]="!isDark()"
+          class="rounded border px-2 py-1 font-mono text-[10px] uppercase tracking-wider border-strong text-fg"
         >
           {{ activeEntry.status }}
         </span>
@@ -67,12 +61,22 @@
           }
 
           <app-ui-action-button
-            [label]="cancelButtonLabel()"
+            [label]="cancelButtonLabel() | translate"
             variant="danger"
             appearance="solid"
             [isDark]="isDark()"
             [disabled]="isCanceling()"
             (clicked)="onCancel()"
+          />
+        }
+
+        @if (isRescueLite(activeEntry) && !isInProgress()) {
+          <app-ui-action-button
+            label="Comprovante"
+            variant="primary"
+            appearance="outline"
+            [isDark]="isDark()"
+            (clicked)="showReportModal.set(true)"
           />
         }
 
@@ -86,7 +90,7 @@
       </div>
     </div>
 
-    <p class="mt-1 font-mono text-[10px]" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+    <p class="mt-1 font-mono text-[10px] text-fg-dim"  >
       @if (activeEntry.totalBytes) {
         <span class="text-accent">size:</span> {{ formatBytes(activeEntry.totalBytes) }}
         <span class="mx-1 opacity-30">|</span>
@@ -101,7 +105,7 @@
     }
 
     @if (showsByteProgress()) {
-      <p class="mt-1 font-mono text-[10px]" [class.text-dark-text]="isDark()" [class.text-light-text]="!isDark()">
+      <p class="mt-1 font-mono text-[10px] text-fg"  >
         {{ formatBytes(activeEntry.downloadedBytes) }}
         @if (activeEntry.totalBytes) {
           / {{ formatBytes(activeEntry.totalBytes) }}
@@ -115,9 +119,7 @@
 
     @if (activeEntry.savePath) {
       <p
-        class="mt-1 break-all font-mono text-[10px] opacity-70"
-        [class.text-dark-text-dim]="isDark()"
-        [class.text-light-text-dim]="!isDark()"
+        class="mt-1 break-all font-mono text-[10px] opacity-70 text-fg-dim"
       >
         <span class="text-success">▸</span>
         {{ activeEntry.savePath }}
@@ -125,18 +127,16 @@
     }
 
     @if (isRescueLite(activeEntry)) {
-      <p class="mt-1 font-mono text-[10px]" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
-        <span class="text-accent">exec:</span> {{ rescueExecutionLabel() }}
+      <p class="mt-1 font-mono text-[10px] text-fg-dim"  >
+        <span class="text-accent">exec:</span> {{ rescueExecutionLabel() | translate }}
         <span class="mx-1 opacity-30">|</span>
-        <span class="text-accent">wipe:</span> {{ dataResetLabel(activeEntry.dataReset) }}
+        <span class="text-accent">wipe:</span> {{ dataResetLabel(activeEntry.dataReset) | translate }}
         <span class="mx-1 opacity-30">|</span>
-        <span class="text-accent">transport:</span> {{ flashTransportLabel(activeEntry.flashTransport) }}
+        <span class="text-accent">transport:</span> {{ flashTransportLabel(activeEntry.flashTransport) | translate }}
       </p>
       @if (rescueStepText(activeEntry)) {
         <p
-          class="mt-1 break-all font-mono text-[10px]"
-          [class.text-dark-text-dim]="isDark()"
-          [class.text-light-text-dim]="!isDark()"
+          class="mt-1 break-all font-mono text-[10px] text-fg-dim"
         >
           {{ rescueStepText(activeEntry) }}
         </p>
@@ -147,4 +147,11 @@
       <p class="mt-1 break-all font-mono text-[10px] text-danger">⚠ {{ activeEntry.error }}</p>
     }
   </article>
+
+  <app-service-report-modal
+    [isOpen]="showReportModal()"
+    [isDark]="isDark()"
+    [report]="reportData()"
+    (close)="showReportModal.set(false)"
+  />
 }

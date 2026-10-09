@@ -6,7 +6,12 @@ import type {
   DownloadProgressMessage,
   ExtractLocalFirmwareResponse,
 } from '../../../shared/desktop-rpc';
-import { ensureExtractedFirmwarePackage } from '../../firmware-package-utils.ts';
+import {
+  ensureExtractedFirmwarePackage,
+  getDownloadDirectory,
+  getRescueExtractDirectoryRoot,
+} from '../../firmware-package-utils.ts';
+import { assertPathInsideAllowedRoots } from '../../path-guard.ts';
 import {
   activeRescues,
   isAbortError,
@@ -53,21 +58,18 @@ export async function extractLocalFirmwarePackage(
   };
 
   try {
-    const packagePath = payload.filePath;
-    if (!packagePath?.trim()) {
-      emit({
-        status: 'failed',
-        phase: 'prepare',
-        stepLabel: 'Missing local firmware package path.',
-        error: 'Missing local firmware package path.',
-      });
-      return {
-        ok: false,
-        filePath: payload.filePath,
-        fileName: payload.fileName,
-        error: 'Missing local firmware package path.',
-      };
-    }
+    const packagePath = assertPathInsideAllowedRoots(
+      payload.filePath,
+      [getDownloadDirectory()],
+      'local firmware package path',
+    );
+    const extractedDir = payload.extractedDir?.trim()
+      ? assertPathInsideAllowedRoots(
+          payload.extractedDir,
+          [getRescueExtractDirectoryRoot()],
+          'extracted firmware directory',
+        )
+      : undefined;
 
     if (!(await Bun.file(packagePath).exists())) {
       emit({
@@ -92,7 +94,7 @@ export async function extractLocalFirmwarePackage(
 
     const extraction = await ensureExtractedFirmwarePackage({
       packagePath,
-      extractedDir: payload.extractedDir,
+      extractedDir,
       signal: rescueController.signal,
       onProcess: (process) => {
         const active = activeRescues.get(downloadId);

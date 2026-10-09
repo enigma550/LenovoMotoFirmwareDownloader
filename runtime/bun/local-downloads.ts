@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, join, relative } from 'node:path';
+import { fetchWithTimeout } from '../../core/infra/http.ts';
 import { requestApi } from '../../core/infra/lmsa/api.ts';
 import type {
   AttachLocalRecipeResponse,
@@ -23,9 +24,10 @@ import {
   sanitizeDirectoryName,
   stripFirmwareArchiveExtension,
 } from './firmware-package-utils.ts';
+import { assertPathInsideAllowedRoots } from './path-guard.ts';
 
 async function fetchRecipeContent(recipeUrl: string) {
-  const response = await fetch(recipeUrl, {
+  const response = await fetchWithTimeout(recipeUrl, {
     method: 'GET',
   });
   if (!response.ok) {
@@ -262,7 +264,22 @@ export async function readLocalFileContent(payload: {
   filePath: string;
   encoding: 'text' | 'base64';
 }): Promise<ReadLocalFileContentResponse> {
-  const { filePath, encoding } = payload;
+  const { encoding } = payload;
+  let filePath = payload.filePath;
+  try {
+    filePath = assertPathInsideAllowedRoots(
+      payload.filePath,
+      [getDownloadDirectory()],
+      'local file path',
+    );
+  } catch (error) {
+    return {
+      ok: false,
+      filePath: payload.filePath,
+      encoding,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
   if (!filePath) {
     return {
       ok: false,
@@ -383,12 +400,17 @@ export async function deleteLocalFile(payload: {
   filePath: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
-    const file = Bun.file(payload.filePath);
+    const filePath = assertPathInsideAllowedRoots(
+      payload.filePath,
+      [getDownloadDirectory()],
+      'local file path',
+    );
+    const file = Bun.file(filePath);
     if (await file.exists()) {
       await file.delete();
     }
 
-    const metadataPath = `${payload.filePath}.lmfd.json`;
+    const metadataPath = `${filePath}.lmfd.json`;
     const metadataFile = Bun.file(metadataPath);
     if (await metadataFile.exists()) {
       await metadataFile.delete();

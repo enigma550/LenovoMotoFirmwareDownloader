@@ -1,18 +1,14 @@
 <div
-  class="space-y-3 rounded-lg border p-3"
-  [class.border-dark-border]="isDark()"
-  [class.bg-dark-elevated]="isDark()"
-  [class.border-light-border]="!isDark()"
-  [class.bg-light-bg]="!isDark()"
+  class="space-y-3 rounded-lg border p-3 border-base"
+  [class.bg-elevated]="isDark()"
+  [class.bg-canvas]="!isDark()"
 >
   <p
-    class="text-sm font-semibold"
-    [class.text-dark-text-bright]="isDark()"
-    [class.text-light-text-bright]="!isDark()"
+    class="text-sm font-semibold text-fg-strong"
   >
     {{ title() }}
   </p>
-  <p class="text-xs" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+  <p class="text-xs text-fg-dim"  >
     {{ description() }}
   </p>
   <div>

@@ -4,6 +4,8 @@ import type {
   AppInfo,
   DesktopIntegrationStatus,
   FrameworkUpdateInfo,
+  LinuxUdevInstallResponse,
+  LinuxUdevStatusResponse,
   WindowsMtkDriverInstallResponse,
   WindowsQdloaderDriverStatusResponse,
   WindowsSpdDriverInstallResponse,
@@ -50,6 +52,29 @@ export class SystemWorkflowService {
       return await this.backend.createDesktopIntegration();
     } catch {
       return { ok: false, status: 'missing' } as DesktopIntegrationStatus;
+    }
+  }
+
+  async getLinuxUdevStatus(): Promise<LinuxUdevStatusResponse> {
+    try {
+      return await this.backend.getLinuxUdevStatus();
+    } catch {
+      return {
+        isLinux: false,
+        installed: false,
+        filePath: '',
+        hasRules: false,
+        userInPlugdev: false,
+        error: 'Desktop API not available',
+      };
+    }
+  }
+
+  async installLinuxUdevRules(): Promise<LinuxUdevInstallResponse> {
+    try {
+      return await this.backend.installLinuxUdevRules();
+    } catch (e) {
+      return { ok: false, message: 'Falha ao instalar regras Udev', error: String(e) };
     }
   }
 

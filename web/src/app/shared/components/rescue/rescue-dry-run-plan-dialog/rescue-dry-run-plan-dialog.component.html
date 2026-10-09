@@ -4,28 +4,25 @@
     (click)="onBackdropClick()"
   >
     <div
-      class="relative w-full max-w-3xl rounded-2xl border p-5 shadow-xl"
-      [class.border-dark-border]="isDark()"
-      [class.bg-dark-surface]="isDark()"
-      [class.border-light-border]="!isDark()"
-      [class.bg-light-surface]="!isDark()"
+      class="relative w-full max-w-3xl rounded-2xl border p-5 shadow-xl border-base bg-surface"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'RESCUE.DRY_RUN_TITLE' | translate"
       (click)="onDialogClick($event)"
     >
       <h4
-        class="text-base font-semibold"
-        [class.text-dark-text-bright]="isDark()"
-        [class.text-light-text-bright]="!isDark()"
+        class="text-base font-semibold text-fg-strong"
       >
-        Rescue Lite Dry Run Plan
+        {{ 'RESCUE.DRY_RUN_TITLE' | translate }}
       </h4>
-      <p class="mt-2 font-mono text-xs" [class.text-dark-text]="isDark()" [class.text-light-text]="!isDark()">
+      <p class="mt-2 font-mono text-xs text-fg"  >
         <span class="text-accent">rom:</span> {{ activePlan.romName }}
         <span class="mx-1 opacity-30">|</span>
         <span class="text-accent">source:</span> {{ activePlan.commandSource }}
         <span class="mx-1 opacity-30">|</span>
         <span class="text-accent">wipe:</span> {{ activePlan.dataReset === 'yes' ? 'YES' : 'NO' }}
         <span class="mx-1 opacity-30">|</span>
-        <span class="text-accent">transport:</span> {{ flashTransportLabel(activePlan.flashTransport) }}
+        <span class="text-accent">transport:</span> {{ flashTransportLabel(activePlan.flashTransport) | translate }}
         @if (activePlan.flashTransport === 'qdl') {
           <span class="mx-1 opacity-30">|</span>
           <span class="text-accent">storage:</span> {{ activePlan.qdlStorage.toUpperCase() }}
@@ -38,22 +35,16 @@
 
       @if (activePlan.localFilePath) {
         <p
-          class="mt-1 break-all font-mono text-xs"
-          [class.text-dark-text-dim]="isDark()"
-          [class.text-light-text-dim]="!isDark()"
+          class="mt-1 break-all font-mono text-xs text-fg-dim"
         >
           {{ activePlan.localFilePath }}
         </p>
       }
 
       <div
-        class="mt-4 max-h-[55vh] overflow-auto rounded-lg border p-3 font-mono text-xs"
-        [class.border-dark-border]="isDark()"
-        [class.bg-dark-elevated]="isDark()"
-        [class.border-light-border]="!isDark()"
-        [class.bg-light-bg]="!isDark()"
-        [class.text-dark-text]="isDark()"
-        [class.text-light-text]="!isDark()"
+        class="mt-4 max-h-[55vh] overflow-auto rounded-lg border p-3 font-mono text-xs border-base text-fg"
+        [class.bg-elevated]="isDark()"
+        [class.bg-canvas]="!isDark()"
       >
         @for (command of activePlan.commands; track $index) {
           <p class="break-all">
@@ -71,7 +62,11 @@
           [disabled]="!hasCommands()"
           (clicked)="onCopyCommands()"
         />
-        <app-rescue-dialog-button label="Close" variant="primary" (clicked)="onBackdropClick()" />
+        <app-rescue-dialog-button
+          [label]="'COMMON.CLOSE' | translate"
+          variant="primary"
+          (clicked)="onBackdropClick()"
+        />
       </div>
     </div>
   </div>

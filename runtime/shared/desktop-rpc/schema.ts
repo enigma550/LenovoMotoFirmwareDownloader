@@ -51,130 +51,142 @@ import type {
   ResumeDownloadRequest,
   RpcRequest,
   SetDesktopPromptPreferenceRequest,
+  StartProjectUpdateRequest,
   WindowsMtkDriverInstallResponse,
   WindowsQdloaderDriverInstallResponse,
   WindowsQdloaderDriverStatusResponse,
   WindowsSpdDriverInstallResponse,
 } from './types.ts';
 
+export type DesktopRpcBunRequests = {
+  authStart: RpcRequest<undefined, DesktopApiResponse<'startAuth'>>;
+  authStartInApp: RpcRequest<undefined, DesktopApiResponse<'startInAppAuth'>>;
+  authComplete: RpcRequest<AuthCompleteRequest, DesktopApiResponse<'completeAuth'>>;
+  consumePendingAuthCallback: RpcRequest<
+    undefined,
+    DesktopApiResponse<'consumePendingAuthCallback'>
+  >;
+  getStoredAuthState: RpcRequest<undefined, DesktopApiResponse<'getStoredAuthState'>>;
+  authWithStoredToken: RpcRequest<undefined, DesktopApiResponse<'authWithStoredToken'>>;
+  ping: RpcRequest<undefined, BridgePingResponse>;
+  getCatalogModels: RpcRequest<GetCatalogModelsRequest, DesktopApiResponse<'getCatalogModels'>>;
+  lookupConnectedDeviceFirmware: RpcRequest<
+    undefined,
+    DesktopApiResponse<'lookupConnectedDeviceFirmware'>
+  >;
+  lookupConnectedDeviceFirmwareFromDeviceInfo: RpcRequest<
+    LookupConnectedDeviceFirmwareFromDeviceInfoRequest,
+    DesktopApiResponse<'lookupConnectedDeviceFirmwareFromDeviceInfo'>
+  >;
+  discoverCountryOptions: RpcRequest<
+    DiscoverCountryOptionsRequest,
+    DesktopApiResponse<'discoverCountryOptions'>
+  >;
+  lookupCatalogManual: RpcRequest<
+    LookupCatalogManualRequest,
+    DesktopApiResponse<'lookupCatalogManual'>
+  >;
+  getReadSupportHints: RpcRequest<
+    ReadSupportHintsRequest,
+    DesktopApiResponse<'getReadSupportHints'>
+  >;
+  lookupReadSupportByImei: RpcRequest<
+    LookupReadSupportByImeiRequest,
+    DesktopApiResponse<'lookupReadSupportByImei'>
+  >;
+  lookupReadSupportBySn: RpcRequest<
+    LookupReadSupportBySnRequest,
+    DesktopApiResponse<'lookupReadSupportBySn'>
+  >;
+  lookupReadSupportByParams: RpcRequest<
+    LookupReadSupportByParamsRequest,
+    DesktopApiResponse<'lookupReadSupportByParams'>
+  >;
+  downloadFirmware: RpcRequest<DownloadFirmwareRequest, DesktopApiResponse<'downloadFirmware'>>;
+  rescueLiteFirmware: RpcRequest<
+    RescueLiteFirmwareRequest,
+    DesktopApiResponse<'rescueLiteFirmware'>
+  >;
+  rescueLiteFirmwareFromLocal: RpcRequest<
+    RescueLiteFirmwareFromLocalRequest,
+    DesktopApiResponse<'rescueLiteFirmwareFromLocal'>
+  >;
+  getPlayStoreStatus: RpcRequest<undefined, PlayStoreStatusResponse>;
+  listPlayStoreDownloads: RpcRequest<undefined, PlayStoreDownloadsResponse>;
+  searchPlayStoreApps: RpcRequest<PlayStoreSearchRequest, PlayStoreSearchResponse>;
+  getPlayStoreAppDetails: RpcRequest<PlayStoreAppDetailsRequest, PlayStoreAppDetailsResponse>;
+  downloadPlayStoreApp: RpcRequest<PlayStoreDownloadRequest, PlayStoreDownloadResponse>;
+  deletePlayStoreDownload: RpcRequest<
+    PlayStoreDeleteDownloadRequest,
+    PlayStoreDeleteDownloadResponse
+  >;
+  installPlayStoreApp: RpcRequest<PlayStoreInstallRequest, PlayStoreInstallResponse>;
+  cancelDownload: RpcRequest<CancelDownloadRequest, DesktopApiResponse<'cancelDownload'>>;
+  listLocalDownloadedFiles: RpcRequest<undefined, LocalDownloadedFilesResponse>;
+  listBackupRestoreSnapshots: RpcRequest<undefined, BackupRestoreSnapshotsResponse>;
+  deleteBackupSnapshot: RpcRequest<DeleteBackupSnapshotRequest, DeleteBackupSnapshotResponse>;
+  scanConnectedBackupPreview: RpcRequest<undefined, ConnectedBackupPreviewResponse>;
+  getConnectedBackupPreviewProgress: RpcRequest<undefined, ConnectedBackupPreviewProgressResponse>;
+  cancelConnectedBackupProcess: RpcRequest<undefined, { ok: boolean; detail: string }>;
+  backupConnectedDevice: RpcRequest<BackupConnectedDeviceRequest, BackupConnectedDeviceResponse>;
+  restoreBackupSnapshot: RpcRequest<RestoreBackupSnapshotRequest, RestoreBackupSnapshotResponse>;
+  extractLocalFirmware: RpcRequest<ExtractLocalFirmwareRequest, ExtractLocalFirmwareResponse>;
+  readLocalFileContent: RpcRequest<ReadLocalFileContentRequest, ReadLocalFileContentResponse>;
+  attachLocalRecipeFromModel: RpcRequest<
+    AttachLocalRecipeFromModelRequest,
+    AttachLocalRecipeResponse
+  >;
+  attachLocalRecipeMetadata: RpcRequest<
+    AttachLocalRecipeMetadataRequest,
+    AttachLocalRecipeResponse
+  >;
+  checkDesktopIntegration: RpcRequest<undefined, DesktopApiResponse<'checkDesktopIntegration'>>;
+  createDesktopIntegration: RpcRequest<undefined, DesktopApiResponse<'createDesktopIntegration'>>;
+  getDesktopPromptPreference: RpcRequest<
+    undefined,
+    DesktopApiResponse<'getDesktopPromptPreference'>
+  >;
+  setDesktopPromptPreference: RpcRequest<
+    SetDesktopPromptPreferenceRequest,
+    DesktopApiResponse<'setDesktopPromptPreference'>
+  >;
+  getAppInfo: RpcRequest<undefined, DesktopApiResponse<'getAppInfo'>>;
+  openUrl: RpcRequest<{ url: string }, DesktopApiResponse<'openUrl'>>;
+  switchSoftwareFixProtocolToLmfd: RpcRequest<
+    undefined,
+    DesktopApiResponse<'switchSoftwareFixProtocolToLmfd'>
+  >;
+  restoreSoftwareFixProtocolHandler: RpcRequest<
+    undefined,
+    DesktopApiResponse<'restoreSoftwareFixProtocolHandler'>
+  >;
+  checkFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<'checkFrameworkUpdate'>>;
+  downloadFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<'downloadFrameworkUpdate'>>;
+  applyFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<'applyFrameworkUpdate'>>;
+  checkProjectUpdate: RpcRequest<undefined, DesktopApiResponse<'checkProjectUpdate'>>;
+  startProjectUpdate: RpcRequest<
+    StartProjectUpdateRequest,
+    DesktopApiResponse<'startProjectUpdate'>
+  >;
+  cancelProjectUpdate: RpcRequest<undefined, DesktopApiResponse<'cancelProjectUpdate'>>;
+  getProjectUpdateLog: RpcRequest<undefined, DesktopApiResponse<'getProjectUpdateLog'>>;
+  getWindowsQdloaderDriverStatus: RpcRequest<undefined, WindowsQdloaderDriverStatusResponse>;
+  installWindowsQdloaderDriver: RpcRequest<undefined, WindowsQdloaderDriverInstallResponse>;
+  installWindowsSpdDriver: RpcRequest<undefined, WindowsSpdDriverInstallResponse>;
+  installWindowsMtkDriver: RpcRequest<undefined, WindowsMtkDriverInstallResponse>;
+  getLinuxUdevStatus: RpcRequest<undefined, DesktopApiResponse<'getLinuxUdevStatus'>>;
+  installLinuxUdevRules: RpcRequest<undefined, DesktopApiResponse<'installLinuxUdevRules'>>;
+  getStorageUsage: RpcRequest<undefined, DesktopApiResponse<'getStorageUsage'>>;
+  cleanExtractedFirmwares: RpcRequest<undefined, DesktopApiResponse<'cleanExtractedFirmwares'>>;
+  probeFastbootDeviceHealth: RpcRequest<undefined, DesktopApiResponse<'probeFastbootDeviceHealth'>>;
+  deleteLocalFile: RpcRequest<DeleteLocalFileRequest, DesktopApiResponse<'deleteLocalFile'>>;
+  pauseDownload: RpcRequest<PauseDownloadRequest, DesktopApiResponse<'pauseDownload'>>;
+  resumeDownload: RpcRequest<ResumeDownloadRequest, DesktopApiResponse<'resumeDownload'>>;
+};
+
 export type DesktopRpcSchema = DesktopRpcBaseSchema & {
   bun: RPCSchema<{
-    requests: {
-      authStart: RpcRequest<undefined, DesktopApiResponse<'startAuth'>>;
-      authStartInApp: RpcRequest<undefined, DesktopApiResponse<'startInAppAuth'>>;
-      authComplete: RpcRequest<AuthCompleteRequest, DesktopApiResponse<'completeAuth'>>;
-      consumePendingAuthCallback: RpcRequest<
-        undefined,
-        DesktopApiResponse<'consumePendingAuthCallback'>
-      >;
-      getStoredAuthState: RpcRequest<undefined, DesktopApiResponse<'getStoredAuthState'>>;
-      authWithStoredToken: RpcRequest<undefined, DesktopApiResponse<'authWithStoredToken'>>;
-      ping: RpcRequest<undefined, BridgePingResponse>;
-      getCatalogModels: RpcRequest<GetCatalogModelsRequest, DesktopApiResponse<'getCatalogModels'>>;
-      lookupConnectedDeviceFirmware: RpcRequest<
-        undefined,
-        DesktopApiResponse<'lookupConnectedDeviceFirmware'>
-      >;
-      lookupConnectedDeviceFirmwareFromDeviceInfo: RpcRequest<
-        LookupConnectedDeviceFirmwareFromDeviceInfoRequest,
-        DesktopApiResponse<'lookupConnectedDeviceFirmwareFromDeviceInfo'>
-      >;
-      discoverCountryOptions: RpcRequest<
-        DiscoverCountryOptionsRequest,
-        DesktopApiResponse<'discoverCountryOptions'>
-      >;
-      lookupCatalogManual: RpcRequest<
-        LookupCatalogManualRequest,
-        DesktopApiResponse<'lookupCatalogManual'>
-      >;
-      getReadSupportHints: RpcRequest<
-        ReadSupportHintsRequest,
-        DesktopApiResponse<'getReadSupportHints'>
-      >;
-      lookupReadSupportByImei: RpcRequest<
-        LookupReadSupportByImeiRequest,
-        DesktopApiResponse<'lookupReadSupportByImei'>
-      >;
-      lookupReadSupportBySn: RpcRequest<
-        LookupReadSupportBySnRequest,
-        DesktopApiResponse<'lookupReadSupportBySn'>
-      >;
-      lookupReadSupportByParams: RpcRequest<
-        LookupReadSupportByParamsRequest,
-        DesktopApiResponse<'lookupReadSupportByParams'>
-      >;
-      downloadFirmware: RpcRequest<DownloadFirmwareRequest, DesktopApiResponse<'downloadFirmware'>>;
-      rescueLiteFirmware: RpcRequest<
-        RescueLiteFirmwareRequest,
-        DesktopApiResponse<'rescueLiteFirmware'>
-      >;
-      rescueLiteFirmwareFromLocal: RpcRequest<
-        RescueLiteFirmwareFromLocalRequest,
-        DesktopApiResponse<'rescueLiteFirmwareFromLocal'>
-      >;
-      getPlayStoreStatus: RpcRequest<undefined, PlayStoreStatusResponse>;
-      listPlayStoreDownloads: RpcRequest<undefined, PlayStoreDownloadsResponse>;
-      searchPlayStoreApps: RpcRequest<PlayStoreSearchRequest, PlayStoreSearchResponse>;
-      getPlayStoreAppDetails: RpcRequest<PlayStoreAppDetailsRequest, PlayStoreAppDetailsResponse>;
-      downloadPlayStoreApp: RpcRequest<PlayStoreDownloadRequest, PlayStoreDownloadResponse>;
-      deletePlayStoreDownload: RpcRequest<
-        PlayStoreDeleteDownloadRequest,
-        PlayStoreDeleteDownloadResponse
-      >;
-      installPlayStoreApp: RpcRequest<PlayStoreInstallRequest, PlayStoreInstallResponse>;
-      cancelDownload: RpcRequest<CancelDownloadRequest, DesktopApiResponse<'cancelDownload'>>;
-      listLocalDownloadedFiles: RpcRequest<undefined, LocalDownloadedFilesResponse>;
-      listBackupRestoreSnapshots: RpcRequest<undefined, BackupRestoreSnapshotsResponse>;
-      deleteBackupSnapshot: RpcRequest<DeleteBackupSnapshotRequest, DeleteBackupSnapshotResponse>;
-      scanConnectedBackupPreview: RpcRequest<undefined, ConnectedBackupPreviewResponse>;
-      getConnectedBackupPreviewProgress: RpcRequest<
-        undefined,
-        ConnectedBackupPreviewProgressResponse
-      >;
-      cancelConnectedBackupProcess: RpcRequest<undefined, { ok: boolean; detail: string }>;
-      backupConnectedDevice: RpcRequest<
-        BackupConnectedDeviceRequest,
-        BackupConnectedDeviceResponse
-      >;
-      restoreBackupSnapshot: RpcRequest<
-        RestoreBackupSnapshotRequest,
-        RestoreBackupSnapshotResponse
-      >;
-      extractLocalFirmware: RpcRequest<ExtractLocalFirmwareRequest, ExtractLocalFirmwareResponse>;
-      readLocalFileContent: RpcRequest<ReadLocalFileContentRequest, ReadLocalFileContentResponse>;
-      attachLocalRecipeFromModel: RpcRequest<
-        AttachLocalRecipeFromModelRequest,
-        AttachLocalRecipeResponse
-      >;
-      attachLocalRecipeMetadata: RpcRequest<
-        AttachLocalRecipeMetadataRequest,
-        AttachLocalRecipeResponse
-      >;
-      checkDesktopIntegration: RpcRequest<undefined, DesktopApiResponse<'checkDesktopIntegration'>>;
-      createDesktopIntegration: RpcRequest<
-        undefined,
-        DesktopApiResponse<'createDesktopIntegration'>
-      >;
-      getDesktopPromptPreference: RpcRequest<
-        undefined,
-        DesktopApiResponse<'getDesktopPromptPreference'>
-      >;
-      setDesktopPromptPreference: RpcRequest<
-        SetDesktopPromptPreferenceRequest,
-        DesktopApiResponse<'setDesktopPromptPreference'>
-      >;
-      getAppInfo: RpcRequest<undefined, DesktopApiResponse<'getAppInfo'>>;
-      openUrl: RpcRequest<{ url: string }, DesktopApiResponse<'openUrl'>>;
-      downloadFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<'downloadFrameworkUpdate'>>;
-      applyFrameworkUpdate: RpcRequest<undefined, DesktopApiResponse<'applyFrameworkUpdate'>>;
-      getWindowsQdloaderDriverStatus: RpcRequest<undefined, WindowsQdloaderDriverStatusResponse>;
-      installWindowsQdloaderDriver: RpcRequest<undefined, WindowsQdloaderDriverInstallResponse>;
-      installWindowsSpdDriver: RpcRequest<undefined, WindowsSpdDriverInstallResponse>;
-      installWindowsMtkDriver: RpcRequest<undefined, WindowsMtkDriverInstallResponse>;
-      deleteLocalFile: RpcRequest<DeleteLocalFileRequest, DesktopApiResponse<'deleteLocalFile'>>;
-      pauseDownload: RpcRequest<PauseDownloadRequest, DesktopApiResponse<'pauseDownload'>>;
-      resumeDownload: RpcRequest<ResumeDownloadRequest, DesktopApiResponse<'resumeDownload'>>;
-    };
+    requests: DesktopRpcBunRequests;
   }>;
   webview: DesktopRpcWebviewSchema;
 };

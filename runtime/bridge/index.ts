@@ -4,10 +4,14 @@ import {
   type DesktopBridgeWindowGlobals,
 } from '../../core/contracts/desktop/bridge.ts';
 import type { DesktopRpcInvoker } from '../../core/contracts/desktop/client.ts';
-import type { DownloadProgressMessage } from '../../core/contracts/desktop/entries.ts';
+import type {
+  DownloadProgressMessage,
+  ProjectUpdateProgressMessage,
+} from '../../core/contracts/desktop/entries.ts';
 import type { DesktopRpcSchema } from '../shared/desktop-rpc';
 
 const DOWNLOAD_PROGRESS_EVENT_NAME = 'desktop-download-progress';
+const UPDATE_PROGRESS_EVENT_NAME = 'desktop-update-progress';
 const MAX_INIT_ATTEMPTS = 600;
 const RETRY_DELAY_MS = 50;
 const DEFAULT_RPC_TIMEOUT_MS = 120_000;
@@ -29,8 +33,16 @@ function dispatchDownloadProgress(payload: DownloadProgressMessage) {
   window.dispatchEvent(event);
 }
 
+function dispatchUpdateProgress(payload: ProjectUpdateProgressMessage) {
+  const event = new CustomEvent<ProjectUpdateProgressMessage>(UPDATE_PROGRESS_EVENT_NAME, {
+    detail: payload,
+  });
+  window.dispatchEvent(event);
+}
+
 const bunBridgeRpcClient = createDesktopRpcClient({
   downloadProgressEventName: DOWNLOAD_PROGRESS_EVENT_NAME,
+  updateProgressEventName: UPDATE_PROGRESS_EVENT_NAME,
   defaultRpcTimeoutMs: DEFAULT_RPC_TIMEOUT_MS,
   downloadRpcTimeoutMs: DOWNLOAD_RPC_TIMEOUT_MS,
 });
@@ -53,6 +65,7 @@ async function setupDesktopApiViaElectroview() {
       requests: {},
       messages: {
         downloadProgress: dispatchDownloadProgress,
+        updateProgress: dispatchUpdateProgress,
       },
     },
   });

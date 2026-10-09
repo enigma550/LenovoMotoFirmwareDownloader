@@ -4,42 +4,35 @@
     (click)="onBackdropClick()"
   >
     <div
-      class="relative w-full max-w-xl rounded-2xl border p-5 shadow-xl"
-      [class.border-dark-border]="isDark()"
-      [class.bg-dark-surface]="isDark()"
-      [class.border-light-border]="!isDark()"
-      [class.bg-light-surface]="!isDark()"
+      class="relative w-full max-w-xl rounded-2xl border p-5 shadow-xl border-base bg-surface"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="title()"
       (click)="onDialogClick($event)"
     >
       <h4
-        class="text-base font-semibold"
-        [class.text-dark-text-bright]="isDark()"
-        [class.text-light-text-bright]="!isDark()"
+        class="text-base font-semibold text-fg-strong"
       >
-        {{ title() }}
+        {{ dryRun() ? ('RESCUE.DRY_RUN_TITLE' | translate) : ('RESCUE.TITLE' | translate) }}
       </h4>
 
-      <p class="mt-2 text-sm" [class.text-dark-text]="isDark()" [class.text-light-text]="!isDark()">
+      <p class="mt-2 text-sm text-fg"  >
         {{ description() }}
       </p>
 
       @if (targetLabel()) {
         <p
-          class="mt-2 break-all font-mono text-xs"
-          [class.text-dark-text-dim]="isDark()"
-          [class.text-light-text-dim]="!isDark()"
+          class="mt-2 break-all font-mono text-xs text-fg-dim"
         >
           {{ targetLabel() }}
         </p>
       }
 
-      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">Flash transport</p>
+      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">{{ 'RESCUE.TRANSPORT' | translate }}</p>
       <p
-        class="mt-1 text-xs"
-        [class.text-dark-text-dim]="isDark()"
-        [class.text-light-text-dim]="!isDark()"
+        class="mt-1 text-xs text-fg-dim"
       >
-        Choose command backend for Rescue Lite execution.
+        {{ 'RESCUE.TRANSPORT_DESC' | translate }}
       </p>
 
       <div class="mt-3 flex flex-wrap gap-2">
@@ -50,7 +43,13 @@
           (clicked)="onSelectFlashTransport('fastboot')"
         />
         <app-ui-action-button
-          label="QDL"
+          label="MediaTek"
+          [isDark]="isDark()"
+          [active]="flashTransport() === 'mediatek'"
+          (clicked)="onSelectFlashTransport('mediatek')"
+        />
+        <app-ui-action-button
+          label="QDL (Qualcomm)"
           [isDark]="isDark()"
           [active]="flashTransport() === 'qdl'"
           (clicked)="onSelectFlashTransport('qdl')"
@@ -61,36 +60,121 @@
           [active]="flashTransport() === 'unisoc'"
           (clicked)="onSelectFlashTransport('unisoc')"
         />
-        <app-ui-action-button
-          label="MediaTek"
-          [isDark]="isDark()"
-          [active]="false"
-          [disabled]="true"
-        />
       </div>
 
-      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">Data reset</p>
+      @if (flashTransport() === 'fastboot') {
+        <div
+          class="mt-4 rounded-xl border p-3.5 transition-colors border-base"
+          [class.bg-elevated]="isDark()"
+          [class.bg-surface]="!isDark()"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wide text-accent">
+              {{ 'PREFLIGHT.TITLE' | translate }}
+            </span>
+            <button
+              type="button"
+              class="flex cursor-pointer items-center gap-1 text-xs text-accent hover:underline disabled:opacity-50"
+              [disabled]="probingHealth()"
+              (click)="checkDeviceHealth()"
+            >
+              <span>{{ probingHealth() ? '⏳' : '🔄' }}</span>
+              <span>{{ 'PREFLIGHT.CHECK_BTN' | translate }}</span>
+            </button>
+          </div>
+
+          @if (deviceHealth(); as health) {
+            @if (health.connected) {
+              <div class="mt-2.5 grid grid-cols-2 gap-2 text-xs">
+                <div
+                  class="rounded-lg border p-2 border-base"
+                  [class.bg-surface]="isDark()"
+                  [class.bg-elevated]="!isDark()"
+                >
+                  <span class="block text-[11px] font-medium opacity-75">
+                    {{ 'PREFLIGHT.CONNECTED_DEVICE' | translate }}
+                  </span>
+                  <span
+                    class="font-mono font-semibold text-fg-strong"
+                  >
+                    {{ health.product || health.serialNumber || 'Fastboot' }}
+                  </span>
+                  @if (health.serialNumber && health.product) {
+                    <span class="block truncate font-mono text-[10px] opacity-60">{{ health.serialNumber }}</span>
+                  }
+                </div>
+
+                <div
+                  class="rounded-lg border p-2 border-base"
+                  [class.bg-surface]="isDark()"
+                  [class.bg-elevated]="!isDark()"
+                >
+                  <span class="block text-[11px] font-medium opacity-75">
+                    {{ 'PREFLIGHT.BATTERY' | translate }}
+                  </span>
+                  <div class="flex items-center gap-1.5 font-semibold">
+                    @if (health.batteryLevel !== undefined) {
+                      <span
+                        [class.text-success]="health.batteryStatus === 'ok'"
+                        [class.text-warning]="health.batteryStatus === 'low'"
+                      >
+                        {{ health.batteryLevel }}%
+                      </span>
+                      @if (health.batteryStatus === 'ok') {
+                        <span class="font-normal text-[10px] text-success">
+                          ({{ 'PREFLIGHT.BATTERY_OK' | translate }})
+                        </span>
+                      } @else if (health.batteryStatus === 'low') {
+                        <span class="font-normal text-[10px] text-warning">
+                          ({{ 'PREFLIGHT.BATTERY_LOW' | translate }})
+                        </span>
+                      }
+                    } @else if (health.batteryVoltage) {
+                      <span class="text-success">{{ health.batteryVoltage }}</span>
+                    } @else {
+                      <span class="opacity-60">N/A</span>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              @if (health.batteryStatus === 'low') {
+                <div class="mt-2.5 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-400">
+                  <span>⚠️</span>
+                  <span>{{ 'PREFLIGHT.BATTERY_WARN' | translate }}</span>
+                </div>
+              }
+            } @else {
+              <p
+                class="mt-2 text-xs text-fg-dim"
+              >
+                ℹ️ {{ 'PREFLIGHT.NOT_CONNECTED' | translate }}
+              </p>
+            }
+          }
+        </div>
+      }
+
+      <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-accent">{{ 'RESCUE.DATA_RESET' | translate }}</p>
       <p
-        class="mt-1 text-xs"
-        [class.text-dark-text-dim]="isDark()"
-        [class.text-light-text-dim]="!isDark()"
+        class="mt-1 text-xs text-fg-dim"
       >
         @if (dryRun()) {
-          Choose whether wipe commands should be included in the dry-run command plan.
+          {{ 'RESCUE.DATA_RESET_DESC_DRY' | translate }}
         } @else {
-          Choose whether user data should be wiped during rescue.
+          {{ 'RESCUE.DATA_RESET_DESC_LIVE' | translate }}
         }
       </p>
 
       <div class="mt-3 flex flex-wrap gap-2">
         <app-ui-action-button
-          label="Yes"
+          [label]="'RESCUE.YES' | translate"
           [isDark]="isDark()"
           [active]="dataReset() === 'yes'"
           (clicked)="onSelectDataReset('yes')"
         />
         <app-ui-action-button
-          label="No"
+          [label]="'RESCUE.NO' | translate"
           [isDark]="isDark()"
           [active]="dataReset() === 'no'"
           (clicked)="onSelectDataReset('no')"
@@ -99,7 +183,7 @@
 
       @if (flashTransport() === 'qdl') {
         <div class="mt-4 space-y-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-accent">QDL storage</p>
+          <p class="text-xs font-semibold uppercase tracking-wide text-accent">{{ 'RESCUE.STORAGE' | translate }}</p>
 
           <div class="flex flex-wrap gap-2">
             <app-ui-action-button
@@ -123,22 +207,16 @@
           </div>
 
           <label
-            class="block text-xs uppercase tracking-wide"
-            [class.text-dark-text-dim]="isDark()"
-            [class.text-light-text-dim]="!isDark()"
+            class="block text-xs uppercase tracking-wide text-fg-dim"
           >
-            Board serial
+            {{ 'RESCUE.BOARD_SERIAL' | translate }}
           </label>
           <input
-            class="w-full rounded-lg border px-3 py-2 font-mono text-sm transition-colors duration-200"
-            [class.border-dark-border]="isDark()"
-            [class.bg-dark-elevated]="isDark()"
-            [class.text-dark-text]="isDark()"
-            [class.border-light-border]="!isDark()"
-            [class.bg-light-surface]="!isDark()"
-            [class.text-light-text]="!isDark()"
+            class="w-full rounded-lg border px-3 py-2 font-mono text-sm transition-colors duration-200 border-base text-fg"
+            [class.bg-elevated]="isDark()"
+            [class.bg-surface]="!isDark()"
             type="text"
-            placeholder="Optional"
+            [placeholder]="'RESCUE.OPTIONAL' | translate"
             [value]="qdlSerial()"
             (input)="onQdlSerialInput($event)"
           />
@@ -146,18 +224,18 @@
           @if (showWindowsDriverInstall()) {
             <app-rescue-driver-install-card
               [isDark]="isDark()"
-              title="Qualcomm driver"
-              description="Install QDLoader HS-USB 9008 driver before using QDL rescue. (Might require reboot)"
+              [title]="'DRIVER.QUALCOMM_TITLE' | translate"
+              [description]="'DRIVER.QUALCOMM_DESC' | translate"
               [buttonLabel]="
                 qdloaderDriverInstallBusy()
-                  ? 'Installing driver...'
+                  ? ('DRIVER.INSTALLING' | translate)
                   : qdloaderDriverInstalled()
-                    ? 'Driver already installed'
-                    : 'Install QDLoader Driver'
+                    ? ('DRIVER.INSTALLED' | translate)
+                    : ('DRIVER.INSTALL_BTN' | translate)
               "
               [buttonDisabled]="qdloaderDriverInstallBusy() || qdloaderDriverInstalled()"
               [installed]="qdloaderDriverInstalled()"
-              installedNote="QDLoader driver package detected as installed."
+              [installedNote]="'DRIVER.INSTALLED' | translate"
               (install)="onInstallWindowsQdloaderDriver()"
             />
           }
@@ -168,18 +246,18 @@
         <div class="mt-4 space-y-3">
           <app-rescue-driver-install-card
             [isDark]="isDark()"
-            title="Unisoc driver"
-            description="Install SPD USB driver before using Unisoc PAC rescue. (Might require reboot)"
+            [title]="'DRIVER.UNISOC_TITLE' | translate"
+            [description]="'DRIVER.UNISOC_DESC' | translate"
             [buttonLabel]="
               spdDriverInstallBusy()
-                ? 'Installing driver...'
+                ? ('DRIVER.INSTALLING' | translate)
                 : spdDriverInstalled()
-                  ? 'Driver installed in this session'
-                  : 'Install SPD Driver'
+                  ? ('DRIVER.INSTALLED' | translate)
+                  : ('DRIVER.INSTALL_BTN' | translate)
             "
             [buttonDisabled]="spdDriverInstallBusy() || spdDriverInstalled()"
             [installed]="spdDriverInstalled()"
-            installedNote="SPD driver installed in this session."
+            [installedNote]="'DRIVER.INSTALLED' | translate"
             (install)="onInstallWindowsSpdDriver()"
           />
         </div>
@@ -189,18 +267,18 @@
         <div class="mt-4 space-y-3">
           <app-rescue-driver-install-card
             [isDark]="isDark()"
-            title="MediaTek driver"
-            description="Install MediaTek USB driver before using MediaTek rescue. (Might require reboot)"
+            [title]="'DRIVER.MEDIATEK_TITLE' | translate"
+            [description]="'DRIVER.MEDIATEK_DESC' | translate"
             [buttonLabel]="
               mtkDriverInstallBusy()
-                ? 'Installing driver...'
+                ? ('DRIVER.INSTALLING' | translate)
                 : mtkDriverInstalled()
-                  ? 'Driver installed in this session'
-                  : 'Install MediaTek Driver'
+                  ? ('DRIVER.INSTALLED' | translate)
+                  : ('DRIVER.INSTALL_BTN' | translate)
             "
             [buttonDisabled]="mtkDriverInstallBusy() || mtkDriverInstalled()"
             [installed]="mtkDriverInstalled()"
-            installedNote="MediaTek driver installed in this session."
+            [installedNote]="'DRIVER.INSTALLED' | translate"
             (install)="onInstallWindowsMtkDriver()"
           />
         </div>
@@ -208,12 +286,12 @@
 
       <div class="mt-5 flex items-center justify-end gap-2">
         <app-rescue-dialog-button
-          label="Cancel"
+          [label]="'RESCUE.CANCEL' | translate"
           [isDark]="isDark()"
           variant="secondary"
           (clicked)="onBackdropClick()"
         />
-        <app-rescue-dialog-button label="Continue" variant="primary" (clicked)="onConfirm()" />
+        <app-rescue-dialog-button [label]="'RESCUE.CONTINUE' | translate" variant="primary" (clicked)="onConfirm()" />
       </div>
     </div>
   </div>

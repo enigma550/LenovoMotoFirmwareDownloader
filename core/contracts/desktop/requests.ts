@@ -21,7 +21,10 @@ import type {
   BackupRestoreSnapshotsResponse,
   BridgePingResponse,
   CancelDownloadResponse,
+  CancelProjectUpdateResponse,
   CatalogModelsResponse,
+  CheckProjectUpdateResponse,
+  CleanStorageResponse,
   ConnectedBackupPreviewProgressResponse,
   ConnectedBackupPreviewResponse,
   ConnectedLookupResponse,
@@ -29,6 +32,10 @@ import type {
   DeleteBackupSnapshotResponse,
   DownloadFirmwareResponse,
   ExtractLocalFirmwareResponse,
+  FastbootDeviceHealthResponse,
+  GetProjectUpdateLogResponse,
+  LinuxUdevInstallResponse,
+  LinuxUdevStatusResponse,
   LocalDownloadedFilesResponse,
   ManualCatalogLookupResponse,
   PendingAuthCallbackResponse,
@@ -44,6 +51,8 @@ import type {
   ReadSupportLookupResponse,
   RescueLiteFirmwareResponse,
   RestoreBackupSnapshotResponse,
+  StartProjectUpdateResponse,
+  StorageUsageResponse,
   StoredAuthStateResponse,
   WindowsMtkDriverInstallResponse,
   WindowsQdloaderDriverInstallResponse,
@@ -53,6 +62,10 @@ import type {
 
 export interface SetDesktopPromptPreferenceRequest {
   ask: boolean;
+}
+
+export interface StartProjectUpdateRequest {
+  backupLocalChanges?: boolean;
 }
 
 export interface BackupConnectedDeviceRequest {
@@ -350,10 +363,19 @@ export interface DesktopApi {
   checkFrameworkUpdate: () => Promise<FrameworkUpdateInfo>;
   downloadFrameworkUpdate: () => Promise<void>;
   applyFrameworkUpdate: () => Promise<void>;
+  checkProjectUpdate: () => Promise<CheckProjectUpdateResponse>;
+  startProjectUpdate: (payload?: StartProjectUpdateRequest) => Promise<StartProjectUpdateResponse>;
+  cancelProjectUpdate: () => Promise<CancelProjectUpdateResponse>;
+  getProjectUpdateLog: () => Promise<GetProjectUpdateLogResponse>;
   getWindowsQdloaderDriverStatus: () => Promise<WindowsQdloaderDriverStatusResponse>;
   installWindowsQdloaderDriver: () => Promise<WindowsQdloaderDriverInstallResponse>;
   installWindowsSpdDriver: () => Promise<WindowsSpdDriverInstallResponse>;
   installWindowsMtkDriver: () => Promise<WindowsMtkDriverInstallResponse>;
+  getLinuxUdevStatus: () => Promise<LinuxUdevStatusResponse>;
+  installLinuxUdevRules: () => Promise<LinuxUdevInstallResponse>;
+  getStorageUsage: () => Promise<StorageUsageResponse>;
+  cleanExtractedFirmwares: () => Promise<CleanStorageResponse>;
+  probeFastbootDeviceHealth: () => Promise<FastbootDeviceHealthResponse>;
   deleteLocalFile: (payload: DeleteLocalFileRequest) => Promise<{ ok: boolean; error?: string }>;
   pauseDownload: (payload: PauseDownloadRequest) => Promise<{ ok: boolean; error?: string }>;
   resumeDownload: (payload: ResumeDownloadRequest) => Promise<DownloadFirmwareResponse>;

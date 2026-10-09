@@ -1,4 +1,5 @@
 import type { Adb } from '@yume-chan/adb';
+import { getLogger } from '../../../core/common/logger.ts';
 import type { DeviceInfo } from '../../../core/domain/device/info.ts';
 import type {
   ConnectedDeviceConnection,
@@ -6,6 +7,8 @@ import type {
   RuntimeConnectedDeviceInfo,
 } from './device-transport-types.ts';
 import { TangoDaemonUsbTransport } from './transports/tango-daemon-usb.transport.ts';
+
+const log = getLogger('connected-device');
 
 type ConnectedDeviceOperationOptions = {
   timeoutMs?: number;
@@ -59,7 +62,7 @@ function logConnectedDeviceOperation(
   extra?: string,
 ) {
   const suffix = extra ? ` ${extra}` : '';
-  console.error(`[DEVICE ${operationId}] ${phase} ${label}${suffix}`);
+  log.error(`[DEVICE ${operationId}] ${phase} ${label}${suffix}`);
 }
 
 function parseGetPropOutput(output: string) {

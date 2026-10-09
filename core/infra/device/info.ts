@@ -1,6 +1,9 @@
 import { $ } from 'bun';
+import { getLogger } from '../../common/logger.ts';
 import type { DeviceInfo } from '../../domain/device/info.ts';
 import { environmentVariables } from '../lmsa/state.ts';
+
+const log = getLogger('device-info');
 
 async function commandExists(commandName: string) {
   const response = await $`which ${commandName}`.quiet().nothrow();
@@ -39,7 +42,7 @@ export async function getDeviceInfo() {
     );
   }
 
-  console.log('[INFO] Device detected via ADB...');
+  log.info('[INFO] Device detected via ADB...');
   const propertiesResponse = await $`adb shell getprop`.quiet().nothrow();
   const propertiesText = propertiesResponse.stdout.toString();
 

@@ -31,7 +31,7 @@ on:
         default: ""
         type: string
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -83,14 +83,14 @@ jobs:
       version: ${{ steps.resolve.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: "1.4.2"
 
       - name: Resolve Version
         id: resolve
@@ -121,22 +121,22 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: "1.4.2"
 
       - name: Install root dependencies
         shell: bash
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Install web dependencies
         shell: bash
         run: |
           cd web
-          bun install
+          bun install --frozen-lockfile
 
       - name: Install Linux packaging tools
         if: runner.os == 'Linux'
@@ -310,7 +310,7 @@ jobs:
           fi
 
       - name: Upload build outputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: LenovoMotoFirmwareDownloader-${{ runner.os }}-${{ matrix.arch }}-${{ needs.resolve-build-options.outputs.buildEnv }}
           path: artifacts/
@@ -318,20 +318,22 @@ jobs:
 
   release:
     name: Publish GitHub Release
+    permissions:
+      contents: write
     if: ${{ needs.resolve-build-options.outputs.publishRelease == 'true' }}
     needs: [resolve-build-options, build, resolve-version]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
-          bun-version: latest
+          bun-version: "1.4.2"
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: LenovoMotoFirmwareDownloader-*-${{ needs.resolve-build-options.outputs.buildEnv }}
           path: release-assets
@@ -364,6 +366,10 @@ jobs:
         run: |
           find release-assets -maxdepth 1 -type f -iname appinfo -delete
 
+          # Checksums let users verify downloaded installers.
+          rm -f release-assets/SHA256SUMS
+          (cd release-assets && sha256sum -- * > SHA256SUMS)
+
           tag="${{ steps.meta.outputs.tag }}"
           title="${{ steps.meta.outputs.title }}"
           buildEnv="${{ needs.resolve-build-options.outputs.buildEnv }}"
@@ -395,7 +401,7 @@ jobs:
               "repos/${{ github.repository }}/releases/$release_id" \
               -F draft=false \
               -F prerelease=false \
-              -f make_latest=true \
+              -f make_latest=false \
               >/dev/null
           fi
 
@@ -417,7 +423,7 @@ jobs:
               # makes stale updater patches accumulate across canary builds.
               echo "Cleaning up old installers..."
               for asset in $(gh release view canary --json assets --jq '.assets[].name'); do
-                if [[ "$asset" == "appinfo" || "$asset" == *".dmg" || "$asset" == *".zip" || "$asset" == *".AppImage" || "$asset" == *".AppImage.zsync" || "$asset" == *".patch" ]]; then
+                if [[ "$asset" == "appinfo" || "$asset" == "SHA256SUMS" || "$asset" == *".dmg" || "$asset" == *".zip" || "$asset" == *".AppImage" || "$asset" == *".AppImage.zsync" || "$asset" == *".patch" ]]; then
                   gh release delete-asset canary "$asset" -y || true
                 fi
               done
@@ -433,7 +439,7 @@ jobs:
               "repos/${{ github.repository }}/releases/$canary_release_id" \
               -F draft=false \
               -F prerelease=false \
-              -f make_latest=true \
+              -f make_latest=false \
               >/dev/null
 
             # Overwrite all files in the release with the new ones

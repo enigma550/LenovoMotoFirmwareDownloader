@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import { UiActionButtonComponent } from '../ui-action-button/ui-action-button.component';
 
 @Component({
   selector: 'app-backup-selection-toolbar',
   standalone: true,
-  imports: [UiActionButtonComponent],
+  imports: [UiActionButtonComponent, TranslatePipe],
   templateUrl: './backup-selection-toolbar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

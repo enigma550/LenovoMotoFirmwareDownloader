@@ -2,8 +2,11 @@ import { existsSync } from 'node:fs';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { getLogger } from '../../core/common/logger.ts';
 import { loadConfig, saveConfig } from '../../core/infra/config.ts';
 import { runBufferedCommand, spawnDetachedCommand } from './process/index.ts';
+
+const log = getLogger('desktop-integration');
 
 export interface DesktopIntegrationStatus {
   ok: boolean;
@@ -304,9 +307,7 @@ async function refreshSoftwareFixSchemeAssociation(desktopDir: string, desktopFi
     SOFTWARE_FIX_SCHEME,
   ]);
   if (!setDefaultOk) {
-    console.warn(
-      `[DesktopIntegration] Could not set ${desktopFileName} as default scheme handler.`,
-    );
+    log.warn(`[DesktopIntegration] Could not set ${desktopFileName} as default scheme handler.`);
   }
 
   await runDesktopCommand('gio', ['mime', SOFTWARE_FIX_SCHEME, desktopFileName]);
@@ -634,7 +635,7 @@ export async function getAppInfo(): Promise<AppInfo> {
       }
     }
   } catch (e) {
-    console.warn('Failed to read version.json', e);
+    log.warn('Failed to read version.json', e);
   }
 
   return {

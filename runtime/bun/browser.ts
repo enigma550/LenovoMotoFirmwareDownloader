@@ -1,3 +1,4 @@
+import { assertSafeExternalUrl } from './path-guard.ts';
 import { launchDetachedCommand } from './process/index.ts';
 
 type ExternalUrlOpenCommand = {
@@ -35,8 +36,9 @@ function describeCommandFailure(command: ExternalUrlOpenCommand, detail: string)
 }
 
 export async function openExternalUrl(url: string) {
+  const safeUrl = assertSafeExternalUrl(url);
   const failures: string[] = [];
-  for (const openCommand of externalUrlOpenCommands(url)) {
+  for (const openCommand of externalUrlOpenCommands(safeUrl)) {
     const result = await launchDetachedCommand({
       args: openCommand.args,
       command: openCommand.command,

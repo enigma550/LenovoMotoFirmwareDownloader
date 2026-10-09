@@ -5,3 +5,4 @@ export { CatalogDesktopApiService } from './catalog-desktop-api.service';
 export { DesktopBridgeClientService } from './desktop-bridge-client.service';
 export { DownloadsDesktopApiService } from './downloads-desktop-api.service';
 export { SystemDesktopApiService } from './system-desktop-api.service';
+export { UpdateDesktopApiService } from './update-desktop-api.service';

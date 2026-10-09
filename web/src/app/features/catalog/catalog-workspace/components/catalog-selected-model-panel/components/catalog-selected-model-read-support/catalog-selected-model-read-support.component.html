@@ -1,20 +1,16 @@
 <p
-  class="mt-2 text-sm"
-  [class.text-light-text]="!store.isDark()"
-  [class.text-dark-text]="store.isDark()"
+  class="mt-2 text-sm text-fg"
 >
   readSupport=true → choose lookup mode.
 </p>
 
 @if (store.readSupportHints()) {
   <p
-    class="mt-2 rounded-lg border p-3 font-mono text-xs"
-    [class.border-light-border]="!store.isDark()"
-    [class.bg-light-surface]="!store.isDark()"
-    [class.text-light-text]="!store.isDark()"
-    [class.border-dark-border-bright]="store.isDark()"
-    [class.bg-dark-elevated]="store.isDark()"
-    [class.text-dark-text]="store.isDark()"
+    class="mt-2 rounded-lg border p-3 font-mono text-xs text-fg"
+    [class.border-base]="!store.isDark()"
+    [class.bg-surface]="!store.isDark()"
+    [class.border-strong]="store.isDark()"
+    [class.bg-elevated]="store.isDark()"
   >
     platform={{ store.readSupportHints()!.platform || 'N/A' }}, required={{
       store.readSupportHints()!.requiredParameters.join(', ') || 'none'
@@ -29,12 +25,12 @@
     [class.bg-accent-subtle]="store.readSupportMode() === 'imei' && !store.isDark()"
     [class.bg-accent/10]="store.readSupportMode() === 'imei' && store.isDark()"
     [class.text-accent]="store.readSupportMode() === 'imei'"
-    [class.bg-light-surface]="store.readSupportMode() !== 'imei' && !store.isDark()"
-    [class.text-light-text]="store.readSupportMode() !== 'imei' && !store.isDark()"
-    [class.border-light-border]="store.readSupportMode() !== 'imei' && !store.isDark()"
-    [class.bg-dark-elevated]="store.readSupportMode() !== 'imei' && store.isDark()"
-    [class.text-dark-text]="store.readSupportMode() !== 'imei' && store.isDark()"
-    [class.border-dark-border]="store.readSupportMode() !== 'imei' && store.isDark()"
+    [class.bg-surface]="store.readSupportMode() !== 'imei' && !store.isDark()"
+    [class.text-fg]="store.readSupportMode() !== 'imei' && !store.isDark()"
+    [class.border-base]="store.readSupportMode() !== 'imei' && !store.isDark()"
+    [class.bg-elevated]="store.readSupportMode() !== 'imei' && store.isDark()"
+    [class.text-fg]="store.readSupportMode() !== 'imei' && store.isDark()"
+    [class.border-base]="store.readSupportMode() !== 'imei' && store.isDark()"
     type="button"
     (click)="store.setReadSupportMode('imei')"
   >
@@ -47,12 +43,12 @@
       [class.bg-accent-subtle]="store.readSupportMode() === 'sn' && !store.isDark()"
       [class.bg-accent/10]="store.readSupportMode() === 'sn' && store.isDark()"
       [class.text-accent]="store.readSupportMode() === 'sn'"
-      [class.bg-light-surface]="store.readSupportMode() !== 'sn' && !store.isDark()"
-      [class.text-light-text]="store.readSupportMode() !== 'sn' && !store.isDark()"
-      [class.border-light-border]="store.readSupportMode() !== 'sn' && !store.isDark()"
-      [class.bg-dark-elevated]="store.readSupportMode() !== 'sn' && store.isDark()"
-      [class.text-dark-text]="store.readSupportMode() !== 'sn' && store.isDark()"
-      [class.border-dark-border]="store.readSupportMode() !== 'sn' && store.isDark()"
+      [class.bg-surface]="store.readSupportMode() !== 'sn' && !store.isDark()"
+      [class.text-fg]="store.readSupportMode() !== 'sn' && !store.isDark()"
+      [class.border-base]="store.readSupportMode() !== 'sn' && !store.isDark()"
+      [class.bg-elevated]="store.readSupportMode() !== 'sn' && store.isDark()"
+      [class.text-fg]="store.readSupportMode() !== 'sn' && store.isDark()"
+      [class.border-base]="store.readSupportMode() !== 'sn' && store.isDark()"
       type="button"
       (click)="store.setReadSupportMode('sn')"
     >
@@ -65,12 +61,12 @@
     [class.bg-accent-subtle]="store.readSupportMode() === 'params' && !store.isDark()"
     [class.bg-accent/10]="store.readSupportMode() === 'params' && store.isDark()"
     [class.text-accent]="store.readSupportMode() === 'params'"
-    [class.bg-light-surface]="store.readSupportMode() !== 'params' && !store.isDark()"
-    [class.text-light-text]="store.readSupportMode() !== 'params' && !store.isDark()"
-    [class.border-light-border]="store.readSupportMode() !== 'params' && !store.isDark()"
-    [class.bg-dark-elevated]="store.readSupportMode() !== 'params' && store.isDark()"
-    [class.text-dark-text]="store.readSupportMode() !== 'params' && store.isDark()"
-    [class.border-dark-border]="store.readSupportMode() !== 'params' && store.isDark()"
+    [class.bg-surface]="store.readSupportMode() !== 'params' && !store.isDark()"
+    [class.text-fg]="store.readSupportMode() !== 'params' && !store.isDark()"
+    [class.border-base]="store.readSupportMode() !== 'params' && !store.isDark()"
+    [class.bg-elevated]="store.readSupportMode() !== 'params' && store.isDark()"
+    [class.text-fg]="store.readSupportMode() !== 'params' && store.isDark()"
+    [class.border-base]="store.readSupportMode() !== 'params' && store.isDark()"
     type="button"
     (click)="store.setReadSupportMode('params')"
   >
@@ -82,19 +78,11 @@
   <div class="mt-4 grid gap-3 md:grid-cols-2">
     <div>
       <label
-        class="block text-xs font-medium"
-        [class.text-light-text-dim]="!store.isDark()"
-        [class.text-dark-text-dim]="store.isDark()"
+        class="block text-xs font-medium text-fg-dim"
         >IMEI</label
       >
       <input
-        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.bg-light-elevated]="!store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.bg-dark-elevated]="store.isDark()"
-        [class.text-dark-text-bright]="store.isDark()"
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm border-strong bg-elevated text-fg-strong"
         placeholder="Required"
         [ngModel]="store.imei()"
         (ngModelChange)="store.imei.set($event)"
@@ -107,19 +95,11 @@
   <div class="mt-4 grid gap-3 md:grid-cols-2">
     <div>
       <label
-        class="block text-xs font-medium"
-        [class.text-light-text-dim]="!store.isDark()"
-        [class.text-dark-text-dim]="store.isDark()"
+        class="block text-xs font-medium text-fg-dim"
         >SN</label
       >
       <input
-        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.bg-light-elevated]="!store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.bg-dark-elevated]="store.isDark()"
-        [class.text-dark-text-bright]="store.isDark()"
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm border-strong bg-elevated text-fg-strong"
         [ngModel]="store.sn()"
         (ngModelChange)="store.sn.set($event)"
       />
@@ -131,19 +111,11 @@
   <div class="mt-4 grid gap-3 md:grid-cols-2">
     <div>
       <label
-        class="block text-xs font-medium"
-        [class.text-light-text-dim]="!store.isDark()"
-        [class.text-dark-text-dim]="store.isDark()"
+        class="block text-xs font-medium text-fg-dim"
         >IMEI</label
       >
       <input
-        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.bg-light-elevated]="!store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.bg-dark-elevated]="store.isDark()"
-        [class.text-dark-text-bright]="store.isDark()"
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm border-strong bg-elevated text-fg-strong"
         placeholder="Optional"
         [ngModel]="store.imei()"
         (ngModelChange)="store.imei.set($event)"
@@ -151,19 +123,11 @@
     </div>
     <div>
       <label
-        class="block text-xs font-medium"
-        [class.text-light-text-dim]="!store.isDark()"
-        [class.text-dark-text-dim]="store.isDark()"
+        class="block text-xs font-medium text-fg-dim"
         >IMEI2</label
       >
       <input
-        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.bg-light-elevated]="!store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.bg-dark-elevated]="store.isDark()"
-        [class.text-dark-text-bright]="store.isDark()"
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm border-strong bg-elevated text-fg-strong"
         placeholder="Optional"
         [ngModel]="store.imei2()"
         (ngModelChange)="store.imei2.set($event)"
@@ -171,19 +135,11 @@
     </div>
     <div>
       <label
-        class="block text-xs font-medium"
-        [class.text-light-text-dim]="!store.isDark()"
-        [class.text-dark-text-dim]="store.isDark()"
+        class="block text-xs font-medium text-fg-dim"
         >SN</label
       >
       <input
-        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.bg-light-elevated]="!store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.bg-dark-elevated]="store.isDark()"
-        [class.text-dark-text-bright]="store.isDark()"
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm border-strong bg-elevated text-fg-strong"
         placeholder="Optional"
         [ngModel]="store.sn()"
         (ngModelChange)="store.sn.set($event)"
@@ -191,19 +147,11 @@
     </div>
     <div>
       <label
-        class="block text-xs font-medium"
-        [class.text-light-text-dim]="!store.isDark()"
-        [class.text-dark-text-dim]="store.isDark()"
+        class="block text-xs font-medium text-fg-dim"
         >channelId</label
       >
       <input
-        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.bg-light-elevated]="!store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.bg-dark-elevated]="store.isDark()"
-        [class.text-dark-text-bright]="store.isDark()"
+        class="mt-1 w-full rounded-lg border px-2 py-2 text-sm border-strong bg-elevated text-fg-strong"
         placeholder="Optional"
         [ngModel]="store.channelId()"
         (ngModelChange)="store.channelId.set($event)"
@@ -217,19 +165,11 @@
     @for (parameterName of store.readSupportHints()!.requiredParameters; track parameterName) {
       <div>
         <label
-          class="block text-xs font-medium"
-          [class.text-light-text-dim]="!store.isDark()"
-          [class.text-dark-text-dim]="store.isDark()"
+          class="block text-xs font-medium text-fg-dim"
           >{{ parameterName }}</label
         >
         <input
-          class="mt-1 w-full rounded-lg border px-2 py-2 text-sm"
-          [class.border-light-border-bright]="!store.isDark()"
-          [class.bg-light-elevated]="!store.isDark()"
-          [class.text-light-text-bright]="!store.isDark()"
-          [class.border-dark-border-bright]="store.isDark()"
-          [class.bg-dark-elevated]="store.isDark()"
-          [class.text-dark-text-bright]="store.isDark()"
+          class="mt-1 w-full rounded-lg border px-2 py-2 text-sm border-strong bg-elevated text-fg-strong"
           placeholder="Required"
           [ngModel]="store.requiredParams()[parameterName] || ''"
           (ngModelChange)="store.setRequiredParam(parameterName, $event)"
@@ -289,13 +229,11 @@
 
 @if (store.readSupportResult()) {
   <p
-    class="mt-3 rounded-lg border p-3 font-mono text-xs"
-    [class.border-light-border]="!store.isDark()"
-    [class.bg-light-surface]="!store.isDark()"
-    [class.text-light-text]="!store.isDark()"
-    [class.border-dark-border-bright]="store.isDark()"
-    [class.bg-dark-elevated]="store.isDark()"
-    [class.text-dark-text]="store.isDark()"
+    class="mt-3 rounded-lg border p-3 font-mono text-xs text-fg"
+    [class.border-base]="!store.isDark()"
+    [class.bg-surface]="!store.isDark()"
+    [class.border-strong]="store.isDark()"
+    [class.bg-elevated]="store.isDark()"
   >
     code={{ store.readSupportResult()!.code || 'N/A' }}, desc={{
       store.readSupportResult()!.description || 'N/A'

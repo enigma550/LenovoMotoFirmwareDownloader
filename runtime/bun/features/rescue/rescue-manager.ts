@@ -9,7 +9,7 @@
  * This file keeps the main `rescueLiteFirmwareWithProgress` orchestration.
  */
 import { mkdir, stat } from 'node:fs/promises';
-import { basename } from 'node:path';
+import { getLogger } from '../../../../core/common/logger.ts';
 import type {
   DownloadProgressMessage,
   RescueFlashTransport,
@@ -23,9 +23,9 @@ import {
   ensureExtractedFirmwarePackage,
   findReusableFirmwarePackagePath,
   getDownloadDirectory,
-  getExtractDirForPackagePath,
   hasUsableExtractedRescueScripts,
 } from '../../firmware-package-utils.ts';
+import { assertPathInsideAllowedRoots } from '../../path-guard.ts';
 import { runRescueCommandPlan } from './commands/run-rescue-command-plan';
 import { buildRescueCommandPlan } from './facade/rescue-command-plan-facade.ts';
 import { type RescueRecipeHints, resolveRescueRecipeHints } from './recipe-resolver.ts';
@@ -36,6 +36,13 @@ import {
   type RescueProgressEmitter,
 } from './rescue-active-tracker.ts';
 import { ensureDeviceReadiness } from './rescue-device-readiness.ts';
+import {
+  buildRescueLiteResult,
+  buildRescueMetadataPatch,
+  resolveLinkedExtractDir,
+} from './rescue-package-stage.ts';
+
+const log = getLogger('rescue');
 
 // Re-export public API from submodules
 export { cancelActiveRescue } from './rescue-active-tracker.ts';
@@ -113,28 +120,22 @@ export async function rescueLiteFirmwareWithProgress(
     let reusedExtraction = false;
 
     if (payload.localPackagePath) {
-      if (!(await Bun.file(payload.localPackagePath).exists())) {
-        throw new Error(`Local firmware package not found: ${payload.localPackagePath}`);
+      const localPackagePath = assertPathInsideAllowedRoots(
+        payload.localPackagePath,
+        [getDownloadDirectory()],
+        'local firmware package path',
+      );
+      if (!(await Bun.file(localPackagePath).exists())) {
+        throw new Error(`Local firmware package not found: ${localPackagePath}`);
       }
-      savePath = payload.localPackagePath;
+      savePath = localPackagePath;
       const packageStats = await stat(savePath);
       bytesDownloaded = packageStats.size;
       totalBytes = packageStats.size;
       reusedPackage = true;
 
       try {
-        await writeFirmwareMetadata(savePath, {
-          source: 'rescue-lite',
-          romUrl,
-          romName,
-          publishDate: payload.publishDate,
-          recipeUrl: payload.recipeUrl,
-          romMatchIdentifier:
-            payload.romMatchIdentifier ||
-            payload.selectedParameters?.romMatchIdentifier ||
-            payload.selectedParameters?.romMatchId,
-          selectedParameters: payload.selectedParameters,
-        });
+        await writeFirmwareMetadata(savePath, buildRescueMetadataPatch(payload));
       } catch {
         // Best effort
       }
@@ -159,18 +160,7 @@ export async function rescueLiteFirmwareWithProgress(
         reusedPackage = true;
 
         try {
-          await writeFirmwareMetadata(savePath, {
-            source: 'rescue-lite',
-            romUrl,
-            romName,
-            publishDate: payload.publishDate,
-            recipeUrl: payload.recipeUrl,
-            romMatchIdentifier:
-              payload.romMatchIdentifier ||
-              payload.selectedParameters?.romMatchIdentifier ||
-              payload.selectedParameters?.romMatchId,
-            selectedParameters: payload.selectedParameters,
-          });
+          await writeFirmwareMetadata(savePath, buildRescueMetadataPatch(payload));
         } catch {
           // Best effort
         }
@@ -239,8 +229,7 @@ export async function rescueLiteFirmwareWithProgress(
     }
 
     // Package is ready. We can now proceed to extraction or command processing.
-    const linkedExtractDir =
-      payload.localExtractedDir?.trim() || getExtractDirForPackagePath(savePath);
+    const linkedExtractDir = resolveLinkedExtractDir(savePath, payload.localExtractedDir);
     workDir = linkedExtractDir;
 
     if (hasUsableExtractedRescueScripts(workDir)) {
@@ -320,11 +309,11 @@ export async function rescueLiteFirmwareWithProgress(
       stepLabel: `Using rescue command source: ${commandSource}`,
     });
     if (isDryRun) {
-      console.log(
+      log.info(
         `[RescueLite:dry-run] ${downloadId} source=${commandSource} commands=${commandPlan.length}`,
       );
       for (const command of commandPlan) {
-        console.log(`[RescueLite:dry-run] ${command}`);
+        log.info(`[RescueLite:dry-run] ${command}`);
       }
 
       for (let index = 0; index < commands.length; index += 1) {
@@ -340,7 +329,10 @@ export async function rescueLiteFirmwareWithProgress(
           stepIndex: index + 1,
           stepTotal: commands.length,
           stepLabel: command.label,
+          consoleLine: `[DRY RUN] (${index + 1}/${commands.length}) ${command.label}`,
+          consoleTone: 'info',
         });
+        await Bun.sleep(20);
       }
 
       emit({
@@ -351,16 +343,16 @@ export async function rescueLiteFirmwareWithProgress(
         stepIndex: commands.length,
         stepTotal: commands.length,
         stepLabel: 'Dry run completed. No commands executed.',
+        consoleLine: `[DRY RUN] Simulação concluída com sucesso! ${commands.length} comandos validados (${commandSource}).`,
+        consoleTone: 'success',
       });
 
-      return {
-        ok: true,
+      return buildRescueLiteResult({
         downloadId,
         savePath,
-        fileName: basename(savePath),
-        bytesDownloaded,
-        totalBytes: totalBytes || bytesDownloaded,
         workDir,
+        bytesDownloaded,
+        totalBytes,
         dryRun: true,
         reusedPackage,
         reusedExtraction,
@@ -369,7 +361,7 @@ export async function rescueLiteFirmwareWithProgress(
         flashTransport,
         qdlStorage,
         qdlSerial,
-      };
+      });
     }
 
     const setActiveProcess = (process: Bun.Subprocess | null) => {
@@ -441,14 +433,12 @@ export async function rescueLiteFirmwareWithProgress(
       subtitle: flashTransport === 'qdl' ? 'Rescue Lite' : `Rescue Lite (${flashTransport})`,
     });
 
-    return {
-      ok: true,
+    return buildRescueLiteResult({
       downloadId,
       savePath,
-      fileName: basename(savePath),
-      bytesDownloaded,
-      totalBytes: totalBytes || bytesDownloaded,
       workDir,
+      bytesDownloaded,
+      totalBytes,
       dryRun: false,
       reusedPackage,
       reusedExtraction,
@@ -457,7 +447,7 @@ export async function rescueLiteFirmwareWithProgress(
       flashTransport,
       qdlStorage,
       qdlSerial,
-    };
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (isAbortError(error) || activeRescues.get(downloadId)?.canceled) {

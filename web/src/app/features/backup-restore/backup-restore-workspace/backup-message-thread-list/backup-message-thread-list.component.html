@@ -1,16 +1,14 @@
 @if (threads().length === 0) {
-  <p class="mt-2 text-xs" [class.text-light-text-dim]="!isDark()" [class.text-dark-text-dim]="isDark()">
+  <p class="mt-2 text-xs text-fg-dim"  >
     No messages found.
   </p>
 } @else {
   <div class="mt-1.5 flex items-center gap-2">
     <button
       type="button"
-      class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-      [class.text-light-text]="!isDark()"
-      [class.hover:bg-light-surface]="!isDark()"
-      [class.text-dark-text]="isDark()"
-      [class.hover:bg-dark-elevated]="isDark()"
+      class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 text-fg"
+      [class.hover:bg-hover-surface]="!isDark()"
+      [class.hover:bg-hover-soft]="isDark()"
       [disabled]="allExpanded()"
       (click)="expandAll()"
     >
@@ -18,11 +16,9 @@
     </button>
     <button
       type="button"
-      class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-      [class.text-light-text]="!isDark()"
-      [class.hover:bg-light-surface]="!isDark()"
-      [class.text-dark-text]="isDark()"
-      [class.hover:bg-dark-elevated]="isDark()"
+      class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 text-fg"
+      [class.hover:bg-hover-surface]="!isDark()"
+      [class.hover:bg-hover-soft]="isDark()"
       [disabled]="expandedSenders().size === 0"
       (click)="collapseAll()"
     >
@@ -34,10 +30,10 @@
       <!-- Thread header -->
       <article
         class="rounded-xl border transition"
-        [class.border-light-border]="!isDark()"
-        [class.bg-light-elevated]="!isDark()"
-        [class.border-dark-border-bright]="isDark()"
-        [class.bg-dark-surface]="isDark()"
+        [class.border-base]="!isDark()"
+        [class.bg-elevated]="!isDark()"
+        [class.border-strong]="isDark()"
+        [class.bg-surface]="isDark()"
       >
         <button
           type="button"
@@ -57,16 +53,12 @@
           </div>
           <div class="min-w-0 flex-1">
             <p
-              class="truncate text-xs font-semibold"
-              [class.text-light-text-bright]="!isDark()"
-              [class.text-dark-text-bright]="isDark()"
+              class="truncate text-xs font-semibold text-fg-strong"
             >
               {{ thread.sender }}
             </p>
             <p
-              class="text-[11px]"
-              [class.text-light-text-dim]="!isDark()"
-              [class.text-dark-text-dim]="isDark()"
+              class="text-[11px] text-fg-dim"
             >
               {{ thread.messages.length }} message{{ thread.messages.length === 1 ? '' : 's' }}
             </p>
@@ -89,13 +81,13 @@
                   isThreadPartiallySelected(thread) && !isThreadAllSelected(thread)
                 "
                 [class.text-white]="isThreadPartiallySelected(thread)"
-                [class.border-dark-border-bright]="
+                [class.border-strong]="
                   !isThreadAllSelected(thread) && !isThreadPartiallySelected(thread) && isDark()
                 "
-                [class.border-light-border-bright]="
+                [class.border-strong]="
                   !isThreadAllSelected(thread) && !isThreadPartiallySelected(thread) && !isDark()
                 "
-                [class.text-light-text-dim]="
+                [class.text-fg-dim]="
                   !isThreadAllSelected(thread) && !isThreadPartiallySelected(thread)
                 "
               >
@@ -110,9 +102,7 @@
 
           <div class="shrink-0">
             <span
-              class="text-[11px]"
-              [class.text-dark-text-dim]="!isDark()"
-              [class.text-light-text-dim]="isDark()"
+              class="text-[11px] text-fg-dim"
             >
               {{ isExpanded(thread.sender) ? '▾' : '▸' }}
             </span>
@@ -123,8 +113,8 @@
         @if (isExpanded(thread.sender)) {
           <div
             class="border-t px-2 pb-2"
-            [class.border-light-border]="!isDark()"
-            [class.border-dark-border-bright]="isDark()"
+            [class.border-base]="!isDark()"
+            [class.border-strong]="isDark()"
           >
             @for (message of thread.messages; track message.id) {
               <div
@@ -150,22 +140,22 @@
                       [class.text-warning]="message.messageType === 'sent' && !isDark()"
                       [class.bg-warning/20]="message.messageType === 'sent' && isDark()"
                       [class.text-warning]="message.messageType === 'sent' && isDark()"
-                      [class.bg-light-surface]="
+                      [class.bg-surface]="
                         message.messageType !== 'sent' &&
                         message.messageType !== 'received' &&
                         !isDark()
                       "
-                      [class.text-light-text-dim]="
+                      [class.text-fg-dim]="
                         message.messageType !== 'sent' &&
                         message.messageType !== 'received' &&
                         !isDark()
                       "
-                      [class.bg-dark-elevated]="
+                      [class.bg-elevated]="
                         message.messageType !== 'sent' &&
                         message.messageType !== 'received' &&
                         isDark()
                       "
-                      [class.text-dark-text-dim]="
+                      [class.text-fg-dim]="
                         message.messageType !== 'sent' &&
                         message.messageType !== 'received' &&
                         isDark()
@@ -174,17 +164,13 @@
                       {{ directionLabel(message) }}
                     </span>
                     <span
-                      class="text-[11px]"
-                      [class.text-light-text-dim]="!isDark()"
-                      [class.text-dark-text-dim]="isDark()"
+                      class="text-[11px] text-fg-dim"
                     >
                       {{ formatMessageTime(message.timestamp) }}
                     </span>
                   </div>
                   <p
-                    class="mt-0.5 whitespace-pre-wrap text-xs"
-                    [class.text-light-text]="!isDark()"
-                    [class.text-dark-text]="isDark()"
+                    class="mt-0.5 whitespace-pre-wrap text-xs text-fg"
                   >
                     {{ message.preview }}
                   </p>
@@ -197,9 +183,9 @@
                       [class.border-success]="isMessageSelected(message.id)"
                       [class.bg-success]="isMessageSelected(message.id)"
                       [class.text-white]="isMessageSelected(message.id)"
-                      [class.border-dark-border-bright]="!isMessageSelected(message.id) && isDark()"
-                      [class.border-light-border-bright]="!isMessageSelected(message.id) && !isDark()"
-                      [class.text-light-text-dim]="!isMessageSelected(message.id)"
+                      [class.border-strong]="!isMessageSelected(message.id) && isDark()"
+                      [class.border-strong]="!isMessageSelected(message.id) && !isDark()"
+                      [class.text-fg-dim]="!isMessageSelected(message.id)"
                     >
                       @if (isMessageSelected(message.id)) {
                         ✓

@@ -1,5 +1,6 @@
 import { basename, join, normalize } from 'node:path';
 import { stripFirmwareArchiveExtension } from './features/rescue/extractors/archive-format.ts';
+import { hardenSanitizedFileName } from './path-guard.ts';
 
 export function getDownloadDirectory() {
   const homeDirectory =
@@ -41,7 +42,7 @@ export function sanitizeFileName(fileName: string, fallback = 'firmware.zip') {
     .join('')
     .replace(/\s+/g, ' ')
     .trim();
-  return sanitized || fallback;
+  return hardenSanitizedFileName(sanitized, fallback);
 }
 
 export function sanitizeDirectoryName(name: string) {

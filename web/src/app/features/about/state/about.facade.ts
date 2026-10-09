@@ -26,6 +26,14 @@ export class AboutFacade {
     return this.system.createDesktopIntegration();
   }
 
+  async getLinuxUdevStatus() {
+    return this.system.getLinuxUdevStatus();
+  }
+
+  async installLinuxUdevRules() {
+    return this.system.installLinuxUdevRules();
+  }
+
   async setDesktopPromptPreference(ask: boolean) {
     return this.system.setDesktopPromptPreference(ask);
   }

@@ -3,98 +3,76 @@
     <div class="absolute inset-0 bg-black/60 transition-opacity" (click)="dismiss()"></div>
 
     <div
-      class="relative w-full max-w-md overflow-hidden rounded-2xl border p-6 text-left align-middle shadow-xl"
-      [class.border-dark-border]="store.isDark()"
-      [class.bg-dark-surface]="store.isDark()"
-      [class.border-light-border]="!store.isDark()"
-      [class.bg-light-surface]="!store.isDark()"
+      class="relative w-full max-w-md overflow-hidden rounded-2xl border p-6 text-left align-middle shadow-xl border-base bg-surface"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'PROMPT.TITLE' | translate"
     >
       <h3
-        class="text-xl font-bold leading-6"
-        [class.text-dark-text-bright]="store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
+        class="text-xl font-bold leading-6 text-fg-strong"
       >
         @if (isWindowsPrompt()) {
-          Default App (Windows)
+          {{ 'PROMPT.WINDOWS_TITLE' | translate }}
         } @else {
-          Desktop Shortcut
+          {{ 'PROMPT.SHORTCUT_TITLE' | translate }}
         }
       </h3>
 
       <div class="mt-4">
         @if (isWindowsPrompt()) {
           <p
-            class="text-sm"
-            [class.text-dark-text]="store.isDark()"
-            [class.text-light-text]="!store.isDark()"
+            class="text-sm text-fg"
           >
-            Windows only allows one handler for <span class="font-mono">softwarefix://</span>.
-            Let LMFD register that protocol for this Windows user if you want Lenovo login callbacks
-            to return here.
+            {{ 'PROMPT.WINDOWS_DESC_1' | translate }}<span class="font-mono">softwarefix://</span
+            >{{ 'PROMPT.WINDOWS_DESC_2' | translate }}
             <br />
             <br />
-            You can switch it back from the About tab later.
+            {{ 'PROMPT.WINDOWS_DESC_3' | translate }}
           </p>
         } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
           <p
-            class="text-sm"
-            [class.text-dark-text]="store.isDark()"
-            [class.text-light-text]="!store.isDark()"
+            class="text-sm text-fg"
           >
-            An existing desktop shortcut was found, but it has an incorrect window class setting.
-            This can cause the application to not group correctly in your dock and taskbar.
+            {{ 'PROMPT.WMCLASS_DESC_1' | translate }}
             <br />
             <br />
-            Would you like to fix it?
+            {{ 'PROMPT.WMCLASS_DESC_2' | translate }}
           </p>
         } @else {
           <p
-            class="text-sm"
-            [class.text-dark-text]="store.isDark()"
-            [class.text-light-text]="!store.isDark()"
+            class="text-sm text-fg"
           >
-            It looks like you don't have a desktop shortcut configured.
+            {{ 'PROMPT.SHORTCUT_DESC_1' | translate }}
             <br />
             <br />
-            Would you like to create one so it appears correctly in your application launcher and
-            dock?
+            {{ 'PROMPT.SHORTCUT_DESC_2' | translate }}
           </p>
         }
       </div>
 
       <div class="mt-8 flex items-center justify-between">
         <label
-          class="flex cursor-pointer select-none items-center gap-2 text-sm"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="flex cursor-pointer select-none items-center gap-2 text-sm text-fg-dim"
         >
           <input
             type="checkbox"
-            class="h-4 w-4 rounded border-2 accent-accent focus:ring-accent"
-            [class.border-dark-border]="store.isDark()"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.border-light-border]="!store.isDark()"
-            [class.bg-light-surface]="!store.isDark()"
+            class="h-4 w-4 rounded border-2 accent-accent focus:ring-accent border-base"
+            [class.bg-elevated]="store.isDark()"
+            [class.bg-surface]="!store.isDark()"
             [checked]="dontAskAgain()"
             (change)="toggleDontAsk($event)"
           />
-          Don't ask again
+          {{ 'PROMPT.DONT_ASK' | translate }}
         </label>
 
         <div class="flex items-center gap-3">
           <button
             type="button"
-            class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-200"
-            [class.border-dark-border]="store.isDark()"
-            [class.text-dark-text]="store.isDark()"
-            [class.hover:bg-dark-elevated]="store.isDark()"
-            [class.border-light-border]="!store.isDark()"
-            [class.text-light-text]="!store.isDark()"
-            [class.hover:bg-light-bg]="!store.isDark()"
+            class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-200 border-base text-fg hover:bg-hover-soft"
             (click)="dismiss()"
             [disabled]="isProcessing()"
           >
-            Not now
+            {{ 'PROMPT.NOT_NOW' | translate }}
           </button>
 
           <button
@@ -105,19 +83,19 @@
           >
             @if (isProcessing()) {
               @if (isWindowsPrompt()) {
-                Switching...
+                {{ 'PROMPT.SWITCHING' | translate }}
               } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
-                Fixing...
+                {{ 'PROMPT.FIXING' | translate }}
               } @else {
-                Creating...
+                {{ 'PROMPT.CREATING' | translate }}
               }
             } @else {
               @if (isWindowsPrompt()) {
-                Switch to LMFD
+                {{ 'PROMPT.SWITCH_TO_LMFD' | translate }}
               } @else if (store.desktopPromptReason() === 'wrong_wmclass') {
-                ✓ Fix it
+                ✓ {{ 'PROMPT.FIX_IT' | translate }}
               } @else {
-                ✓ Create
+                ✓ {{ 'PROMPT.CREATE' | translate }}
               }
             }
           </button>

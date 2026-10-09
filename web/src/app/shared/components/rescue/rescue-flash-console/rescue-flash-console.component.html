@@ -1,23 +1,17 @@
 @if (shouldShow()) {
   <section
     #consoleSection
-    class="mt-4 rounded-xl border p-4"
-    [class.border-dark-border]="isDark()"
-    [class.bg-dark-surface]="isDark()"
-    [class.border-light-border]="!isDark()"
-    [class.bg-light-surface]="!isDark()"
+    class="mt-4 rounded-xl border p-4 border-base bg-surface"
   >
     <div class="mb-3 flex items-center justify-between gap-2">
       <p
-        class="text-sm font-semibold"
-        [class.text-dark-text-bright]="isDark()"
-        [class.text-light-text-bright]="!isDark()"
+        class="text-sm font-semibold text-fg-strong"
       >
         {{ title() }}
       </p>
       <div class="flex items-center gap-2">
         <app-ui-action-button
-          label="Cancel"
+          [label]="'CONSOLE.CANCEL' | translate"
           [isDark]="isDark()"
           variant="danger"
           appearance="outline"
@@ -25,28 +19,42 @@
           (clicked)="requestCancelCurrentAction()"
         />
         <app-ui-action-button
-          label="Copy"
+          [label]="'CONSOLE.COPY' | translate"
           [isDark]="isDark()"
           variant="neutral"
           appearance="outline"
           (clicked)="copyConsoleToClipboard()"
         />
         <app-ui-action-button
-          label="Clear"
+          [label]="'CONSOLE.CLEAR' | translate"
           [isDark]="isDark()"
           variant="neutral"
           appearance="outline"
           (clicked)="clearConsole()"
         />
+        @if (currentReportData()) {
+          <app-ui-action-button
+            [label]="'REPORT.BTN' | translate"
+            [isDark]="isDark()"
+            variant="primary"
+            appearance="outline"
+            (clicked)="openReportModal()"
+          />
+        }
       </div>
     </div>
     <div
-      class="h-56 overflow-hidden rounded-lg border"
-      [class.border-dark-border]="isDark()"
-      [class.border-light-border]="!isDark()"
+      class="h-56 overflow-hidden rounded-lg border border-base"
       (wheel)="onConsoleWheel($event)"
     >
       <ng-terminal #flashTerminal [xtermOptions]="terminalOptions()" />
     </div>
   </section>
+
+  <app-service-report-modal
+    [isOpen]="showReportModal()"
+    [isDark]="isDark()"
+    [report]="currentReportData()"
+    (close)="closeReportModal()"
+  />
 }

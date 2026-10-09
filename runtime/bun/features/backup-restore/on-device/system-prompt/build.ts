@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getLogger } from '../../../../../../core/common/logger.ts';
 import {
   collectFiles,
   commandName,
@@ -11,6 +12,8 @@ import {
   resolveBuildTool,
   run,
 } from '../shared/build-support.ts';
+
+const log = getLogger('system-prompt-build');
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const JAVA_SRC = join(ROOT, 'java', 'src');
@@ -21,7 +24,7 @@ const OUTPUT_DEX = join(ROOT, 'system_prompt_helper.dex');
 
 function usePrebuiltOrThrow(reason: string): never {
   if (existsSync(OUTPUT_DEX)) {
-    console.warn(`[system-prompt] ${reason} Falling back to committed prebuilt DEX: ${OUTPUT_DEX}`);
+    log.warn(`[system-prompt] ${reason} Falling back to committed prebuilt DEX: ${OUTPUT_DEX}`);
     process.exit(0);
   }
   throw new Error(reason);
@@ -62,4 +65,4 @@ if (!existsSync(classesDex)) {
 }
 
 await Bun.write(OUTPUT_DEX, Bun.file(classesDex));
-console.log(`Built ${OUTPUT_DEX}`);
+log.info(`Built ${OUTPUT_DEX}`);

@@ -1,4 +1,11 @@
-import { Component, type ElementRef, HostListener, inject, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  type ElementRef,
+  HostListener,
+  inject,
+  ViewChild,
+} from '@angular/core';
 import { DropdownState } from '../../../../../core/ui/dropdown-state';
 import { CatalogFacade } from '../../../state';
 import { CatalogSelectedModelReadSupportComponent } from './components/catalog-selected-model-read-support/catalog-selected-model-read-support.component';
@@ -7,6 +14,7 @@ type DropdownMenu = 'country' | null;
 
 @Component({
   selector: 'app-catalog-selected-model-panel',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CatalogSelectedModelReadSupportComponent],
   templateUrl: './catalog-selected-model-panel.component.html',

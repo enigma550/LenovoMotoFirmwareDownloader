@@ -1,16 +1,10 @@
 @if (variant(); as activeVariant) {
   <article
-    class="rounded-xl border p-4 transition-all"
-    [class.border-dark-border]="isDark()"
-    [class.bg-dark-surface]="isDark()"
-    [class.border-light-border]="!isDark()"
-    [class.bg-light-surface]="!isDark()"
+    class="rounded-xl border p-4 transition-all border-base bg-surface"
   >
     <div class="flex items-center gap-2">
       <p
-        class="text-sm font-bold uppercase tracking-wide"
-        [class.text-dark-text-bright]="isDark()"
-        [class.text-light-text-bright]="!isDark()"
+        class="text-sm font-bold uppercase tracking-wide text-fg-strong"
       >
         {{ activeVariant.romName }}
       </p>
@@ -28,20 +22,20 @@
       }
     </div>
 
-    <p class="mt-1 font-mono text-[10px]" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+    <p class="mt-1 font-mono text-[10px] text-fg-dim"  >
       <span class="text-accent">published:</span> {{ activeVariant.publishDate || 'Unknown' }}
     </p>
-    <p class="mt-0.5 font-mono text-[10px] opacity-70" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+    <p class="mt-0.5 font-mono text-[10px] opacity-70 text-fg-dim"  >
       match_id: {{ activeVariant.romMatchIdentifier || 'N/A' }}
     </p>
 
     @if (hasRecipeAvailable()) {
       <p class="mt-1 font-mono text-[10px] text-success">
-        ✓ Recipe available
+        {{ 'FIRMWARE.RECIPE_AVAILABLE' | translate }}
       </p>
     } @else {
       <p class="mt-1 font-mono text-[10px] text-warning">
-        ⚠ Recipe unavailable (will fallback to local XML/script)
+        {{ 'FIRMWARE.RECIPE_UNAVAILABLE' | translate }}
       </p>
     }
 
@@ -64,7 +58,7 @@
           type="button"
           (click)="onRequestRescue()"
         >
-          ⚡ Rescue Lite
+          {{ 'FIRMWARE.RESCUE_LITE' | translate }}
         </button>
         <button
           class="rounded-lg border px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider transition-colors duration-200"
@@ -77,7 +71,7 @@
           type="button"
           (click)="onRequestRescueDryRun()"
         >
-          Dry Run
+          {{ 'FIRMWARE.DRY_RUN' | translate }}
         </button>
       }
 
@@ -94,7 +88,7 @@
           type="button"
           (click)="onAttachRecipeToLocalZip()"
         >
-          {{ linkingVariantRecipe() ? 'Linking...' : 'Use local archive' }}
+          {{ linkingVariantRecipe() ? ('FIRMWARE.LINKING' | translate) : ('FIRMWARE.USE_LOCAL_ARCHIVE' | translate) }}
         </button>
       }
 
@@ -103,7 +97,7 @@
           class="rounded-lg border px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider shadow-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60"
           [class.border-accent]="isDark()"
           [class.bg-accent]="isDark()"
-          [class.text-dark-bg]="isDark()"
+          [class.text-canvas]="isDark()"
           [class.hover:bg-accent-hover]="isDark()"
           [class.hover:shadow-md]="isDark()"
           [class.border-accent]="!isDark()"
@@ -114,19 +108,19 @@
           (click)="onStartDownload()"
         >
           @if (isVariantDownloadActive() && getVariantStatus() === 'canceling') {
-            Cancelling...
+            {{ 'FIRMWARE.CANCELLING' | translate }}
           } @else if (isVariantDownloadActive()) {
             @if (getVariantMode() === 'rescue-lite') {
               @if (getVariantDryRun()) {
-                Dry run...
+                {{ 'FIRMWARE.DRY_RUN_PROGRESS' | translate }}
               } @else {
-                Running...
+                {{ 'FIRMWARE.RUNNING' | translate }}
               }
             } @else {
-              Downloading...
+              {{ 'FIRMWARE.DOWNLOADING' | translate }}
             }
           } @else {
-            ↓ Download
+            ↓ {{ 'FIRMWARE.DOWNLOAD' | translate }}
           }
         </button>
       } @else {
@@ -137,17 +131,13 @@
           [class.border-success]="!isDark()"
           [class.text-success]="!isDark()"
         >
-          ✓ In Downloads
+          {{ 'FIRMWARE.IN_DOWNLOADS' | translate }}
         </span>
       }
 
       @if (isVariantDownloadTracked()) {
         <span
-          class="rounded-lg border px-2 py-1 font-mono text-[10px] uppercase"
-          [class.border-dark-border-bright]="isDark()"
-          [class.text-dark-text]="isDark()"
-          [class.border-light-border-bright]="!isDark()"
-          [class.text-light-text]="!isDark()"
+          class="rounded-lg border px-2 py-1 font-mono text-[10px] uppercase border-strong text-fg"
         >
           {{ getVariantStatus() }}
         </span>
@@ -175,12 +165,12 @@
     </a>
 
     @if (activeVariant.recipeUrl) {
-      <p class="mt-1 break-all font-mono text-[10px]" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+      <p class="mt-1 break-all font-mono text-[10px] text-fg-dim"  >
         recipe: {{ activeVariant.recipeUrl }}
       </p>
     }
 
-    <p class="mt-1 break-all font-mono text-[10px]" [class.text-dark-text-dim]="isDark()" [class.text-light-text-dim]="!isDark()">
+    <p class="mt-1 break-all font-mono text-[10px] text-fg-dim"  >
       params:
       @for (entry of activeVariant.selectedParameters || {} | keyvalue; track entry.key) {
         <span>{{ entry.key }}={{ entry.value }} </span>

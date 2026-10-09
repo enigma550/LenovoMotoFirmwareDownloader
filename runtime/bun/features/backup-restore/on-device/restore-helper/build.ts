@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getLogger } from '../../../../../../core/common/logger.ts';
 import {
   candidateSdkRoots,
   collectFiles,
@@ -15,6 +16,8 @@ import {
   runWithInput,
   sdkRoot,
 } from '../shared/build-support.ts';
+
+const log = getLogger('restore-helper-build');
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const JAVA_SRC = join(ROOT, 'java', 'src');
@@ -32,9 +35,7 @@ const MIN_API = '26';
 
 function usePrebuiltOrThrow(reason: string): never {
   if (existsSync(OUTPUT_APK)) {
-    console.warn(
-      `[restore-helper] ${reason} Falling back to committed prebuilt APK: ${OUTPUT_APK}`,
-    );
+    log.warn(`[restore-helper] ${reason} Falling back to committed prebuilt APK: ${OUTPUT_APK}`);
     process.exit(0);
   }
   throw new Error(reason);
@@ -188,4 +189,4 @@ run(apksigner, [
   APK_ALIGNED,
 ]);
 
-console.log(`Built ${OUTPUT_APK}`);
+log.info(`Built ${OUTPUT_APK}`);

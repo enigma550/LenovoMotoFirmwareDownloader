@@ -4,6 +4,7 @@
  */
 import { Injectable, inject } from '@angular/core';
 import { mapDownloadProgressMessage } from '../../../core/api/desktop-response.mapper';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import type { FirmwareDownloadState } from '../../../shared/state/workflow.types';
 import { WorkflowUiService } from '../../../shared/state/workflow-ui.service';
 import { canceledToastLabel, completedStatusLabel } from './download-utils';
@@ -25,6 +26,7 @@ export type DownloadStateAccessor = {
 @Injectable({ providedIn: 'root' })
 export class DownloadProgressHandlerService {
   private readonly ui = inject(WorkflowUiService);
+  private readonly i18n = inject(TranslationService);
   private accessor: DownloadStateAccessor | null = null;
 
   registerAccessor(accessor: DownloadStateAccessor) {
@@ -123,7 +125,9 @@ export class DownloadProgressHandlerService {
       if (isStandaloneExtract) {
         this.ui.status.set('Extraction completed.');
       } else {
-        this.ui.status.set(completedStatusLabel(nextState.mode, nextState.dryRun));
+        this.ui.status.set(
+          this.i18n.translate(completedStatusLabel(nextState.mode, nextState.dryRun)),
+        );
       }
     } else if (payload.status === 'failed') {
       const message =
@@ -131,17 +135,30 @@ export class DownloadProgressHandlerService {
       this.ui.errorMessage.set(message);
       accessor.showFailureToastOnce(payload.downloadId, message, 4200);
       if (!accessor.isDownloadActive()) {
-        this.ui.status.set('Idle');
+        this.ui.status.set(this.i18n.translate('STATUS.IDLE'));
       }
     } else if (payload.status === 'canceled') {
       this.ui.errorMessage.set('');
       if (isStandaloneExtract) {
-        this.ui.status.set('Extraction canceled.');
-        this.ui.showToast(`Extraction canceled: ${nextState.romName}`, 'info', 2600);
+        this.ui.status.set(this.i18n.translate('DOWNLOADS.EXTRACTION_CANCELED_STATUS'));
+        this.ui.showToast(
+          this.i18n.translate('DOWNLOADS.EXTRACTION_CANCELED', { name: nextState.romName }),
+          'info',
+          2600,
+        );
       } else {
-        const label = canceledToastLabel(nextState.mode);
-        this.ui.status.set(`${label} canceled: ${nextState.romName}.`);
-        this.ui.showToast(`${label} canceled: ${nextState.romName}`, 'info', 2600);
+        const label = this.i18n.translate(canceledToastLabel(nextState.mode));
+        this.ui.status.set(
+          this.i18n.translate('DOWNLOADS.CANCELED_WITH_NAME', { label, name: nextState.romName }),
+        );
+        this.ui.showToast(
+          this.i18n.translate('DOWNLOADS.CANCELED_WITH_NAME_TOAST', {
+            label,
+            name: nextState.romName,
+          }),
+          'info',
+          2600,
+        );
       }
     }
   };

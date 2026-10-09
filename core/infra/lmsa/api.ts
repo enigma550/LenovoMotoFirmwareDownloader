@@ -1,10 +1,69 @@
+import { constants as cryptoConstants, publicEncrypt } from 'node:crypto';
+import { getLogger } from '../../common/logger.ts';
 import type { RequestOptions } from '../../common/request-options.ts';
+import { fetchWithTimeout } from '../http.ts';
 import { API_URL, BASE_URL, USER_AGENT } from './constants.ts';
 import { cookieJar, session } from './state.ts';
+
+const log = getLogger('lmsa-api');
 
 const clientVersion = '7.5.5.19';
 const requestLanguage = 'en-US';
 const requestWindowsInfo = 'Microsoft Windows 10 Pro, 64-bit';
+const PUBLIC_KEY_PATH = '/common/rsa.jhtml';
+
+let fingerprintPublicKeyPem: string | null = null;
+
+async function loadFingerprintPublicKey() {
+  if (fingerprintPublicKeyPem) return fingerprintPublicKeyPem;
+
+  const response = await fetchWithTimeout(`${API_URL}${PUBLIC_KEY_PATH}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Request-Tag': 'lmsa',
+      'User-Agent': USER_AGENT,
+      ['Guid']: session.guid,
+      clientVersion,
+    },
+    body: '{}',
+  });
+  const data = (await response.json()) as { desc?: unknown };
+  const base64Key = typeof data.desc === 'string' ? data.desc.trim() : '';
+  if (!base64Key) return null;
+
+  const lines = base64Key.match(/.{1,64}/g)?.join('\n') ?? base64Key;
+  fingerprintPublicKeyPem = `-----BEGIN PUBLIC KEY-----\n${lines}\n-----END PUBLIC KEY-----\n`;
+  return fingerprintPublicKeyPem;
+}
+
+// Mirrors the official client: last URL segment with its extension replaced by "interface".
+function getLastSegmentForFingerprint(url: string) {
+  const parts = url.split('/').filter(Boolean);
+  const lastPart = parts[parts.length - 1];
+  if (!lastPart) return '';
+  const dotIndex = lastPart.lastIndexOf('.');
+  return dotIndex > 0 ? `${lastPart.slice(0, dotIndex)}interface` : lastPart;
+}
+
+// Lenovo gateway requires X-Device-Fingerprint = base64(RSA_PKCS1v15("<unixMs>|<Authorization>|<segment>")).
+async function createDeviceFingerprint(url: string, authorization: string) {
+  if (url.endsWith(PUBLIC_KEY_PATH)) return '';
+
+  try {
+    const publicKey = await loadFingerprintPublicKey();
+    if (!publicKey) return '';
+
+    const plainText = `${Date.now()}|${authorization}|${getLastSegmentForFingerprint(url)}`;
+    return publicEncrypt(
+      { key: publicKey, padding: cryptoConstants.RSA_PKCS1_PADDING },
+      Buffer.from(plainText, 'utf8'),
+    ).toString('base64');
+  } catch (error) {
+    log.warn('[LMSA] Failed to create device fingerprint:', error);
+    return '';
+  }
+}
 
 function serializeCookies() {
   return [...cookieJar.entries()]
@@ -53,7 +112,7 @@ function refreshAuth(headers: Headers) {
 }
 
 export async function bootstrapSessionCookie() {
-  const response = await fetch(`${BASE_URL}/lmsa-web/index.jsp`, { redirect: 'manual' });
+  const response = await fetchWithTimeout(`${BASE_URL}/lmsa-web/index.jsp`, { redirect: 'manual' });
   updateCookies(response.headers);
 }
 
@@ -127,6 +186,14 @@ export async function requestApi(
     headers.set('Authorization', session.jwt);
   }
 
+  const authorizationHeader = headers.get('Authorization');
+  if (authorizationHeader) {
+    const deviceFingerprint = await createDeviceFingerprint(url, authorizationHeader);
+    if (deviceFingerprint) {
+      headers.set('X-Device-Fingerprint', deviceFingerprint);
+    }
+  }
+
   const payload = options.raw
     ? body
     : {
@@ -140,7 +207,7 @@ export async function requestApi(
 
   const isGet = (options.method || 'POST').toUpperCase() === 'GET';
 
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     method: options.method || 'POST',
     headers,
     body: buildRequestBody(body, payload, isGet, isFormUrlEncoded),

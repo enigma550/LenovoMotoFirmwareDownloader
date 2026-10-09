@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { chmod, cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -73,6 +74,7 @@ interface QdlReleaseSelection {
   tag: string;
   assetName: string;
   downloadUrl: string;
+  digest: string;
 }
 
 function readReleaseTag(value: unknown) {
@@ -87,11 +89,13 @@ function findReleaseAsset(release: GitHubRelease, targetAssetName: string) {
     const assetName = typeof asset.name === 'string' ? asset.name.trim() : '';
     const browserDownloadUrl = asset['browser_download_url'];
     const downloadUrl = typeof browserDownloadUrl === 'string' ? browserDownloadUrl.trim() : '';
+    const digest = typeof asset['digest'] === 'string' ? asset['digest'].trim() : '';
     if (!assetName || !downloadUrl) continue;
     if (assetName === targetAssetName) {
       return {
         assetName,
         downloadUrl,
+        digest,
       };
     }
   }
@@ -195,6 +199,7 @@ async function selectQdlReleaseForAsset(targetAssetName: string): Promise<QdlRel
       tag: readReleaseTag(byTagJson['tag_name']) || QDL_RELEASE_TAG,
       assetName: selectedAsset.assetName,
       downloadUrl: selectedAsset.downloadUrl,
+      digest: selectedAsset.digest,
     };
   }
 
@@ -227,6 +232,7 @@ async function selectQdlReleaseForAsset(targetAssetName: string): Promise<QdlRel
       tag: releaseTag,
       assetName: selectedAsset.assetName,
       downloadUrl: selectedAsset.downloadUrl,
+      digest: selectedAsset.digest,
     };
   }
 
@@ -249,6 +255,27 @@ async function downloadQdlAsset(selection: QdlReleaseSelection) {
   const bytes = new Uint8Array(await response.arrayBuffer());
   if (bytes.byteLength === 0) {
     throw new Error(`[QDL] Downloaded asset is empty: ${downloadUrl}`);
+  }
+
+  // Integrity: GitHub publishes a sha256 digest per release asset. Verify the
+  // downloaded bytes against it whenever it is available.
+  const expectedDigest = selection.digest.toLowerCase();
+  if (expectedDigest.startsWith('sha256:')) {
+    const expectedHash = expectedDigest.slice('sha256:'.length);
+    const actualHash = createHash('sha256').update(bytes).digest('hex');
+    if (actualHash !== expectedHash) {
+      throw new Error(
+        `[QDL] Integrity check failed for ${selection.assetName}: ` +
+          `expected sha256 ${expectedHash}, got ${actualHash}.`,
+      );
+    }
+    console.log(
+      `[QDL] Integrity verified for ${selection.assetName} (sha256 ${actualHash.slice(0, 12)}...).`,
+    );
+  } else {
+    console.warn(
+      `[QDL] Release asset ${selection.assetName} has no published digest; skipping integrity check.`,
+    );
   }
 
   return {

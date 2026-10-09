@@ -2,13 +2,17 @@ import type {
   BunRpcRequestHandlers,
   DownloadProgressDispatch,
 } from '../../../rpc/request-handler-types.ts';
+import { probeFastbootDeviceHealth } from '../connected/fastboot-device-probe.ts';
 import { extractLocalFirmwarePackage, rescueLiteFirmwareWithProgress } from '../rescue-manager.ts';
 
 export function createRescueHandlers(
   sendDownloadProgress: DownloadProgressDispatch,
 ): Pick<
   BunRpcRequestHandlers,
-  'rescueLiteFirmware' | 'rescueLiteFirmwareFromLocal' | 'extractLocalFirmware'
+  | 'rescueLiteFirmware'
+  | 'rescueLiteFirmwareFromLocal'
+  | 'extractLocalFirmware'
+  | 'probeFastbootDeviceHealth'
 > {
   return {
     rescueLiteFirmware: async ({
@@ -93,6 +97,9 @@ export function createRescueHandlers(
           sendDownloadProgress(progressEvent);
         },
       );
+    },
+    probeFastbootDeviceHealth: async () => {
+      return probeFastbootDeviceHealth();
     },
   };
 }

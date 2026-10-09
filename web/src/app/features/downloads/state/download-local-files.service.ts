@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DownloadsDesktopApiService } from '../../../core/api/desktop';
+import { TranslationService } from '../../../core/i18n/translation.service';
 import type { FirmwareVariant, LocalDownloadedFile } from '../../../core/models/desktop-api';
 import { WorkflowUiService } from '../../../shared/state/workflow-ui.service';
 import { findBestLocalFileMatchForVariant, getPreferredVariantFileName } from './download-utils';
@@ -8,6 +9,7 @@ import { findBestLocalFileMatchForVariant, getPreferredVariantFileName } from '.
 export class DownloadLocalFilesService {
   private readonly backend = inject(DownloadsDesktopApiService);
   private readonly ui = inject(WorkflowUiService);
+  private readonly i18n = inject(TranslationService);
 
   readonly localDownloadedFiles = signal<LocalDownloadedFile[]>([]);
 
@@ -150,8 +152,8 @@ export class DownloadLocalFilesService {
 
   async deleteLocalFile(file: LocalDownloadedFile) {
     const confirmed = await this.ui.confirm(
-      'Remove download?',
-      `Are you sure you want to remove ${file.fileName} from your local storage? This will delete the file and all associated metadata.`,
+      this.i18n.translate('DOWNLOADS.REMOVE_TITLE'),
+      this.i18n.translate('DOWNLOADS.REMOVE_MESSAGE', { name: file.fileName }),
     );
 
     if (!confirmed) {

@@ -1,5 +1,20 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import type { RescueFlashTransport, RescueQdlStorage } from '../../../../core/models/desktop-api';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  HostListener,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import { DownloadsDesktopApiService } from '../../../../core/api/desktop/downloads-desktop-api.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
+import type {
+  FastbootDeviceHealthResponse,
+  RescueFlashTransport,
+  RescueQdlStorage,
+} from '../../../../core/models/desktop-api';
 import type { DataResetChoice } from '../../../../shared/state/workflow.types';
 import { UiActionButtonComponent } from '../../ui/ui-action-button/ui-action-button.component';
 import { RescueDialogButtonComponent } from '../rescue-dialog-button/rescue-dialog-button.component';
@@ -8,11 +23,18 @@ import { RescueDriverInstallCardComponent } from '../rescue-driver-install-card/
 @Component({
   selector: 'app-rescue-options-dialog',
   standalone: true,
-  imports: [RescueDialogButtonComponent, RescueDriverInstallCardComponent, UiActionButtonComponent],
+  imports: [
+    RescueDialogButtonComponent,
+    RescueDriverInstallCardComponent,
+    UiActionButtonComponent,
+    TranslatePipe,
+  ],
   templateUrl: './rescue-options-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RescueOptionsDialogComponent {
+  private readonly downloadsApi = inject(DownloadsDesktopApiService);
+
   readonly isOpen = input(false);
   readonly isDark = input(false);
   readonly title = input('Rescue Lite');
@@ -41,7 +63,42 @@ export class RescueOptionsDialogComponent {
   readonly qdlStorageChange = output<RescueQdlStorage>();
   readonly qdlSerialChange = output<string>();
 
+  readonly probingHealth = signal(false);
+  readonly deviceHealth = signal<FastbootDeviceHealthResponse | null>(null);
+
+  constructor() {
+    effect(() => {
+      if (this.isOpen() && this.flashTransport() === 'fastboot') {
+        void this.checkDeviceHealth();
+      }
+    });
+  }
+
+  protected async checkDeviceHealth() {
+    if (this.probingHealth()) return;
+    this.probingHealth.set(true);
+    try {
+      const result = await this.downloadsApi.probeFastbootDeviceHealth();
+      this.deviceHealth.set(result);
+    } catch (err) {
+      this.deviceHealth.set({
+        ok: false,
+        connected: false,
+        batteryStatus: 'unknown',
+        warnings: [],
+        error: String(err),
+      });
+    } finally {
+      this.probingHealth.set(false);
+    }
+  }
+
   protected onBackdropClick() {
+    this.close.emit();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
     this.close.emit();
   }
 

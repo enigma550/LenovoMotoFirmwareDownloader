@@ -1,33 +1,29 @@
 @if (tree().length === 0 && depth() === 0) {
-  <p class="mt-2 text-xs" [class.text-light-text-dim]="!isDark()" [class.text-dark-text-dim]="isDark()">
-    No files found.
+  <p class="mt-2 text-xs text-fg-dim"  >
+    {{ 'BACKUP.NO_FILES' | translate }}
   </p>
 } @else {
   @if (depth() === 0) {
     <div class="mt-1.5 flex items-center gap-2">
       <button
         type="button"
-        class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-        [class.text-light-text]="!isDark()"
-        [class.hover:bg-light-surface]="!isDark()"
-        [class.text-dark-text]="isDark()"
-        [class.hover:bg-dark-elevated]="isDark()"
+        class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 text-fg"
+        [class.hover:bg-hover-surface]="!isDark()"
+        [class.hover:bg-hover-soft]="isDark()"
         [disabled]="allExpanded()"
         (click)="expandAll()"
       >
-        Expand all
+        {{ 'BACKUP.EXPAND_ALL' | translate }}
       </button>
       <button
         type="button"
-        class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-        [class.text-light-text]="!isDark()"
-        [class.hover:bg-light-surface]="!isDark()"
-        [class.text-dark-text]="isDark()"
-        [class.hover:bg-dark-elevated]="isDark()"
+        class="rounded-lg px-2 py-1 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 text-fg"
+        [class.hover:bg-hover-surface]="!isDark()"
+        [class.hover:bg-hover-soft]="isDark()"
         [disabled]="!anyExpanded()"
         (click)="collapseAll()"
       >
-        Collapse all
+        {{ 'BACKUP.COLLAPSE_ALL' | translate }}
       </button>
     </div>
   }
@@ -38,8 +34,8 @@
         <div
           class="rounded-lg transition"
           [class.border]="depth() === 0"
-          [class.border-light-border]="depth() === 0 && !isDark()"
-          [class.border-dark-border-bright]="depth() === 0 && isDark()"
+          [class.border-base]="depth() === 0 && !isDark()"
+          [class.border-strong]="depth() === 0 && isDark()"
         >
           <button
             type="button"
@@ -56,24 +52,25 @@
               {{ isExpanded(node.fullPath) ? '▼' : '▶' }}
             </span>
             <span
-              class="min-w-0 flex-1 truncate text-xs font-semibold"
-              [class.text-light-text-bright]="!isDark()"
-              [class.text-dark-text-bright]="isDark()"
+              class="min-w-0 flex-1 truncate text-xs font-semibold text-fg-strong"
             >
               {{ node.name }}
             </span>
             <span
-              class="text-[11px]"
-              [class.text-light-text-dim]="!isDark()"
-              [class.text-dark-text-dim]="isDark()"
+              class="text-[11px] text-fg-dim"
             >
-              {{ childFileCount(node) }} file{{ childFileCount(node) === 1 ? '' : 's' }}
+              {{ childFileCount(node) }} {{ (childFileCount(node) === 1 ? 'BACKUP.FILE_ONE' : 'BACKUP.FILE_MANY') | translate }}
             </span>
 
             @if (selectable) {
               <div
                 class="shrink-0 cursor-pointer"
+                role="checkbox"
+                tabindex="0"
+                [attr.aria-checked]="isFolderAllSelected(node)"
                 (click)="$event.stopPropagation(); onToggleFolder(node)"
+                (keydown.enter)="$event.stopPropagation(); onToggleFolder(node)"
+                (keydown.space)="$event.stopPropagation(); onToggleFolder(node); $event.preventDefault()"
               >
                 <div
                   class="flex h-4 w-4 items-center justify-center rounded border text-[9px] font-bold"
@@ -87,13 +84,13 @@
                     isFolderPartiallySelected(node) && !isFolderAllSelected(node)
                   "
                   [class.text-white]="isFolderPartiallySelected(node)"
-                  [class.border-dark-border-bright]="
+                  [class.border-strong]="
                     !isFolderAllSelected(node) && !isFolderPartiallySelected(node) && isDark()
                   "
-                  [class.border-light-border-bright]="
+                  [class.border-strong]="
                     !isFolderAllSelected(node) && !isFolderPartiallySelected(node) && !isDark()
                   "
-                  [class.text-light-text-dim]="
+                  [class.text-fg-dim]="
                     !isFolderAllSelected(node) && !isFolderPartiallySelected(node)
                   "
                 >
@@ -126,8 +123,8 @@
           [class.cursor-pointer]="selectable"
           [class.border-l-success]="selectable && isFileSelected(node.file.id)"
           [class.border-l-transparent]="!selectable || !isFileSelected(node.file.id)"
-          [class.bg-light-surface]="!isDark()"
-          [class.bg-dark-elevated/40]="isDark()"
+          [class.bg-surface]="!isDark()"
+          [class.bg-elevated/40]="isDark()"
           (click)="selectable ? toggleFile.emit(node.file.id) : null"
         >
           <span
@@ -140,17 +137,13 @@
             {{ fileExtIcon(node.file) }}
           </span>
           <span
-            class="min-w-0 flex-1 truncate font-mono text-xs"
-            [class.text-light-text]="!isDark()"
-            [class.text-dark-text]="isDark()"
+            class="min-w-0 flex-1 truncate font-mono text-xs text-fg"
           >
             {{ node.name }}
           </span>
           @if (node.file.sizeBytes) {
             <span
-              class="font-mono text-[11px]"
-              [class.text-light-text-dim]="!isDark()"
-              [class.text-dark-text-dim]="isDark()"
+              class="font-mono text-[11px] text-fg-dim"
             >
               {{ formatNodeSize(node.file.sizeBytes) }}
             </span>
@@ -163,9 +156,9 @@
                 [class.border-success]="isFileSelected(node.file.id)"
                 [class.bg-success]="isFileSelected(node.file.id)"
                 [class.text-white]="isFileSelected(node.file.id)"
-                [class.border-dark-border-bright]="!isFileSelected(node.file.id) && isDark()"
-                [class.border-light-border-bright]="!isFileSelected(node.file.id) && !isDark()"
-                [class.text-light-text-dim]="!isFileSelected(node.file.id)"
+                [class.border-strong]="!isFileSelected(node.file.id) && isDark()"
+                [class.border-strong]="!isFileSelected(node.file.id) && !isDark()"
+                [class.text-fg-dim]="!isFileSelected(node.file.id)"
               >
                 @if (isFileSelected(node.file.id)) {
                   ✓

@@ -1,5 +1,8 @@
 import { chmod, lstat, mkdir, readdir, rm, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
+import { getLogger } from '../../core/common/logger.ts';
+
+const log = getLogger('cef-profile');
 
 async function ensureDirectory(path: string) {
   try {
@@ -85,6 +88,6 @@ export async function cleanupLinuxCefProfileLocks(userCachePath: string) {
       }
     }
   } catch (error) {
-    console.warn('[CEF] Failed to clean profile locks. Continuing without cleanup.', error);
+    log.warn('[CEF] Failed to clean profile locks. Continuing without cleanup.', error);
   }
 }

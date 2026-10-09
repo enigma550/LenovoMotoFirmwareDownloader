@@ -3,6 +3,8 @@ import type {
   AppInfo,
   DesktopIntegrationStatus,
   FrameworkUpdateInfo,
+  LinuxUdevInstallResponse,
+  LinuxUdevStatusResponse,
   WindowsMtkDriverInstallResponse,
   WindowsQdloaderDriverInstallResponse,
   WindowsQdloaderDriverStatusResponse,
@@ -118,5 +120,13 @@ export class SystemDesktopApiService {
       desktopApi.installWindowsMtkDriver(),
     );
     return mapWindowsMtkDriverInstallResponse(response);
+  }
+
+  async getLinuxUdevStatus(): Promise<LinuxUdevStatusResponse> {
+    return this.bridge.withDesktopApi((desktopApi) => desktopApi.getLinuxUdevStatus());
+  }
+
+  async installLinuxUdevRules(): Promise<LinuxUdevInstallResponse> {
+    return this.bridge.withDesktopApi((desktopApi) => desktopApi.installLinuxUdevRules());
   }
 }

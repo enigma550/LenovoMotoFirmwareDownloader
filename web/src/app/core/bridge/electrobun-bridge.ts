@@ -12,6 +12,7 @@ let fallbackInstalled = false;
 const BRIDGE_WAIT_ATTEMPTS = 600;
 const BRIDGE_WAIT_INTERVAL_MS = 50;
 const DOWNLOAD_PROGRESS_EVENT_NAME = 'desktop-download-progress';
+const UPDATE_PROGRESS_EVENT_NAME = 'desktop-update-progress';
 const DEFAULT_RPC_TIMEOUT_MS = 120_000;
 const DOWNLOAD_RPC_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
@@ -51,6 +52,7 @@ function wait(durationMs: number) {
 
 const bunBridgeRpcClient = createDesktopRpcClient({
   downloadProgressEventName: DOWNLOAD_PROGRESS_EVENT_NAME,
+  updateProgressEventName: UPDATE_PROGRESS_EVENT_NAME,
   defaultRpcTimeoutMs: DEFAULT_RPC_TIMEOUT_MS,
   downloadRpcTimeoutMs: DOWNLOAD_RPC_TIMEOUT_MS,
 });

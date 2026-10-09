@@ -5,6 +5,7 @@ import { mkdir, readdir, readFile, rename, rmdir, stat, unlink } from 'node:fs/p
 import { homedir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { finished } from 'node:stream/promises';
+import { fetchWithTimeout, LONG_HTTP_TIMEOUT_MS } from '../../../../core/infra/http.ts';
 import type {
   DownloadProgressMessage,
   PlayStoreAppDetailsResponse,
@@ -508,9 +509,13 @@ async function downloadPlayStoreFile(options: {
   headers.set('Cookie', options.cookies);
   headers.set('User-Agent', options.session.userAgent);
 
-  const response = await fetch(options.url, {
-    headers,
-  });
+  const response = await fetchWithTimeout(
+    options.url,
+    {
+      headers,
+    },
+    LONG_HTTP_TIMEOUT_MS,
+  );
   if (!response.ok) {
     throw new Error(`APK download failed with HTTP ${response.status}.`);
   }
@@ -570,7 +575,7 @@ async function saveDownloadedAppSidecars(options: {
   let iconFileName: string | undefined;
   const iconUrl = options.iconUrl?.trim();
   if (iconUrl) {
-    const response = await fetch(iconUrl).catch(() => null);
+    const response = await fetchWithTimeout(iconUrl).catch(() => null);
     if (response?.ok) {
       const iconExtension = iconExtensionFromResponse(response, iconUrl);
       iconFileName = `${APP_STORE_ICON_FILE_PREFIX}${iconExtension}`;

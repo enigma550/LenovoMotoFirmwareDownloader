@@ -41,7 +41,13 @@ type ArchiverInstance = {
   finalize: () => Promise<void>;
 };
 
-type ArchiverFactory = (format: 'zip', options: { zlib: { level: number } }) => ArchiverInstance;
+type ArchiverOptions = { zlib: { level: number } };
+
+type ArchiverFactory = (format: 'zip', options: ArchiverOptions) => ArchiverInstance;
+
+type ArchiverCtor = new (options: ArchiverOptions) => ArchiverInstance;
+
+type CreateArchiveFn = (options: ArchiverOptions) => ArchiverInstance;
 
 type ModuleLikeValue =
   | string
@@ -72,13 +78,19 @@ function resolveRcEdit(moduleValue: ModuleLikeValue): RcEditFn {
   return candidate as RcEditFn;
 }
 
-function resolveArchiver(moduleValue: ModuleLikeValue): ArchiverFactory {
+function resolveArchiver(moduleValue: ModuleLikeValue): CreateArchiveFn {
   const record = asRecord(moduleValue);
-  const candidate = record?.['default'] ?? moduleValue;
-  if (typeof candidate !== 'function') {
-    throw new Error('archiver module did not export a callable factory.');
+  // archiver 8.x: class-based API (`new ZipArchive({...})`).
+  const zipClass = record?.['ZipArchive'];
+  if (typeof zipClass === 'function') {
+    return (options) => new (zipClass as ArchiverCtor)(options);
   }
-  return candidate as ArchiverFactory;
+  // archiver 7.x and older: callable factory (`archiver('zip', {...})`).
+  const factory = record?.['default'] ?? moduleValue;
+  if (typeof factory === 'function') {
+    return (options) => (factory as ArchiverFactory)('zip', options);
+  }
+  throw new Error('archiver module did not export ZipArchive or a callable factory.');
 }
 
 if (!BUILD_DIR) {
@@ -324,9 +336,9 @@ async function patchWindowsInstaller(): Promise<void> {
   unlinkSync(artifactZipPath);
 
   const archiverModule: ModuleLikeValue = await import('archiver');
-  const createArchive: ArchiverFactory = resolveArchiver(archiverModule);
+  const createArchive: CreateArchiveFn = resolveArchiver(archiverModule);
   const output: import('fs').WriteStream = createWriteStream(artifactZipPath);
-  const archive: ArchiverInstance = createArchive('zip', {
+  const archive: ArchiverInstance = createArchive({
     zlib: { level: 9 },
   });
 

@@ -1,9 +1,12 @@
 import { BrowserWindow } from 'electrobun/bun';
+import { getLogger } from '../../../../core/common/logger.ts';
 import {
   buildDashboardButtonScript,
   DASHBOARD_NAVIGATION_URL,
 } from './embedded-auth-dashboard-button.ts';
 import { queueRuntimeAuthCallbackUrl } from './startup-auth-callback.ts';
+
+const log = getLogger('auth-window');
 
 const SOFTWARE_FIX_CALLBACK_PREFIX = /^softwarefix:\/\/callback/i;
 
@@ -106,7 +109,7 @@ function closeAuthWindow(reason: string, focusDashboard: boolean) {
     try {
       activeWindow.close();
     } catch (error) {
-      console.warn(`[AuthWindow] Failed to close auth window (${reason}).`, error);
+      log.warn(`[AuthWindow] Failed to close auth window (${reason}).`, error);
     }
   }
 
@@ -115,7 +118,7 @@ function closeAuthWindow(reason: string, focusDashboard: boolean) {
       mainWindow?.maximize?.();
       mainWindow?.focus?.();
     } catch (error) {
-      console.warn('[AuthWindow] Failed to focus dashboard window.', error);
+      log.warn('[AuthWindow] Failed to focus dashboard window.', error);
     }
   }
 }
@@ -128,7 +131,7 @@ function injectDashboardButton() {
   try {
     authWindow.webview.executeJavascript(buildDashboardButtonScript());
   } catch (error) {
-    console.warn('[AuthWindow] Failed to inject dashboard button.', error);
+    log.warn('[AuthWindow] Failed to inject dashboard button.', error);
   }
 }
 
@@ -251,13 +254,13 @@ export function openAuthLoginWindow(loginUrl: string, mainWindow?: MainWindowHos
 
   let createdWindow: BrowserWindow;
   try {
-    console.log(`[AuthWindow] Opening login window with renderer: ${preferredRenderer}`);
+    log.info(`[AuthWindow] Opening login window with renderer: ${preferredRenderer}`);
     createdWindow = createWindow(preferredRenderer);
   } catch (error) {
     if (preferredRenderer === defaultRenderer) {
       throw error;
     }
-    console.warn(
+    log.warn(
       `[AuthWindow] Preferred renderer '${preferredRenderer}' failed, falling back to '${defaultRenderer}'.`,
       error,
     );

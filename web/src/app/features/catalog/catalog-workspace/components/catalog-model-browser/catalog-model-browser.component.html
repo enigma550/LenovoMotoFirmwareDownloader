@@ -1,45 +1,31 @@
 <section
-  class="rounded-xl border p-5 transition-all duration-200"
-  [class.border-dark-border]="store.isDark()"
-  [class.bg-dark-surface]="store.isDark()"
-  [class.border-light-border]="!store.isDark()"
-  [class.bg-light-surface]="!store.isDark()"
+  class="rounded-xl border p-5 transition-all duration-200 border-base bg-surface"
   [class.shadow-sm]="!store.isDark()"
 >
   <div class="flex items-start justify-between gap-4">
     <div>
       <h3
-        class="text-xl font-bold tracking-wide"
-        [class.text-dark-text-bright]="store.isDark()"
-        [class.text-light-text-bright]="!store.isDark()"
+        class="text-xl font-bold tracking-wide text-fg-strong"
       >
-        📋 Catalog Workspace
+        📋 {{ 'CATALOG.TITLE' | translate }}
       </h3>
       <p
-        class="mt-1 text-sm"
-        [class.text-dark-text-dim]="store.isDark()"
-        [class.text-light-text-dim]="!store.isDark()"
+        class="mt-1 text-sm text-fg-dim"
       >
-        Filter models, select one, and run firmware lookups
+        {{ 'CATALOG.DESC' | translate }}
       </p>
     </div>
   </div>
 
   <div class="mt-5 flex flex-wrap gap-3">
     <button
-      class="rounded-lg border px-4 py-2 text-sm font-medium transition-all"
-      [class.border-dark-border]="store.isDark()"
-      [class.bg-dark-elevated]="store.isDark()"
-      [class.text-dark-text]="store.isDark()"
-      [class.hover:border-dark-border-bright]="store.isDark()"
-      [class.border-light-border]="!store.isDark()"
-      [class.bg-light-surface]="!store.isDark()"
-      [class.text-light-text]="!store.isDark()"
-      [class.hover:border-light-border-bright]="!store.isDark()"
+      class="rounded-lg border px-4 py-2 text-sm font-medium transition-all border-base text-fg hover:border-strong"
+      [class.bg-elevated]="store.isDark()"
+      [class.bg-surface]="!store.isDark()"
       type="button"
       (click)="store.loadCatalog(false)"
     >
-      📂 Load Local
+      📂 {{ 'CATALOG.LOAD_LOCAL' | translate }}
     </button>
     <button
       class="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200"
@@ -54,7 +40,7 @@
       type="button"
       (click)="store.loadCatalog(true)"
     >
-      🔄 Refresh from LMSA
+      🔄 {{ 'CATALOG.REFRESH' | translate }}
     </button>
   </div>
 
@@ -64,22 +50,16 @@
       <!-- Category filter -->
       <div>
         <label
-          class="mb-1.5 block text-xs font-medium"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="mb-1.5 block text-xs font-medium text-fg-dim"
         >
-          Category
+          {{ 'CATALOG.CATEGORY' | translate }}
         </label>
         <div class="relative w-full">
           <button
             #categoryTrigger
-            class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200"
-            [class.border-dark-border-bright]="store.isDark()"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.text-dark-text]="store.isDark()"
-            [class.border-light-border-bright]="!store.isDark()"
-            [class.bg-light-surface]="!store.isDark()"
-            [class.text-light-text]="!store.isDark()"
+            class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200 border-strong text-fg"
+            [class.bg-elevated]="store.isDark()"
+            [class.bg-surface]="!store.isDark()"
             type="button"
             aria-haspopup="listbox"
             [attr.aria-expanded]="isMenuOpen('category')"
@@ -96,68 +76,58 @@
 
           @if (isMenuOpen('category')) {
             <div
-              class="absolute z-30 max-h-64 w-full overflow-auto rounded-lg border py-1 shadow-xl"
+              class="absolute z-30 max-h-64 w-full overflow-auto rounded-lg border py-1 shadow-xl border-strong"
               [class.bottom-full]="isMenuUpward('category')"
               [class.mb-1]="isMenuUpward('category')"
               [class.top-full]="!isMenuUpward('category')"
               [class.mt-1]="!isMenuUpward('category')"
-              [class.border-dark-border-bright]="store.isDark()"
-              [class.bg-dark-surface]="store.isDark()"
-              [class.border-light-border-bright]="!store.isDark()"
-              [class.bg-light-elevated]="!store.isDark()"
+              [class.bg-surface]="store.isDark()"
+              [class.bg-elevated]="!store.isDark()"
               role="listbox"
             >
               <button
-                class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
                 (click)="selectCategory('all', $event)"
               >
-                All
+                {{ 'CATALOG.ALL' | translate }}
               </button>
               <button
-                class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
                 (click)="selectCategory('phone', $event)"
               >
-                📱 Phone
+                📱 {{ 'CATALOG.PHONE' | translate }}
               </button>
               <button
-                class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
                 (click)="selectCategory('tablet', $event)"
               >
-                📲 Tablet
+                📲 {{ 'CATALOG.TABLET' | translate }}
               </button>
               <button
-                class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
                 (click)="selectCategory('smart', $event)"
               >
-                ⌚ Smart
+                ⌚ {{ 'CATALOG.SMART' | translate }}
               </button>
             </div>
           }
@@ -167,22 +137,16 @@
       <!-- readSupport filter -->
       <div>
         <label
-          class="mb-1.5 block text-xs font-medium"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="mb-1.5 block text-xs font-medium text-fg-dim"
         >
-          Read Support
+          {{ 'CATALOG.READ_SUPPORT' | translate }}
         </label>
         <div class="relative w-full">
           <button
             #readSupportTrigger
-            class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200"
-            [class.border-dark-border-bright]="store.isDark()"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.text-dark-text]="store.isDark()"
-            [class.border-light-border-bright]="!store.isDark()"
-            [class.bg-light-surface]="!store.isDark()"
-            [class.text-light-text]="!store.isDark()"
+            class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200 border-strong text-fg"
+            [class.bg-elevated]="store.isDark()"
+            [class.bg-surface]="!store.isDark()"
             type="button"
             aria-haspopup="listbox"
             [attr.aria-expanded]="isMenuOpen('readSupport')"
@@ -199,36 +163,30 @@
 
           @if (isMenuOpen('readSupport')) {
             <div
-              class="absolute z-30 max-h-64 w-full overflow-auto rounded-lg border py-1 shadow-xl"
+              class="absolute z-30 max-h-64 w-full overflow-auto rounded-lg border py-1 shadow-xl border-strong"
               [class.bottom-full]="isMenuUpward('readSupport')"
               [class.mb-1]="isMenuUpward('readSupport')"
               [class.top-full]="!isMenuUpward('readSupport')"
               [class.mt-1]="!isMenuUpward('readSupport')"
-              [class.border-dark-border-bright]="store.isDark()"
-              [class.bg-dark-surface]="store.isDark()"
-              [class.border-light-border-bright]="!store.isDark()"
-              [class.bg-light-elevated]="!store.isDark()"
+              [class.bg-surface]="store.isDark()"
+              [class.bg-elevated]="!store.isDark()"
               role="listbox"
             >
               <button
-                class="block w-full px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="block w-full px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
                 (click)="selectReadSupport('all', $event)"
               >
-                All
+                {{ 'CATALOG.ALL' | translate }}
               </button>
               <button
-                class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-success/10]="store.isDark()"
                 [class.hover:text-success]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-success-light]="!store.isDark()"
                 [class.hover:text-success]="!store.isDark()"
                 type="button"
@@ -245,14 +203,12 @@
                 >
                   <path d="M5 13l4 4L19 7" />
                 </svg>
-                Supported
+                {{ 'CATALOG.SUPPORTED' | translate }}
               </button>
               <button
-                class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors"
-                [class.text-dark-text]="store.isDark()"
+                class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors text-fg"
                 [class.hover:bg-danger/10]="store.isDark()"
                 [class.hover:text-danger]="store.isDark()"
-                [class.text-light-text]="!store.isDark()"
                 [class.hover:bg-danger-light]="!store.isDark()"
                 [class.hover:text-danger]="!store.isDark()"
                 type="button"
@@ -269,7 +225,7 @@
                 >
                   <path d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Not supported
+                {{ 'CATALOG.NOT_SUPPORTED' | translate }}
               </button>
             </div>
           }
@@ -279,64 +235,48 @@
       <!-- Search -->
       <div class="md:col-span-2">
         <label
-          class="mb-1.5 block text-xs font-medium"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="mb-1.5 block text-xs font-medium text-fg-dim"
         >
-          🔍 Search
+          🔍 {{ 'CATALOG.SEARCH' | translate }}
         </label>
         <input
-          class="w-full rounded-lg border px-3 py-2 text-sm transition-all duration-200 placeholder:opacity-50 focus:outline-none"
-          [class.border-dark-border-bright]="store.isDark()"
-          [class.bg-dark-elevated]="store.isDark()"
-          [class.text-dark-text]="store.isDark()"
+          class="w-full rounded-lg border px-3 py-2 text-sm transition-all duration-200 placeholder:opacity-50 focus:outline-none border-strong text-fg"
+          [class.bg-elevated]="store.isDark()"
           [class.focus:border-accent]="store.isDark()"
-          [class.border-light-border-bright]="!store.isDark()"
-          [class.bg-light-surface]="!store.isDark()"
-          [class.text-light-text]="!store.isDark()"
+          [class.bg-surface]="!store.isDark()"
           [class.focus:border-accent]="!store.isDark()"
           [ngModel]="store.searchText()"
           (ngModelChange)="store.setSearchText($event)"
-          placeholder="model, market, platform..."
+          [placeholder]="'CATALOG.SEARCH_PLACEHOLDER' | translate"
         />
       </div>
     </div>
 
     <!-- Data table -->
     <div
-      class="mt-5 overflow-hidden rounded-xl border"
-      [class.border-dark-border-bright]="store.isDark()"
-      [class.bg-dark-elevated]="store.isDark()"
-      [class.border-light-border-bright]="!store.isDark()"
-      [class.bg-light-surface]="!store.isDark()"
+      class="mt-5 overflow-hidden rounded-xl border border-strong"
+      [class.bg-elevated]="store.isDark()"
+      [class.bg-surface]="!store.isDark()"
     >
       <!-- Table header -->
       <div
-        class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_6rem] gap-3 border-b px-3 py-2.5 text-xs font-semibold"
-        [class.border-dark-border]="store.isDark()"
-        [class.bg-dark-bg]="store.isDark()"
+        class="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_6rem] gap-3 border-b px-3 py-2.5 text-xs font-semibold border-base bg-canvas"
         [class.text-accent]="store.isDark()"
-        [class.border-light-border]="!store.isDark()"
-        [class.bg-light-bg]="!store.isDark()"
         [class.text-accent]="!store.isDark()"
       >
-        <span class="min-w-0">Model</span>
-        <span class="min-w-0">Market</span>
-        <span class="min-w-0">Platform</span>
-        <span class="min-w-0">Category</span>
-        <span class="text-right">Read Support</span>
+        <span class="min-w-0">{{ 'CATALOG.MODEL' | translate }}</span>
+        <span class="min-w-0">{{ 'CATALOG.MARKET' | translate }}</span>
+        <span class="min-w-0">{{ 'CATALOG.PLATFORM' | translate }}</span>
+        <span class="min-w-0">{{ 'CATALOG.CATEGORY' | translate }}</span>
+        <span class="text-right">{{ 'CATALOG.READ_SUPPORT' | translate }}</span>
       </div>
 
       <!-- Table rows -->
       @for (model of store.visibleModels(); track model.modelName + model.marketName) {
         <button
-          class="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_6rem] items-center gap-3 border-b px-3 py-2 text-left text-sm transition-all duration-150"
-          [class.border-dark-border]="store.isDark()"
-          [class.text-dark-text]="store.isDark()"
+          class="grid w-full grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_6rem] items-center gap-3 border-b px-3 py-2 text-left text-sm transition-all duration-150 border-base text-fg"
           [class.hover:bg-success/5]="store.isDark()"
           [class.hover:text-success]="store.isDark()"
-          [class.border-light-border]="!store.isDark()"
-          [class.text-light-text]="!store.isDark()"
           [class.hover:bg-success-light]="!store.isDark()"
           [class.bg-success/15]="
             store.isDark() &&
@@ -413,11 +353,9 @@
         </button>
       } @empty {
         <p
-          class="p-4 text-center text-sm"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="p-4 text-center text-sm text-fg-dim"
         >
-          No models match current filters.
+          {{ 'CATALOG.NO_MATCH' | translate }}
         </p>
       }
     </div>
@@ -425,50 +363,38 @@
     <!-- Pagination -->
     <div class="mt-4 flex flex-wrap items-center gap-3">
       <button
-        class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all duration-200"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.text-dark-text]="store.isDark()"
+        class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all duration-200 border-strong text-fg"
         [class.hover:border-accent]="store.isDark()"
         [class.hover:text-accent]="store.isDark()"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.text-light-text]="!store.isDark()"
         [class.hover:border-accent]="!store.isDark()"
         type="button"
         (click)="store.prevPage()"
       >
-        ← Prev
+        {{ 'CATALOG.PREV' | translate }}
       </button>
       <button
-        class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all duration-200"
-        [class.border-dark-border-bright]="store.isDark()"
-        [class.text-dark-text]="store.isDark()"
+        class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all duration-200 border-strong text-fg"
         [class.hover:border-accent]="store.isDark()"
         [class.hover:text-accent]="store.isDark()"
-        [class.border-light-border-bright]="!store.isDark()"
-        [class.text-light-text]="!store.isDark()"
         [class.hover:border-accent]="!store.isDark()"
         type="button"
         (click)="store.nextPage()"
       >
-        Next →
+        {{ 'CATALOG.NEXT' | translate }}
       </button>
       <span
-        class="text-sm"
-        [class.text-dark-text-dim]="store.isDark()"
-        [class.text-light-text-dim]="!store.isDark()"
+        class="text-sm text-fg-dim"
       >
-        Page
+        {{ 'CATALOG.PAGE' | translate }}
         <span class="text-accent">{{ store.pageIndex() + 1 }}</span>
         /
         <span>{{ store.totalPages() }}</span>
       </span>
       <span class="mx-2 opacity-30">|</span>
       <span
-        class="text-sm"
-        [class.text-dark-text-dim]="store.isDark()"
-        [class.text-light-text-dim]="!store.isDark()"
+        class="text-sm text-fg-dim"
       >
-        Matches:
+        {{ 'CATALOG.MATCHES' | translate }}:
         <span class="text-success">{{ store.filteredModels().length }}</span>
       </span>
     </div>

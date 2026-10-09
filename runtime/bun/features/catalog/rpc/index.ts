@@ -1,3 +1,4 @@
+import { getLogger } from '../../../../../core/common/logger.ts';
 import {
   getModelCatalog,
   refreshModelCatalogFromApi,
@@ -21,6 +22,8 @@ import {
 import type { BunRpcRequestHandlers } from '../../../rpc/request-handler-types.ts';
 import { toErrorMessage } from '../../../rpc/request-handler-types.ts';
 
+const log = getLogger('catalog-rpc');
+
 export function createCatalogHandlers(): Pick<
   BunRpcRequestHandlers,
   | 'getCatalogModels'
@@ -40,7 +43,7 @@ export function createCatalogHandlers(): Pick<
         let models = usedLmsaRefresh ? await refreshModelCatalogFromApi() : await getModelCatalog();
 
         if (!usedLmsaRefresh && models.length === 0) {
-          console.log('[Catalog] Local catalog is empty. Refreshing from LMSA API...');
+          log.info('[Catalog] Local catalog is empty. Refreshing from LMSA API...');
           models = await refreshModelCatalogFromApi();
           usedLmsaRefresh = true;
         }

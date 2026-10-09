@@ -8,6 +8,7 @@ import {
   signal,
   type WritableSignal,
 } from '@angular/core';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import type { BackupRestoreFileEntry } from '../../../../core/models/desktop-api';
 import { formatBytes } from '../../../../shared/utils/format';
 import {
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-backup-file-tree',
   standalone: true,
-  imports: [forwardRef(() => BackupFileTreeComponent)],
+  imports: [forwardRef(() => BackupFileTreeComponent), TranslatePipe],
   templateUrl: './backup-file-tree.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

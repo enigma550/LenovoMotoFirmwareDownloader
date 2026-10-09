@@ -8,11 +8,17 @@ import {
 } from '../features/downloads/rpc/index.ts';
 import { createRescueHandlers } from '../features/rescue/rpc/index.ts';
 import { createSystemHandlers } from '../features/system/rpc/index.ts';
+import { createUpdateHandlers } from '../features/update/rpc/index.ts';
 import { RpcHandlerRegistry } from './handler-registry.ts';
-import type { BunRpcRequestHandlers, DownloadProgressDispatch } from './request-handler-types.ts';
+import type {
+  BunRpcRequestHandlers,
+  DownloadProgressDispatch,
+  UpdateProgressDispatch,
+} from './request-handler-types.ts';
 
 export function createRequestHandlers(options: {
   sendDownloadProgress: DownloadProgressDispatch;
+  sendUpdateProgress: UpdateProgressDispatch;
   getMainWindow?: () => {
     renderer?: 'native' | 'cef';
     maximize?: () => void;
@@ -42,5 +48,6 @@ export function createRequestHandlers(options: {
   registry.registerMany(createBackupRestoreHandlers());
   registry.registerMany(createRescueHandlers(options.sendDownloadProgress));
   registry.registerMany(createSystemHandlers());
+  registry.registerMany(createUpdateHandlers(options.sendUpdateProgress));
   return registry.toRecord();
 }

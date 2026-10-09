@@ -5,7 +5,8 @@ if [ ! -f /etc/arch-release ]; then
   exit 0
 fi
 
-GET_DEBLOATED_PKGS_URL="${GET_DEBLOATED_PKGS_URL:-https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/get-debloated-pkgs.sh}"
+# Pinned by commit SHA — this script is executed during the build.
+GET_DEBLOATED_PKGS_URL="${GET_DEBLOATED_PKGS_URL:-https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/3513258ee1473058f434495114ba9f737bba9ae0/useful-tools/get-debloated-pkgs.sh}"
 
 install_get_debloated_pkgs() {
   if command -v get-debloated-pkgs >/dev/null 2>&1; then

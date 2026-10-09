@@ -20,6 +20,7 @@ import {
   type JsonValue,
   sanitizeDirectoryName,
 } from '../../../firmware-package-utils.ts';
+import { assertSafeSnapshotId } from '../../../path-guard.ts';
 import {
   restoreContactsOnDevice,
   restoreMessagesOnDevice,
@@ -197,11 +198,13 @@ export async function restoreBackupSnapshot(
 ): Promise<RestoreBackupSnapshotResponse> {
   beginConnectedPreviewProgress(0);
   appendConnectedPreviewLog('Restore requested.');
-  const snapshotId = payload.snapshotId?.trim() || '';
-  if (!snapshotId) {
+  let snapshotId = '';
+  try {
+    snapshotId = assertSafeSnapshotId(payload.snapshotId ?? '');
+  } catch (error) {
     const response = emptyRestoreResponse('', {
-      error: 'Missing snapshot id.',
-      detail: 'Select a snapshot before restore.',
+      error: 'Invalid snapshot id.',
+      detail: error instanceof Error ? error.message : String(error),
     });
     failConnectedPreviewProgress(response.detail || response.error || 'Restore failed.');
     return response;

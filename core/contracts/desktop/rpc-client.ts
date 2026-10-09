@@ -98,18 +98,32 @@ function setDesktopRpcBridgeHandlers(
 
 export function createDesktopRpcClient(options: {
   downloadProgressEventName: string;
+  updateProgressEventName: string;
   defaultRpcTimeoutMs: number;
   downloadRpcTimeoutMs: number;
 }) {
-  const { downloadProgressEventName, defaultRpcTimeoutMs, downloadRpcTimeoutMs } = options;
+  const {
+    downloadProgressEventName,
+    updateProgressEventName,
+    defaultRpcTimeoutMs,
+    downloadRpcTimeoutMs,
+  } = options;
   let requestCounter = 0;
   const pendingRequests = new Map<number, PendingRequest>();
 
-  function dispatchDownloadProgress(payload: RpcBridgePayload | undefined) {
-    const event = new CustomEvent(downloadProgressEventName, {
+  function dispatchProgressEvent(eventName: string, payload: RpcBridgePayload | undefined) {
+    const event = new CustomEvent(eventName, {
       detail: payload,
     });
     window.dispatchEvent(event);
+  }
+
+  function dispatchDownloadProgress(payload: RpcBridgePayload | undefined) {
+    dispatchProgressEvent(downloadProgressEventName, payload);
+  }
+
+  function dispatchUpdateProgress(payload: RpcBridgePayload | undefined) {
+    dispatchProgressEvent(updateProgressEventName, payload);
   }
 
   function getRpcTimeoutMs(method: string) {
@@ -120,7 +134,10 @@ export function createDesktopRpcClient(options: {
       method === 'extractLocalFirmware' ||
       method === 'scanConnectedBackupPreview' ||
       method === 'backupConnectedDevice' ||
-      method === 'restoreBackupSnapshot'
+      method === 'restoreBackupSnapshot' ||
+      method === 'startProjectUpdate' ||
+      method === 'applyFrameworkUpdate' ||
+      method === 'downloadFrameworkUpdate'
       ? downloadRpcTimeoutMs
       : defaultRpcTimeoutMs;
   }
@@ -157,12 +174,14 @@ export function createDesktopRpcClient(options: {
       return;
     }
 
-    if (
-      packet['type'] === 'message' &&
-      packet['id'] === 'downloadProgress' &&
-      'payload' in packet
-    ) {
-      dispatchDownloadProgress(packet['payload']);
+    if (packet['type'] === 'message' && 'payload' in packet) {
+      if (packet['id'] === 'downloadProgress') {
+        dispatchDownloadProgress(packet['payload']);
+        return;
+      }
+      if (packet['id'] === 'updateProgress') {
+        dispatchUpdateProgress(packet['payload']);
+      }
     }
   }
 

@@ -31,6 +31,78 @@ All data is stored locally on your machine - nothing is sent to any third-party 
 
 ---
 
+## Instalação via código-fonte no Linux (Ubuntu, Zorin, Debian, Arch)
+
+Funciona em distribuições baseadas em Debian/Ubuntu (Ubuntu, Zorin OS, Linux Mint) e em Arch.
+
+```bash
+git clone https://github.com/darkmorellato/LenovoMotoFirmwareDownloader.git
+cd LenovoMotoFirmwareDownloader
+./install-linux-deps.sh        # instala dependências de sistema (pede sudo); --yes instala o Bun sem perguntar
+bun install --frozen-lockfile
+(cd web && bun install --frozen-lockfile)
+bun run start
+```
+
+- O script detecta `apt` ou `pacman`, instala ferramentas de build, libusb, polkit (`pkexec`),
+  `podman` (se nem `podman` nem `docker` existirem — usado para compilar o addon USB) e as
+  bibliotecas do navegador embutido (CEF/GTK). Pacotes com nomes diferentes entre versões
+  (ex.: `libasound2` / `libasound2t64`) são resolvidos automaticamente.
+- **Permissões USB:** use o botão de regras udev do app uma vez (pede senha via `pkexec`) e
+  reconecte o aparelho. As regras também dizem ao **ModemManager** (ativo por padrão no
+  Ubuntu/Zorin) para ignorar os aparelhos, evitando que ele ocupe as portas durante o flash.
+  Instalações antigas das regras serão detectadas como desatualizadas e podem ser reinstaladas.
+- Com o aparelho em modo Fastboot, "Consultar Atualização" lê IMEI/serial via Fastboot (sem ADB).
+
+---
+
+## Atualização (instalações via código-fonte) / Updating (source installs)
+
+Máquinas que **já clonaram o repositório** podem se atualizar de três formas — nenhuma delas sobrescreve trabalho local sem aviso:
+
+### 1. Botão "Atualizar" no aplicativo (recomendado)
+
+Clique em **🔄 Atualizar** no cabeçalho do app. Ele:
+
+1. Valida suas credenciais git para o repositório remoto (avisa se faltar acesso);
+2. Mostra os commits recebidos e o estado local **antes** de alterar qualquer coisa;
+3. Sincroniza apenas via *fast-forward* — nunca sobrescreve seu histórico local;
+4. Se houver alterações locais, oferece **backup seguro** (`git stash`) — nada é perdido;
+5. Reinstala as dependências (raiz e `web/`) e recompila a interface;
+6. Registra cada operação em `assets/data/logs/update-*.log` (botão "Ver log").
+
+Ao final, **reinicie o app** para usar a nova versão.
+
+### 2. Script de linha de comando
+
+```bash
+./update.sh            # atualiza (aborta com segurança se houver mudanças locais)
+./update.sh --backup   # faz stash das mudanças locais e atualiza
+```
+
+### 3. Manualmente
+
+```bash
+git fetch origin
+git log HEAD..origin/main --oneline    # veja o que vem por aí
+git merge --ff-only origin/main        # atualiza apenas se for fast-forward
+bun install --frozen-lockfile
+(cd web && bun install --frozen-lockfile)
+bun run web:build
+bun run tooling/build/sync-frontend.ts
+```
+
+Depois inicie com `bun run start`.
+
+**Notas**
+
+- Se o `git merge --ff-only` falhar, seu branch **divergiu** do remoto — resolva manualmente
+  (`git rebase origin/main` ou merge). Nada é sobrescrito automaticamente.
+- Alterações locais podem ser preservadas com `./update.sh --backup` e restauradas
+  depois com `git stash pop`.
+- Apps instalados por **Release** (AppImage/Setup) não usam git: atualizam pelo
+  mesmo botão "Atualizar", via canal de releases do GitHub.
+
 ## Development
 
 ### Install

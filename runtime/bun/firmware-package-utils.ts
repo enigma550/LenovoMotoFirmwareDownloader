@@ -21,6 +21,12 @@ import {
 } from './firmware-package-paths.ts';
 
 export {
+  formatFastbootArgs,
+  isWipeSensitivePartition,
+  parseCommandTokens,
+  shouldSkipForDataReset,
+} from './features/rescue/rescue-command-tokens.ts';
+export {
   getAppStoreDownloadDirectory,
   getDownloadDirectory,
   getExtractDirForPackagePath,
@@ -261,70 +267,6 @@ export async function ensureExtractedFirmwarePackage(options: {
     extractDir,
     reusedExtraction: false,
   };
-}
-
-export function formatFastbootArgs(args: string[]) {
-  return ['fastboot', ...args].join(' ');
-}
-
-export function isWipeSensitivePartition(partition: string) {
-  const lowerPartition = partition.toLowerCase();
-  return (
-    lowerPartition === 'userdata' || lowerPartition === 'cache' || lowerPartition === 'metadata'
-  );
-}
-
-export function parseCommandTokens(rawLine: string) {
-  const tokens: string[] = [];
-  let current = '';
-  let quote: '"' | "'" | null = null;
-
-  for (let index = 0; index < rawLine.length; index += 1) {
-    const char = rawLine[index] as string;
-    if (quote) {
-      if (char === quote) {
-        quote = null;
-      } else {
-        current += char;
-      }
-      continue;
-    }
-
-    if (char === '"' || char === "'") {
-      quote = char;
-      continue;
-    }
-
-    if (/\s/.test(char)) {
-      if (current) {
-        tokens.push(current);
-        current = '';
-      }
-      continue;
-    }
-
-    current += char;
-  }
-
-  if (current) {
-    tokens.push(current);
-  }
-  return tokens;
-}
-
-export function shouldSkipForDataReset(args: string[], dataReset: 'yes' | 'no') {
-  if (dataReset !== 'no' || args.length < 2) {
-    return false;
-  }
-  const command = (args[0] || '').toLowerCase();
-  const partition = (args[1] || '').toLowerCase();
-  if (command === 'erase' || command === 'format') {
-    return isWipeSensitivePartition(partition);
-  }
-  if (command === 'flash' && partition) {
-    return isWipeSensitivePartition(partition);
-  }
-  return false;
 }
 
 export async function maybeResolveCommandFileArgument(

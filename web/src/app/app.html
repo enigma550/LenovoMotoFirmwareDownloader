@@ -1,122 +1,129 @@
 <main
-  class="min-h-screen p-4 transition-colors duration-200 md:p-6"
-  [class.bg-dark-bg]="store.isDark()"
-  [class.text-dark-text]="store.isDark()"
-  [class.bg-light-bg]="!store.isDark()"
-  [class.text-light-text]="!store.isDark()"
+  class="min-h-screen p-4 transition-colors duration-200 md:p-6 bg-canvas text-fg"
+  [class.theme-dark]="store.isDark()"
 >
   <div class="mx-auto max-w-7xl">
     <!-- HEADER -->
     <header
-      class="rounded-xl border p-5 transition-all duration-200 md:p-6"
-      [class.border-dark-border]="store.isDark()"
-      [class.bg-dark-surface]="store.isDark()"
-      [class.border-light-border]="!store.isDark()"
-      [class.bg-light-surface]="!store.isDark()"
+      class="rounded-xl border p-5 transition-all duration-200 md:p-6 border-base bg-surface"
       [class.shadow-sm]="!store.isDark()"
     >
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <!-- Logo and title -->
+        <!-- Logo and title with Lenovo Software Fix styling -->
         <div class="flex items-center gap-4">
           <div
-            class="hidden md:flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.bg-accent-light]="!store.isDark()"
+            class="hidden md:flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg shadow-sm"
+            [class.bg-accent]="true"
           >
-            <span
-              class="block w-[2.6ch] text-center font-mono text-base font-black leading-none tracking-wide"
-              [class.text-accent]="true"
-              >LM</span
-            >
-            <span
-              class="block w-[2.6ch] text-center font-mono text-base font-black leading-none tracking-wide"
-              [class.text-accent]="true"
-              >FD</span
-            >
+            <span class="block text-center font-mono text-xs font-black tracking-widest text-white">LENOVO</span>
+            <span class="block text-center font-mono text-[10px] font-bold text-white/80">FIX</span>
           </div>
           <div>
-            <h1
-              class="text-xl font-semibold md:text-2xl"
-              [class.text-dark-text-bright]="store.isDark()"
-              [class.text-light-text-bright]="!store.isDark()"
-            >
-              Lenovo Moto Firmware Downloader
-            </h1>
+            <div class="flex items-center gap-2">
+              <span class="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">Lenovo</span>
+              <h1
+                class="text-xl font-bold tracking-tight md:text-2xl text-fg-strong"
+              >
+                {{ 'APP.TITLE' | translate }}
+              </h1>
+            </div>
             <p
-              class="text-sm"
-              [class.text-dark-text-dim]="store.isDark()"
-              [class.text-light-text-dim]="!store.isDark()"
+              class="text-xs font-medium text-fg-dim"
             >
-              Device management tool
+              {{ 'APP.SUBTITLE' | translate }}
             </p>
           </div>
         </div>
 
-        <!-- Status indicators -->
-        <div class="flex flex-wrap items-center gap-3">
+        <!-- Status indicators & Controls -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Update button -->
+          <button
+            class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-xs transition-all hover:scale-105 active:scale-95"
+            type="button"
+            (click)="update.openDialog()"
+            [title]="'UPDATE.TITLE' | translate"
+            [attr.aria-label]="'UPDATE.TITLE' | translate"
+          >
+            <span aria-hidden="true">🔄</span>
+            <span>{{ 'UPDATE.BUTTON' | translate }}</span>
+            @if (update.hasUpdate()) {
+            <span
+              class="h-2 w-2 rounded-full bg-success"
+              [attr.aria-label]="'UPDATE.AVAILABLE_BADGE' | translate"
+            ></span>
+            }
+          </button>
+
           <!-- Bridge status -->
           <div
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.bg-light-border]="!store.isDark()"
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium"
+            [class.bg-elevated]="store.isDark()"
+            [class.bg-base]="!store.isDark()"
           >
             <span
               class="h-2 w-2 rounded-full"
               [class.bg-success]="store.bridgeHealthy()"
               [class.bg-danger]="!store.bridgeHealthy()"
             ></span>
-            <span
-              [class.text-dark-text-dim]="store.isDark()"
-              [class.text-light-text-dim]="!store.isDark()"
-              >{{ store.bridgeStatus() }}</span
+            <span class="text-fg-dim"
+              >{{ (store.bridgeHealthy() ? 'STATUS.BRIDGE_CONNECTED' : 'STATUS.BRIDGE_DISCONNECTED') | translate }}</span
             >
           </div>
 
           <!-- Auth status -->
           <div
-            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm"
+            class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium"
             [class.bg-success-light]="store.authComplete() && !store.isDark()"
             [class.text-success]="store.authComplete()"
             [class.bg-warning-light]="!store.authComplete() && !store.isDark()"
             [class.text-warning]="!store.authComplete()"
-            [class.bg-dark-elevated]="store.isDark()"
+            [class.bg-elevated]="store.isDark()"
           >
             <span
               class="h-2 w-2 rounded-full"
               [class.bg-success]="store.authComplete()"
               [class.bg-warning]="!store.authComplete()"
             ></span>
-            {{ store.authComplete() ? 'Authenticated' : 'Not authenticated' }}
+            {{ (store.authComplete() ? 'STATUS.AUTHENTICATED' : 'STATUS.NOT_AUTHENTICATED') | translate }}
           </div>
+
+          <!-- Language toggle -->
+          <button
+            class="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-xs transition-all hover:scale-105 active:scale-95 text-fg-strong"
+            [class.bg-elevated]="store.isDark()"
+            [class.border-strong]="store.isDark()"
+            [class.bg-surface]="!store.isDark()"
+            [class.border-base]="!store.isDark()"
+            type="button"
+            (click)="i18n.toggleLanguage()"
+            [title]="i18n.currentLang() === 'pt-BR' ? 'Alternar para Inglês' : 'Switch to Portuguese'"
+          >
+            <span>🌐</span>
+            <span>{{ i18n.currentLang() === 'pt-BR' ? '🇧🇷 PT-BR' : '🇺🇸 EN' }}</span>
+          </button>
 
           <!-- Theme toggle -->
           <button
-            class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
-            [class.bg-dark-elevated]="store.isDark()"
-            [class.text-dark-text]="store.isDark()"
-            [class.hover:bg-dark-border]="store.isDark()"
-            [class.bg-light-border]="!store.isDark()"
-            [class.text-light-text]="!store.isDark()"
-            [class.hover:bg-light-border-bright]="!store.isDark()"
+            class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors text-fg hover:bg-hover-strong"
+            [class.bg-elevated]="store.isDark()"
+            [class.bg-base]="!store.isDark()"
             type="button"
             (click)="store.toggleTheme()"
           >
-            {{ store.isDark() ? '☀ Light' : '☾ Dark' }}
+            {{ (store.isDark() ? 'THEME.LIGHT' : 'THEME.DARK') | translate }}
           </button>
         </div>
       </div>
 
       <!-- Status bar -->
       <div
-        class="mt-4 flex flex-wrap items-center gap-3 border-t pt-4"
-        [class.border-dark-border]="store.isDark()"
-        [class.border-light-border]="!store.isDark()"
+        class="mt-4 flex flex-wrap items-center gap-3 border-t pt-4 border-base"
       >
         <!-- Status indicator -->
         <div
-          class="flex items-center gap-2 text-sm"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="flex items-center gap-2 text-sm text-fg-dim"
+          aria-live="polite"
         >
           @if (store.isBusy()) {
           <span
@@ -134,7 +141,7 @@
           class="rounded-lg px-3 py-1 text-sm"
           [class.bg-accent-light]="!store.isDark()"
           [class.text-accent-dim]="!store.isDark()"
-          [class.bg-dark-elevated]="store.isDark()"
+          [class.bg-elevated]="store.isDark()"
           [class.text-accent]="store.isDark()"
         >
           {{ selectedModel.modelName }} @if (selectedModel.marketName) {
@@ -152,9 +159,9 @@
       [class.border-danger]="true"
       [class.bg-danger-light]="!store.isDark()"
       [class.text-danger]="true"
-      [class.bg-dark-surface]="store.isDark()"
+      [class.bg-surface]="store.isDark()"
     >
-      <span class="font-semibold">Error:</span> {{ store.errorMessage() }}
+      <span class="font-semibold">{{ 'ERRORS.LABEL' | translate }}</span> {{ store.errorMessage() }}
     </div>
     }
 
@@ -173,15 +180,9 @@
         @if (!store.authComplete() && (store.sourceMode() === 'catalog' || store.sourceMode() ===
         'connected')) {
         <div
-          class="rounded-xl border p-6 text-sm"
-          [class.border-dark-border]="store.isDark()"
-          [class.bg-dark-surface]="store.isDark()"
-          [class.text-dark-text-dim]="store.isDark()"
-          [class.border-light-border]="!store.isDark()"
-          [class.bg-light-surface]="!store.isDark()"
-          [class.text-light-text-dim]="!store.isDark()"
+          class="rounded-xl border p-6 text-sm border-base bg-surface text-fg-dim"
         >
-          Authentication required for Catalog and Connected Device features.
+          {{ 'AUTH.REQUIRED_NOTICE' | translate }}
         </div>
         } @else if (store.sourceMode() === 'connected') {
         <app-connected-lookup />
@@ -197,18 +198,12 @@
         <app-about-workspace />
         } @else if (store.sourceMode() === null) {
         <div
-          class="rounded-xl border p-8 text-center"
-          [class.border-dark-border]="store.isDark()"
-          [class.bg-dark-surface]="store.isDark()"
-          [class.border-light-border]="!store.isDark()"
-          [class.bg-light-surface]="!store.isDark()"
+          class="rounded-xl border p-8 text-center border-base bg-surface"
         >
           <p
-            class="text-sm"
-            [class.text-dark-text-dim]="store.isDark()"
-            [class.text-light-text-dim]="!store.isDark()"
+            class="text-sm text-fg-dim"
           >
-            Select a source module to begin
+            {{ 'COMMON.SELECT_MODULE' | translate }}
           </p>
         </div>
         } @if (store.authComplete() && store.sourceMode() !== 'downloads' && store.sourceMode() !==
@@ -220,13 +215,17 @@
   </div>
 
   <!-- TOAST NOTIFICATIONS -->
-  <section class="pointer-events-none fixed right-4 top-4 z-50 grid max-w-md gap-3">
+  <section
+    class="pointer-events-none fixed right-4 top-4 z-50 grid max-w-md gap-3"
+    role="status"
+    aria-live="polite"
+  >
     @for (toast of store.toasts(); track toast.id) {
     <article
       class="pointer-events-auto rounded-lg border-l-4 px-4 py-3 text-sm shadow-lg animate-fade-in"
       [class.border-accent]="toast.variant === 'info'"
-      [class.bg-dark-surface]="store.isDark()"
-      [class.text-dark-text]="store.isDark()"
+      [class.bg-surface]="store.isDark()"
+      [class.text-fg]="store.isDark()"
       [class.bg-accent-light]="toast.variant === 'info' && !store.isDark()"
       [class.border-success]="toast.variant === 'success'"
       [class.bg-success-light]="toast.variant === 'success' && !store.isDark()"
@@ -240,6 +239,8 @@
         <button
           class="shrink-0 opacity-60 transition hover:opacity-100"
           type="button"
+          [attr.aria-label]="'COMMON.DISMISS' | translate"
+          [title]="'COMMON.DISMISS' | translate"
           (click)="store.dismissToast(toast.id)"
         >
           ✕
@@ -250,4 +251,6 @@
   </section>
 
   <app-desktop-prompt-modal />
+  <app-update-dialog />
+  <app-confirm-dialog />
 </main>

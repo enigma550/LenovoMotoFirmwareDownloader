@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { createSingleFlight } from '../../../../core/common/single-flight.ts';
+import { fetchWithTimeout } from '../../../../core/infra/http.ts';
 import type { PlayStoreArch } from '../../../shared/desktop-rpc';
 import {
   buildAuroraDeviceConfig,
@@ -59,6 +61,8 @@ const DISPENSER_USER_AGENT = 'com.aurora.store-4.8.2-74';
 const DEFAULT_LOCALE = 'en-US';
 
 const sessionCache = new Map<PlayStoreArch, PlayStoreSession>();
+// Collapses concurrent session builds (check-in + token exchange) into one.
+const sessionFlight = createSingleFlight<PlayStoreSession>();
 let nextAccountIndex = 0;
 
 function toRequestBody(bytes: Uint8Array) {
@@ -195,7 +199,7 @@ function longDecimalToHex(value: string) {
 }
 
 async function fetchBytes(url: string, init: RequestInit) {
-  const response = await fetch(url, init);
+  const response = await fetchWithTimeout(url, init);
   const body = new Uint8Array(await response.arrayBuffer());
   if (!response.ok) {
     throw new PlayStoreAuthError(`Google Play auth request failed with HTTP ${response.status}.`);
@@ -318,7 +322,7 @@ async function exchangeAasTokenForAuth(options: {
   headers.set('app', 'com.google.android.gms');
   headers.set('device', options.gsfId);
 
-  const response = await fetch(AUTH_URL, {
+  const response = await fetchWithTimeout(AUTH_URL, {
     body,
     headers,
     method: 'POST',
@@ -355,7 +359,7 @@ async function fetchDfeCookie(session: Omit<PlayStoreSession, 'dfeCookie'>) {
     headers.set('X-DFE-Device-Checkin-Consistency-Token', session.deviceConsistencyToken);
   }
 
-  const response = await fetch(TOC_URL, {
+  const response = await fetchWithTimeout(TOC_URL, {
     headers,
     method: 'GET',
   });
@@ -491,11 +495,14 @@ async function fetchDispenserSession(dispenserUrl: string, arch: PlayStoreArch) 
   headers.set('Content-Type', 'application/json');
   headers.set('User-Agent', DISPENSER_USER_AGENT);
 
-  let response = await fetch(`${dispenserUrl}?locale=${encodeURIComponent(DEFAULT_LOCALE)}`, {
-    body: JSON.stringify(buildAuroraDeviceConfig(profile)),
-    headers,
-    method: 'POST',
-  });
+  let response = await fetchWithTimeout(
+    `${dispenserUrl}?locale=${encodeURIComponent(DEFAULT_LOCALE)}`,
+    {
+      body: JSON.stringify(buildAuroraDeviceConfig(profile)),
+      headers,
+      method: 'POST',
+    },
+  );
   let text = await response.text();
   let parsed: unknown;
   try {
@@ -508,10 +515,13 @@ async function fetchDispenserSession(dispenserUrl: string, arch: PlayStoreArch) 
     const fallbackHeaders = new Headers();
     fallbackHeaders.set('Accept', 'application/json');
     fallbackHeaders.set('User-Agent', DISPENSER_USER_AGENT);
-    response = await fetch(`${dispenserUrl}?locale=${encodeURIComponent(DEFAULT_LOCALE)}`, {
-      headers: fallbackHeaders,
-      method: 'GET',
-    });
+    response = await fetchWithTimeout(
+      `${dispenserUrl}?locale=${encodeURIComponent(DEFAULT_LOCALE)}`,
+      {
+        headers: fallbackHeaders,
+        method: 'GET',
+      },
+    );
     text = await response.text();
     try {
       parsed = text ? JSON.parse(text) : {};
@@ -574,40 +584,49 @@ export async function getPlayStoreSession(arch: PlayStoreArch, forceRefresh = fa
     }
   }
 
-  const profiles = await getPlayStoreAuthProfiles();
-  let lastError = '';
-  if (profiles.accounts.length > 0) {
-    for (let offset = 0; offset < profiles.accounts.length; offset += 1) {
-      const index = (nextAccountIndex + offset) % profiles.accounts.length;
-      const account = profiles.accounts[index];
-      if (!account) {
-        continue;
+  return sessionFlight.run(`session:${arch}`, async () => {
+    if (!forceRefresh) {
+      const cached = sessionCache.get(arch);
+      if (cached) {
+        return cached;
       }
+    }
 
+    const profiles = await getPlayStoreAuthProfiles();
+    let lastError = '';
+    if (profiles.accounts.length > 0) {
+      for (let offset = 0; offset < profiles.accounts.length; offset += 1) {
+        const index = (nextAccountIndex + offset) % profiles.accounts.length;
+        const account = profiles.accounts[index];
+        if (!account) {
+          continue;
+        }
+
+        try {
+          const session = await buildPlayStoreSession(account, arch);
+          nextAccountIndex = (index + 1) % profiles.accounts.length;
+          sessionCache.set(arch, session);
+          return session;
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : String(error);
+        }
+      }
+    }
+
+    for (const dispenserUrl of profiles.dispensers) {
       try {
-        const session = await buildPlayStoreSession(account, arch);
-        nextAccountIndex = (index + 1) % profiles.accounts.length;
+        const session = await fetchDispenserSession(dispenserUrl, arch);
         sessionCache.set(arch, session);
         return session;
       } catch (error) {
         lastError = error instanceof Error ? error.message : String(error);
       }
     }
-  }
 
-  for (const dispenserUrl of profiles.dispensers) {
-    try {
-      const session = await fetchDispenserSession(dispenserUrl, arch);
-      sessionCache.set(arch, session);
-      return session;
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : String(error);
-    }
-  }
-
-  throw new PlayStoreAuthError(
-    lastError || profiles.error || 'No Aurora token dispenser or auth profile is available.',
-  );
+    throw new PlayStoreAuthError(
+      lastError || profiles.error || 'No Aurora token dispenser or auth profile is available.',
+    );
+  });
 }
 
 export async function ensureDefaultAuroraProfilesDirectory() {
